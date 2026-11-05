@@ -130,7 +130,33 @@ GitHub Actions relance formatage, analyse, tests et build à chaque push.
   relevé ; la faim, le repas du soir et l'établi de la Planque
   (`PlanqueService`, `BuildPanel`) ; quatre intérieurs, maisons qui
   racontent, trois repères. Détail dans `docs/DECISIONS.md`.
-- **Ensuite** : ce que Josh dira après avoir joué ; puis la jauge de
+- **5 novembre 2026, retours de Josh** : arrachage animé (tremblement, puis
+  envol des morceaux et des objets légers), cachettes occupées et Repris
+  dehors, manger depuis le sac (`BagPanel`, Y / I) et à la table de la
+  Planque, collines boisées autour, Repris couleur cendre, nuit éclaircie.
+- **5 novembre 2026, la campagne** : zone jouable 1400 × 1400 (ville au
+  centre, campagne autour : fermes isolées, chemins, bosses, bosquets,
+  épaves) ; les Repris de jour augmentent avec les jours
+  (`Config.repris.day`, `Repris.onDay`).
+- **5 novembre 2026, la traque** : l'Œil vise de mieux en mieux et poursuit
+  qui il voit (`Config.eye.hunt`, courbes par jour dans `Growth`) ; la
+  Planque est une ferme isolée du coin sud-ouest ; ville décalée et parcelles
+  irrégulières ; campagne en hameaux et chemins sinueux.
+- **5 novembre 2026, les petites cachettes** : buissons et tôles partout,
+  voitures ouvertes des deux côtés ; caché, on voit dehors ; l'Œil arrache
+  aussi au hasard (cachettes, même occupées, avec répit ; toits qui tremblent
+  3,5 s). La progression de l'Œil sur 7 quartiers est proposée dans
+  `docs/CONCEPT.md` §5 bis, à valider avec Josh.
+- **5 novembre 2026, la difficulté** : un Œil qui s'améliore à chaque quartier
+  et garde tout (`CONCEPT.md` §5 bis, décidé) ; dans la Banlieue, seule la
+  traque monte ; 140 cachettes le matin ; à partir du jour 9 l'Œil
+  s'impatiente et rend la ville invivable (`Config.district`).
+- **5 novembre 2026, l'Œil vivant** : paupières (la Fissure se referme sur
+  lui hors des Balayages), clignements, pupille qui se resserre, iris et
+  veines retravaillés (`SkyView`, `Config.sky`) ; la moitié des toits
+  arrachés vers le jour 9.
+- **Ensuite** : ce que Josh dira après avoir joué ; un vrai modèle de
+  créature pour les Repris ; puis la jauge de
   Visibilité de la Planque, la construction libre sur grille, les autres
   Repris (Rampant, Hurleur, Guetteur, Brute), les quêtes.
 

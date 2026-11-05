@@ -110,3 +110,124 @@ montre pas leur texte). *Jamais tenu en main* : tout ce qui suit.
    différence le lendemain si on ne l'a pas fait.
 8. **La variété** : les maisons se ressemblent-elles encore trop ? Les mots,
    les repères (église, station, château d'eau) aident-ils à se repérer ?
+
+## Après les retours (5 novembre 2026)
+
+*Vu à l'écran par l'assistant, seul* : l'arrachage d'un toit (l'étage éclate
+vers le ciel), les Repris dans une ruine de jour et de nuit, la nuit
+éclaircie, le panneau du sac (ouvert par I) et celui de l'établi, les collines
+boisées. *Vérifié par sonde* : manger une eau fait passer la faim de 28 à 53 ;
+une cachette occupée fait sortir un Repris. *Jamais tenu à la manette* : Y
+pour le sac, A pour manger.
+
+1. **L'arrachage** : le tremblement d'une seconde suffit-il pour comprendre
+   et sortir ?
+2. **Les cachettes occupées** : est-ce une bonne surprise, ou injuste quand on
+   s'y jette en plein Balayage ?
+3. **Les Repris dehors** : effrayants, ou faciles à éviter ?
+4. **Le sac** : Y à la manette, choisir à la croix, A pour manger. Est-ce
+   rapide quand on est pressé ?
+5. **La nuit** : maintenant assez claire pour jouer, mais encore inquiétante ?
+
+## La campagne (5 novembre 2026)
+
+*Vu par l'assistant* : la carte de loin (ville, fermes, bosquets, collines
+au hasard) et une ferme au niveau du sol. *Mesuré* : 0 problème, 204
+emplacements de cachettes, 307 contenants, 103 bâtiments. *En jeu, seul* : le
+premier jour, 25 Repris dorment sous un toit, 14 sont dehors en ville et 13
+dans la campagne.
+
+1. **Aller dans la campagne** : est-ce que ça vaut le trajet (fermes à
+   fouiller) ? Est-ce trop vide entre les fermes ?
+2. **L'Œil en biais** : se cacher dans une ferme est-il trop facile ?
+3. **Le nombre de Repris** : assez le premier jour ? Trop vers le jour 5 ?
+
+## La traque de l'Œil et la nouvelle carte (5 novembre 2026)
+
+*Vu par l'assistant* : la ville d'en haut (rues décalées, maisons en
+désordre), la ferme de la Planque seule dans son coin. *Mesuré* : 0 problème,
+184 emplacements de cachettes, 257 contenants. *En jeu, seul, par sonde* :
+immobile sous le regard, il reste collé dessus et aspire en 2 s ; en courant
+sur le côté dès qu'il frôle, on s'échappe le premier jour (de justesse depuis
+le centre) et il reprend son trajet. *Jamais vu par un humain* : est-ce que
+la poursuite fait peur ou paraît injuste.
+
+1. **Se faire voir exprès le premier jour** et courir vers un abri : est-ce
+   qu'on a le sentiment de pouvoir s'en sortir ?
+2. **Fuir sur le côté** plutôt que tout droit, loin de la ville : est-ce que
+   ça se comprend en voyant la tache de lumière ?
+3. **Les jours suivants** : vers le jour 5, sent-on qu'il vise mieux ?
+4. **Le départ** : la Planque au fond de la campagne, est-ce trop loin de la
+   ville (environ 20 secondes de course jusqu'au bord de la ville) ?
+5. **La ville** : moins « tracée à la règle » ? Les terrains vagues se
+   remarquent-ils ?
+6. **La campagne** : les hameaux et maisons seules donnent-ils envie
+   d'explorer ?
+
+## Les petites cachettes (5 novembre 2026)
+
+*Vu à l'écran par l'assistant* : un buisson dans le coin d'une haie, une tôle
+contre une palissade. *En jeu, seul, par sonde* : on entre dans un buisson et
+sous une tôle ; chaque voiture a une invite de chaque côté. *Jamais tenu à la
+manette* : entrer par le côté passager.
+
+1. **Les voitures** : entrer par n'importe quel côté, et ressortir du même
+   côté.
+2. **En fuyant le regard** : trouve-t-on maintenant une cachette à quelques
+   secondes, partout en ville ?
+3. **Trop facile ?** On est passé à environ 140 cachettes par jour (40 %).
+   A-t-on encore peur ? Faut-il en enlever, ou en remettre ?
+4. **Le buisson et la tôle** : se reconnaissent-ils de loin comme des
+   cachettes ?
+
+## Voir dehors, arrachages au hasard (5 novembre 2026)
+
+*En jeu, seul, par sonde* : depuis une voiture, on voit dehors avec le rappel
+en bas. Une cachette arrachée avec moi dedans m'a éjecté, avec un répit de
+2 s pendant lequel la jauge est restée à 0. Un toit arraché avec moi dessous
+affiche « Le toit tremble : sors vite ! » et tremble 3,5 s. Pendant un
+Balayage du jour 1, une cachette au hasard est partie en plus de la mienne.
+*Jamais vu par un humain* : est-ce juste ou frustrant ?
+
+1. **Caché** : la vue depuis un buisson, une tôle, une voiture. Gêne-t-elle,
+   ou est-ce mieux que l'écran noir ?
+2. **Éjecté** : comprend-on tout de suite qu'il faut courir ? 2 s suffisent-elles ?
+3. **Le toit qui tremble** : a-t-on le temps de sortir de la maison ?
+4. **La ville qui s'abîme** : vers le jour 5, reste-t-il assez de toits ?
+
+## La difficulté de la Banlieue (5 novembre 2026)
+
+*Vérifié en jeu, seul* : 140 cachettes le matin, dont 100 en ville.
+*Vérifié par le calcul* : 20 toits arrachés au hasard au jour 10, en plus de
+ceux où l'on s'est abrité. *Jamais joué par un humain* : est-ce assez dur ?
+
+1. **Le premier jour** : trouve-t-on une cachette sans trop chercher, sans
+   que ce soit gratuit ?
+2. **Vers le jour 5** : la traque fait-elle vraiment peur ? A-t-on déjà été
+   aspiré en courant ?
+3. **S'ennuie-t-on** à un moment de la journée ? Si oui, quand ?
+
+## L'Œil qui s'impatiente (5 novembre 2026)
+
+*Vérifié par le calcul* : 32 toits arrachés au hasard au jour 8, 60 au jour 12.
+*Vérifié en jeu, seul* : 140 cachettes au jour 1, 84 au jour 13 ; un Balayage
+tourne sans erreur. *Jamais vu* : le message du jour 9 (il faut jouer
+jusque-là), ni la ville réelle au jour 12.
+
+1. **Vers le jour 8** : la ville est-elle assez abîmée pour qu'on le sente, sans
+   être vide ?
+2. **Au jour 9** : le message « L'Œil s'impatiente » donne-t-il envie de se
+   presser ?
+3. **Si on traîne jusqu'au jour 12** : est-ce vraiment dur ? C'est voulu.
+
+## L'Œil vivant (5 novembre 2026)
+
+*Vu à l'écran par l'assistant* : l'Œil ouvert (iris, fibres, veines, reflet),
+la couture brûlante quand il est fermé, et en jeu, son ouverture au premier
+Balayage, tourné vers son faisceau. *Jamais vu* : un clignement, ni la
+fermeture en mouvement (seulement les états ouvert et fermé).
+
+1. **Le réveil** : le voir s'ouvrir au signal fait-il peur ? Est-ce un bon
+   signe pour se cacher ?
+2. **Fermé** : la couture se voit-elle de partout dans la ville ?
+3. **Les clignements** : trop souvent, pas assez ?

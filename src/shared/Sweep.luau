@@ -134,6 +134,34 @@ function Sweep.withInspections(
 	return out
 end
 
+-- Les arrachages au hasard : chaque cible devient un detour sur le trajet,
+-- juste apres le point le plus proche. Le regard les arrache EN PASSANT,
+-- sans aller les chercher d'abord comme les cachettes marquees.
+function Sweep.withStops(path: { Point }, targets: { Target }, pause: number): { Point }
+	local after: { [number]: { Target } } = {}
+	for _, target in targets do
+		local best, bestDistance = 1, math.huge
+		for i, p in path do
+			local d = (p.x - target.x) ^ 2 + (p.z - target.z) ^ 2
+			if d < bestDistance then
+				best, bestDistance = i, d
+			end
+		end
+		after[best] = after[best] or {}
+		table.insert(after[best], target)
+	end
+	local out: { Point } = {}
+	for i, p in path do
+		table.insert(out, p)
+		for _, target in after[i] or {} do
+			table.insert(out, { x = target.x, z = target.z, pause = pause, spotId = target.id })
+			-- Puis il revient sur son trajet.
+			table.insert(out, { x = p.x, z = p.z, pause = 0 })
+		end
+	end
+	return out
+end
+
 -- La zone qu'un Balayage couvre : un carre de `size` centre sur (x, z),
 -- ramene dans les limites du quartier (un joueur au bord ne fait pas
 -- balayer le vide au-dela).
@@ -166,6 +194,25 @@ function Sweep.targetsIn(targets: { Target }, zone: Bounds, margin: number): { T
 		end
 	end
 	return out
+end
+
+-- Un pas du regard vers une cible, a vitesse `speed` (studs/s) pendant `dt`.
+-- Il ne depasse jamais la cible.
+function Sweep.chaseStep(
+	x: number,
+	z: number,
+	tx: number,
+	tz: number,
+	speed: number,
+	dt: number
+): (number, number)
+	local dx, dz = tx - x, tz - z
+	local distance = math.sqrt(dx * dx + dz * dz)
+	local step = speed * dt
+	if distance <= step or distance == 0 then
+		return tx, tz
+	end
+	return x + dx / distance * step, z + dz / distance * step
 end
 
 function Sweep.timeline(points: { Point }, speed: number): Timeline

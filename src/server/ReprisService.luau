@@ -21,6 +21,7 @@ local TweenService = game:GetService("TweenService")
 
 local Survivor = ReplicatedStorage:WaitForChild("Survivor")
 local Config = require(Survivor:WaitForChild("Config"))
+local Growth = require(Survivor:WaitForChild("Growth"))
 local Repris = require(Survivor:WaitForChild("Repris"))
 
 local CombatService = require(script.Parent:WaitForChild("CombatService"))
@@ -89,13 +90,16 @@ end
 -- Un corps de Repris : un humain decolore, maigre, sans visage, aux yeux pâles.
 local function buildTemplate(): Model
 	local description = Instance.new("HumanoidDescription")
-	description.HeightScale = 1.05
-	description.WidthScale = 0.8
-	description.DepthScale = 0.85
-	description.HeadScale = 0.9
+	-- Plus grands et plus maigres qu'un joueur : on les reconnait de loin a la
+	-- silhouette. Un mannequin gris de Roblox ne faisait pas peur (vu en jeu
+	-- le 5 novembre 2026).
+	description.HeightScale = 1.15
+	description.WidthScale = 0.7
+	description.DepthScale = 0.75
+	description.HeadScale = 0.85
 	description.BodyTypeScale = 0
 	description.ProportionScale = 0
-	local ash = Color3.fromRGB(146, 146, 142)
+	local ash = Color3.fromRGB(54, 52, 50)
 	description.HeadColor = ash
 	description.TorsoColor = ash:Lerp(Color3.new(0, 0, 0), 0.15)
 	description.LeftArmColor = ash
@@ -104,27 +108,52 @@ local function buildTemplate(): Model
 	description.RightLegColor = ash:Lerp(Color3.new(0, 0, 0), 0.2)
 	local model = Players:CreateHumanoidModelFromDescription(description, Enum.HumanoidRigType.R15)
 	model.Name = "Repris"
+	-- Une peau de cendre durcie.
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+			part.Material = Enum.Material.Basalt
+		end
+	end
 	local head = model:FindFirstChild("Head") :: BasePart
-	local face = head:FindFirstChildOfClass("Decal")
-	if face then
-		face:Destroy()
+	-- Pas de visage : le sourire par defaut de Roblox etait encore la sous les
+	-- yeux (vu en jeu le 5 novembre 2026). Il peut etre un Decal ou la texture
+	-- de la tete elle-meme.
+	for _, child in head:GetDescendants() do
+		if child:IsA("Decal") or child:IsA("FaceControls") then
+			child:Destroy()
+		end
+	end
+	if head:IsA("MeshPart") then
+		head.TextureID = ""
 	end
 	for _, side in { -1, 1 } do
 		local eye = Instance.new("Part")
 		eye.Name = "Oeil"
 		eye.Shape = Enum.PartType.Ball
-		eye.Size = Vector3.new(0.22, 0.22, 0.22)
+		-- Petits et un peu enfonces : de gros yeux blancs faisaient dessin
+		-- anime (vu en jeu).
+		eye.Size = Vector3.new(0.14, 0.14, 0.14)
 		eye.Material = Enum.Material.Neon
-		eye.Color = Color3.fromRGB(230, 226, 214)
+		eye.Color = Color3.fromRGB(214, 196, 170)
 		eye.CanCollide = false
 		eye.CanQuery = false
 		eye.Massless = true
-		eye.CFrame = head.CFrame * CFrame.new(side * 0.22, 0.1, -head.Size.Z / 2)
+		eye.CFrame = head.CFrame * CFrame.new(side * 0.2, 0.08, -head.Size.Z / 2 + 0.04)
 		local weld = Instance.new("WeldConstraint")
 		weld.Part0 = head
 		weld.Part1 = eye
 		weld.Parent = eye
 		eye.Parent = model
+	end
+	-- Une fumee sombre qui s'echappe d'eux : ils sont faits de ce qui brule.
+	local torso = model:FindFirstChild("UpperTorso")
+	if torso then
+		local smoke = Instance.new("Smoke")
+		smoke.Color = Color3.fromRGB(30, 28, 28)
+		smoke.Opacity = 0.12
+		smoke.Size = 1.2
+		smoke.RiseVelocity = 1.5
+		smoke.Parent = torso
 	end
 	local humanoid = model:FindFirstChildOfClass("Humanoid") :: Humanoid
 	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
@@ -428,7 +457,7 @@ end
 
 -- Le matin : les Repris de la nuit se dissipent, d'autres s'endorment dans
 -- une partie des maisons.
-function ReprisService.newDay()
+function ReprisService.newDay(dayNumber: number)
 	for i = #agents, 1, -1 do
 		remove(agents[i], agents[i].night)
 	end
@@ -443,7 +472,7 @@ function ReprisService.newDay()
 			end
 		end
 	end
-	local count = math.floor(#candidates * r.dormantHouseShare + 0.5)
+	local count = math.floor(#candidates * Growth.onDay(r.day.houseShare, dayNumber) + 0.5)
 	for _ = 1, count do
 		if #candidates == 0 then
 			break
@@ -458,6 +487,32 @@ function ReprisService.newDay()
 			local at = CFrame.new(floor.Position + offset)
 				* CFrame.Angles(0, random:NextNumber(0, math.pi * 2), 0)
 			spawnAgent("errant", at, false)
+		end
+	end
+	-- Dehors : debout dans une rue ou un jardin, sur le sol (pas sur un toit).
+	local bounds = world.bounds
+	local half = bounds.Size / 2
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { getFolder() }
+	local placed = 0
+	local outdoor = math.floor(Growth.onDay(r.day.outdoor, dayNumber))
+	for _ = 1, outdoor * 10 do
+		if placed >= outdoor then
+			break
+		end
+		local x = bounds.Position.X + random:NextNumber(-half.X, half.X)
+		local z = bounds.Position.Z + random:NextNumber(-half.Z, half.Z)
+		local hit = workspace:Raycast(Vector3.new(x, 80, z), Vector3.new(0, -120, 0), params)
+		if
+			hit
+			and hit.Position.Y < 1.5
+			and (hit.Position - world.spawn.Position).Magnitude > r.outdoorMinPlanqueDistance
+		then
+			local at = CFrame.new(hit.Position + Vector3.new(0, 3.2, 0))
+				* CFrame.Angles(0, random:NextNumber(0, math.pi * 2), 0)
+			spawnAgent("errant", at, false)
+			placed += 1
 		end
 	end
 end
@@ -509,6 +564,14 @@ function ReprisService.beginNight(nightNumber: number)
 				true
 			)
 		end
+	end
+end
+
+-- Un Repris qui jaillit d'une cachette qu'on ouvre.
+function ReprisService.ambush(at: CFrame, victim: Player)
+	local agent = spawnAgent("errant", at, false)
+	if agent then
+		wakeUp(agent, victim, nil)
 	end
 end
 

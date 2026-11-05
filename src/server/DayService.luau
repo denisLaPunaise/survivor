@@ -52,9 +52,17 @@ local function runGame(myGeneration: number)
 		CrewService.dawn()
 		HidingService.newDay(dayNumber)
 		LootService.newDay()
-		ReprisService.newDay()
+		ReprisService.newDay(dayNumber)
 		CrewService.returnTaken()
-		announce(string.format("Jour %d", dayNumber))
+		-- S'attarder dans le quartier : on le dit, chaque matin.
+		announce(
+			if dayNumber >= Config.district.pressureDay
+				then string.format(
+					"Jour %d. L'Œil s'impatiente : la ville ne tiendra plus longtemps.",
+					dayNumber
+				)
+				else string.format("Jour %d", dayNumber)
+		)
 
 		task.wait(d.firstSweepSeconds)
 		for i = 1, d.sweepsPerDay do
@@ -70,7 +78,7 @@ local function runGame(myGeneration: number)
 					return
 				end
 			end
-			EyeService.runSweep(current)
+			EyeService.runSweep(current, dayNumber)
 			if i < d.sweepsPerDay and current() then
 				task.wait(random:NextNumber(d.gapSeconds.min, d.gapSeconds.max))
 			end
@@ -88,7 +96,6 @@ local function runGame(myGeneration: number)
 		announce("La nuit tombe. Ils descendent.")
 		eyeState:FireAllClients({ phase = "night", seconds = d.nightSeconds })
 		CrewService.setLamps(true)
-		PlanqueService.serveDinner()
 		ReprisService.beginNight(dayNumber)
 		task.wait(d.nightSeconds)
 		CrewService.setLamps(false)

@@ -73,12 +73,13 @@ function Hud.start()
 	gui.DisplayOrder = 5
 	gui.Parent = player:WaitForChild("PlayerGui")
 
-	-- L'ecran de cachette passe SOUS le texte, au-dessus du monde.
+	-- Cache, on voit dehors normalement (Josh : l'ecran noir et son message
+	-- genaient). Il ne reste qu'un rappel discret en bas, et la lueur qui
+	-- monte quand le regard approche.
 	local dark = Instance.new("Frame")
 	dark.Name = "Cachette"
 	dark.Size = UDim2.fromScale(1, 1)
-	dark.BackgroundColor3 = Color3.new(0, 0, 0)
-	dark.BackgroundTransparency = 0.04
+	dark.BackgroundTransparency = 1
 	dark.Visible = false
 	dark.ZIndex = 1
 	dark.Parent = gui
@@ -98,8 +99,9 @@ function Hud.start()
 	fade.Parent = glow
 
 	local hiddenText =
-		label(dark, "Texte", UDim2.fromScale(0.6, 0.1), UDim2.fromScale(0.5, 0.5), 22)
+		label(dark, "Texte", UDim2.fromScale(0.6, 0.05), UDim2.fromScale(0.5, 0.93), 17)
 	hiddenText.ZIndex = 3
+	hiddenText.TextTransparency = 0.25
 
 	local taken = Instance.new("Frame")
 	taken.Name = "Aspire"
@@ -245,9 +247,9 @@ function Hud.start()
 		local info = TweenInfo.new(6)
 		if on then
 			TweenService:Create(Lighting, info, {
-				ClockTime = 23.5,
-				Brightness = 0.6,
-				OutdoorAmbient = Color3.fromRGB(46, 50, 62),
+				ClockTime = Config.sky.night.clockTime,
+				Brightness = Config.sky.night.brightness,
+				OutdoorAmbient = Color3.fromRGB(table.unpack(Config.sky.night.outdoorAmbient)),
 			}):Play()
 		else
 			TweenService:Create(Lighting, info, {
@@ -283,7 +285,7 @@ function Hud.start()
 	local function refreshStates()
 		local hidden = player:GetAttribute("Hidden") == true
 		dark.Visible = hidden
-		hiddenText.Text = "Caché. Tu ne vois rien dehors.\nSortir : "
+		hiddenText.Text = "Caché   ·   Sortir : "
 			.. buttonName(Config.controls.contexts.hidden.leave)
 		taken.Visible = player:GetAttribute("Taken") == true
 		downed.Visible = player:GetAttribute("Downed") == true
@@ -324,8 +326,8 @@ function Hud.start()
 		gauge.Visible = value > 0.01 and not dark.Visible
 		fill.Size = UDim2.fromScale(value, 1)
 
-		-- Cache, on ne voit pas l'Oeil : seule une lueur filtre quand le
-		-- regard passe pres (decide avec Josh).
+		-- Cache, une lueur monte en bas de l'ecran quand le regard passe
+		-- pres : on le voit aussi, mais pas forcement s'il est dans le dos.
 		if dark.Visible then
 			local beam = workspace:FindFirstChild("Regard")
 			local character = player.Character

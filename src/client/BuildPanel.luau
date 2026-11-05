@@ -59,7 +59,12 @@ function BuildPanel.start()
 	frame.Name = "Panneau"
 	frame.AnchorPoint = Vector2.new(0.5, 0.5)
 	frame.Position = UDim2.fromScale(0.5, 0.5)
-	frame.Size = UDim2.fromOffset(560, 470)
+	-- Proportionnel a l'ecran, sans depasser 560 x 470 : a taille fixe, il
+	-- debordait d'une petite fenetre (vu en jeu le 5 novembre 2026).
+	frame.Size = UDim2.fromScale(0.92, 0.9)
+	local limit = Instance.new("UISizeConstraint")
+	limit.MaxSize = Vector2.new(560, 470)
+	limit.Parent = frame
 	frame.BackgroundColor3 = PANEL
 	frame.BackgroundTransparency = 0.08
 	frame.BorderSizePixel = 0
@@ -117,7 +122,7 @@ function BuildPanel.start()
 		if button == nil then
 			local b = Instance.new("TextButton")
 			b.Name = name
-			b.Size = UDim2.new(1, 0, 0, 62)
+			b.Size = UDim2.new(1, 0, 1 / (#Config.planque.builds + 1), -6)
 			b.BackgroundColor3 = ROW
 			b.BorderSizePixel = 0
 			b.AutoButtonColor = true

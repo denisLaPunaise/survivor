@@ -16,6 +16,8 @@ local Config = require(Survivor:WaitForChild("Config"))
 local Loot = require(Survivor:WaitForChild("Loot"))
 local Remotes = Survivor:WaitForChild("Remotes")
 
+local CombatService = require(script.Parent:WaitForChild("CombatService"))
+local RemoteGuard = require(script.Parent:WaitForChild("RemoteGuard"))
 local ReprisService = require(script.Parent:WaitForChild("ReprisService"))
 local WorldService = require(script.Parent:WaitForChild("WorldService"))
 
@@ -71,6 +73,7 @@ function LootService.sendHud(player: Player, message: string?)
 	end
 	hud:FireClient(player, {
 		bag = names,
+		items = bag,
 		slots = Config.bag.slots,
 		stock = stock,
 		message = message,
@@ -162,6 +165,40 @@ function LootService.broadcast(message: string?)
 	end
 end
 
+-- Manger ou se soigner avec un objet du sac (Y). Rend le message a afficher.
+local function useItem(player: Player, index: number)
+	local bag = bags[player]
+	if
+		bag == nil
+		or bag[index] == nil
+		or player:GetAttribute("Taken")
+		or CombatService.isDowned(player)
+	then
+		return
+	end
+	local item = Config.items[bag[index]]
+	local food = (item :: any).food
+	local heal = (item :: any).heal
+	if food == nil and heal == nil then
+		LootService.sendHud(player, item.name .. " : à déposer au coffre")
+		return
+	end
+	table.remove(bag, index)
+	if food then
+		local hunger = player:GetAttribute("Hunger")
+		local current = if typeof(hunger) == "number" then hunger else Config.needs.hungerMax
+		player:SetAttribute("Hunger", math.min(current + food, Config.needs.hungerMax))
+	end
+	if heal then
+		CombatService.heal(player, heal)
+	end
+	refreshSpeed(player)
+	LootService.sendHud(
+		player,
+		if food then item.name .. " : mangé" else item.name .. " : utilisé"
+	)
+end
+
 -- Un joueur aspire perd ce qu'il portait (decide).
 function LootService.clearBag(player: Player)
 	if bags[player] then
@@ -219,6 +256,13 @@ function LootService.start()
 			search(player, container, prompt)
 		end)
 	end
+
+	local bagRemote = Remotes:WaitForChild("Bag") :: RemoteEvent
+	bagRemote.OnServerEvent:Connect(RemoteGuard.wrap("Bag", function(player: Player, request: any)
+		if typeof(request) == "table" and typeof(request.use) == "number" then
+			useItem(player, math.floor(request.use))
+		end
+	end))
 
 	local chestPrompt = promptFor(world.chest, "Déposer", 0, Config.loot.promptDistance)
 	chestPrompt.ObjectText = "Coffre"

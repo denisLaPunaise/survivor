@@ -14,7 +14,7 @@
 	- une rue principale est-ouest (z = 0) et une rue nord-sud (x = 0) ;
 	- huit parcelles autour du carrefour : sept maisons et un terrain vide, la
 	  ou l'Oeil a aspire une maison entiere ;
-	- la Planque : une cave sous le jardin de la maison en ruine du sud-ouest.
+	- la Planque : une cave derriere une ferme en ruine, seule dans le coin sud-ouest.
 ]]
 
 local Lighting = game:GetService("Lighting")
@@ -35,9 +35,11 @@ local CONTRACT = {
 	prefabs = "SurvivorCachettes",
 	inside = "Interieur",
 	workbench = "Etabli",
+	table = "Table",
 	slotPrefix = "Slot",
 	building = "Batiment",
 	roof = "Toiture",
+	loose = "Aspirable",
 	exit = "Sortie",
 	cover = "Couvert",
 }
@@ -47,12 +49,14 @@ local CONTRACT = {
 local EYE_HEIGHT = 600
 
 -- Le ciel, recopie de Config.world.
-local SKY = { folder = "Ciel", eye = "Oeil", debris = "Debris" }
+local SKY = { folder = "Ciel", eye = "Oeil", debris = "Debris", lids = "Paupieres" }
 
 -- Les limites que l'Oeil balaie.
 -- 800 x 640 (decide avec Josh : ~800 x 800 ; 640 en profondeur suffit a
 -- quatre rangees de maisons et une bande centrale).
-local BOUNDS_SIZE = Vector3.new(800, 1, 800)
+-- Toute la zone jouable : la ville (800 x 800) et sa campagne. L'Oeil
+-- balaie partout ou l'on peut aller.
+local BOUNDS_SIZE = Vector3.new(1400, 1, 1400)
 
 local random = Random.new(1957)
 
@@ -716,14 +720,32 @@ local NOTES = {
 	"Si tu lis ça, prends les conserves. On n'en aura plus besoin.",
 }
 
+-- Ce que l'aspiration emporte de l'interieur en meme temps que le toit.
+local LOOSE_NAMES = {
+	Chaise = true,
+	Papier = true,
+	Tapis = true,
+	Oreiller = true,
+	Fauteuil = true,
+	Lampadaire = true,
+	Tele = true,
+	Cadre = false,
+	Banc = true,
+	Produit = true,
+}
+
 local function tagBuilding(m: Model, groundY: number)
 	local covered = false
 	for _, part in m:GetDescendants() do
 		if part:IsA("BasePart") then
 			local bottom = part.Position.Y - part.Size.Y / 2
-			if ROOF_NAMES[part.Name] or bottom >= groundY + FLOOR_Y + WALL_H - 0.1 then
+			-- Avec le toit partent aussi les linteaux et tout ce qui est au-dessus
+			-- des fenetres : le haut des murs est dechiquete, pas tranche net.
+			if ROOF_NAMES[part.Name] or bottom >= groundY + FLOOR_Y + 7 then
 				part:SetAttribute(CONTRACT.roof, true)
 				covered = true
+			elseif LOOSE_NAMES[part.Name] then
+				part:SetAttribute(CONTRACT.loose, true)
 			end
 		end
 	end
@@ -1417,7 +1439,10 @@ local function buildPrefabs(storage: Instance)
 			sub:Destroy()
 		end
 		marker(m, CONTRACT.inside, cabin)
+		-- Une portiere de chaque cote : on y entre (et on en ressort) par le
+		-- cote ou l'on est (Josh : « que d'un cote, c'est un peu chiant »).
 		marker(m, CONTRACT.exit, CFrame.new(5.2, 3, 0))
+		marker(m, CONTRACT.exit, CFrame.new(-5.2, 3, 0))
 	end
 	carTemplates = all
 	-- La benne : dedans, couvercle ferme.
@@ -1491,6 +1516,74 @@ local function buildPrefabs(storage: Instance)
 		)
 		marker(m, CONTRACT.inside, CFrame.new(0, 2.4, 0))
 		marker(m, CONTRACT.exit, CFrame.new(0, 3, -6))
+	end
+	-- Les petites cachettes de partout (Josh : « pas de petits recoins ») :
+	-- un buisson touffu ou l'on se glisse, une tole appuyee contre un mur.
+	do
+		local m, g = prefabRoot(storage, "Buisson", Vector3.new(7, 1, 7))
+		local leaf = Color3.fromRGB(56, 76, 42)
+		-- Un Ball est une sphere du plus petit cote : tailles cubiques.
+		local function ball(at: Vector3, size: number)
+			P(
+				m,
+				"Feuillage",
+				Vector3.new(size, size, size),
+				g * CFrame.new(at),
+				Enum.Material.LeafyGrass,
+				leaf:Lerp(Color3.fromRGB(78, 96, 52), random:NextNumber(0, 1)),
+				{ shape = Enum.PartType.Ball, collide = false, cover = 0.4 }
+			)
+		end
+		for k = 0, 5 do
+			local a = k * math.pi / 3 + random:NextNumber(-0.2, 0.2)
+			ball(
+				Vector3.new(math.cos(a) * 2.4, 1.9, math.sin(a) * 2.4),
+				random:NextNumber(3.8, 4.6)
+			)
+		end
+		for k = 0, 3 do
+			local a = k * math.pi / 2 + 0.6
+			ball(Vector3.new(math.cos(a) * 1.3, 3.9, math.sin(a) * 1.3), random:NextNumber(3.4, 4))
+		end
+		ball(Vector3.new(0, 5.1, 0), 3.2)
+		marker(m, CONTRACT.inside, CFrame.new(0, 2.2, 0))
+		marker(m, CONTRACT.exit, CFrame.new(0, 3, -5))
+	end
+	do
+		local m, g = prefabRoot(storage, "Tole", Vector3.new(8, 1, 6))
+		-- Un panneau de planches derriere : la tole tient seule, contre un mur
+		-- ou au milieu d'un champ.
+		P(
+			m,
+			"Panneau",
+			Vector3.new(7.6, 5.8, 0.4),
+			g * CFrame.new(0, 2.9, 2.2),
+			Enum.Material.WoodPlanks,
+			C.woodGray
+		)
+		-- La tole : du sol (z = -2,6) au haut du panneau (z = 1,9, y = 5,6).
+		-- Angle negatif autour de X : l'axe Z local monte vers +Z.
+		local rise, run = 5.6, 4.5
+		P(
+			m,
+			"Tole",
+			Vector3.new(7.2, 0.2, math.sqrt(rise * rise + run * run)),
+			g
+				* CFrame.new(0, rise / 2, -2.6 + run / 2)
+				* CFrame.Angles(-math.atan2(rise, run), 0, 0),
+			Enum.Material.CorrodedMetal,
+			C.metal
+		)
+		P(
+			m,
+			"Planche",
+			Vector3.new(0.6, 0.3, 6),
+			g * CFrame.new(3.2, 0.15, -0.6) * CFrame.Angles(0, math.rad(8), 0),
+			Enum.Material.WoodPlanks,
+			C.wood
+		)
+		marker(m, CONTRACT.inside, CFrame.new(0, 2.2, 0.6))
+		marker(m, CONTRACT.exit, CFrame.new(0, 3, -5))
 	end
 end
 
@@ -1690,6 +1783,15 @@ local function buildPlanque(root: Instance, terrain: Terrain, x0: number, z0: nu
 	)
 	local spawn = marker(m, CONTRACT.spawn, CFrame.new(cx, floorY + 3, cz + 3))
 
+	-- La table : on y mange sur la reserve.
+	P(
+		m,
+		CONTRACT.table,
+		Vector3.new(4, 2.6, 3),
+		CFrame.new(cx - 1, floorY + 1.3, cz - 1.5),
+		Enum.Material.WoodPlanks,
+		C.wood:Lerp(C.trim, 0.2)
+	)
 	-- L'etabli : on y construit avec la reserve (Config.planque.builds).
 	local bench = P(
 		m,
@@ -1847,29 +1949,68 @@ local function buildSky(root: Instance, center: Vector3)
 		}
 	)
 	eye.PrimaryPart = globe
-	-- Des veines rouges sur le devant du globe.
-	for i = 1, 22 do
-		local a = (i / 22) * math.pi * 2 + random:NextNumber(-0.1, 0.1)
-		local r0 = random:NextNumber(52, 62)
-		local r1 = random:NextNumber(85, 112)
-		local function onGlobe(r: number): Vector3
-			local local_ = Vector3.new(math.cos(a) * r, math.sin(a) * r, 0)
-			local z = -math.sqrt(math.max(radius * radius - r * r, 0)) - 0.4
-			return (look * CFrame.new(local_.X, local_.Y, z)).Position
-		end
-		local vein = slab(
+	-- Des veines sur le devant du globe, qui se ramifient en allant vers le
+	-- bord : sombres pour la plupart, quelques-unes brulantes. Toutes en neon,
+	-- le globe paraissait un jouet propre (vu en image le 5 novembre 2026).
+	local function onGlobe(a: number, r: number): Vector3
+		local z = -math.sqrt(math.max(radius * radius - r * r, 0)) - 0.4
+		return (look * CFrame.new(math.cos(a) * r, math.sin(a) * r, z)).Position
+	end
+	local function vein(a0: number, r0: number, a1: number, r1: number, width: number)
+		local hot = random:NextNumber() < 0.25
+		local v = slab(
 			eye,
-			onGlobe(r0),
-			onGlobe(r1),
-			random:NextNumber(0.8, 2.2),
+			onGlobe(a0, r0),
+			onGlobe(a1, r1),
+			width,
 			0.6,
-			Enum.Material.Neon,
-			Color3.fromRGB(150, 30, 26),
+			if hot then Enum.Material.Neon else Enum.Material.SmoothPlastic,
+			if hot then Color3.fromRGB(150, 30, 26) else Color3.fromRGB(112, 30, 26),
 			"Veine"
 		)
-		vein.CanCollide = false
-		vein.CanQuery = false
-		vein.CastShadow = false
+		v.CanCollide = false
+		v.CanQuery = false
+		v.CastShadow = false
+	end
+	for i = 1, 34 do
+		local a = (i / 34) * math.pi * 2 + random:NextNumber(-0.08, 0.08)
+		local r0 = random:NextNumber(60, 66)
+		local mid = random:NextNumber(82, 92)
+		local bend = a + random:NextNumber(-0.08, 0.08)
+		vein(a, r0, bend, mid, random:NextNumber(1, 2.2))
+		-- Deux branches plus fines vers le bord.
+		for _, side in { -1, 1 } do
+			if random:NextNumber() < 0.7 then
+				vein(
+					bend,
+					mid,
+					bend + side * random:NextNumber(0.04, 0.12),
+					random:NextNumber(100, 114),
+					random:NextNumber(0.5, 1.1)
+				)
+			end
+		end
+	end
+	-- Un reflet humide, fixe sur le globe : il lui donne du volume.
+	do
+		local a, r = math.rad(135), 78
+		local at = onGlobe(a, r)
+		local normal = (at - look.Position).Unit
+		P(
+			eye,
+			"Reflet",
+			Vector3.new(0.4, 16, 16),
+			CFrame.lookAt(at + normal * 0.6, at + normal * 2) * CFrame.Angles(0, math.rad(90), 0),
+			Enum.Material.Neon,
+			Color3.fromRGB(255, 246, 232),
+			{
+				shape = Enum.PartType.Cylinder,
+				collide = false,
+				query = false,
+				shadow = false,
+				transparency = 0.35,
+			}
+		)
 	end
 	-- Iris, anneau sombre, pupille fendue. Un cylindre a son axe sur X : on le
 	-- tourne pour que son axe soit l'avant de l'Oeil.
@@ -1905,13 +2046,29 @@ local function buildSky(root: Instance, center: Vector3)
 			shadow = false,
 		}
 	)
+	-- Un anneau chaud qui rougeoie, puis le coeur sombre autour de la pupille.
+	P(
+		eye,
+		"IrisChaud",
+		Vector3.new(14, 98, 98),
+		face * CFrame.new(front + 0.6, 0, 0),
+		Enum.Material.Neon,
+		Color3.fromRGB(176, 62, 22),
+		{
+			shape = Enum.PartType.Cylinder,
+			collide = false,
+			query = false,
+			shadow = false,
+			transparency = 0.25,
+		}
+	)
 	P(
 		eye,
 		"AnneauIris",
-		Vector3.new(14, 84, 84),
-		face * CFrame.new(front + 1.5, 0, 0),
+		Vector3.new(14, 74, 74),
+		face * CFrame.new(front + 1.2, 0, 0),
 		Enum.Material.SmoothPlastic,
-		Color3.fromRGB(32, 8, 6),
+		Color3.fromRGB(58, 16, 8),
 		{
 			shape = Enum.PartType.Cylinder,
 			collide = false,
@@ -1919,15 +2076,103 @@ local function buildSky(root: Instance, center: Vector3)
 			shadow = false,
 		}
 	)
-	P(
-		eye,
-		"Pupille",
-		Vector3.new(4, 92, 26),
-		look * CFrame.new(0, 0, -(front + 8.5)),
-		Enum.Material.SmoothPlastic,
-		Color3.fromRGB(4, 2, 2),
-		noRay
-	)
+	-- Les fibres de l'iris, du coeur vers l'anneau chaud.
+	local irisFace = front + 8.4
+	for i = 1, 48 do
+		local a = (i / 48) * math.pi * 2 + random:NextNumber(-0.04, 0.04)
+		local r0 = random:NextNumber(16, 22)
+		local r1 = random:NextNumber(40, 50)
+		local fiber = slab(
+			eye,
+			(look * CFrame.new(math.cos(a) * r0, math.sin(a) * r0, -irisFace)).Position,
+			(look * CFrame.new(math.cos(a) * r1, math.sin(a) * r1, -irisFace)).Position,
+			random:NextNumber(0.8, 1.8),
+			0.4,
+			Enum.Material.Neon,
+			Color3.fromRGB(220, 110, 44)
+				:Lerp(Color3.fromRGB(120, 30, 14), random:NextNumber(0, 0.7)),
+			"Fibre"
+		)
+		fiber.CanCollide = false
+		fiber.CanQuery = false
+		fiber.CastShadow = false
+		fiber.Transparency = random:NextNumber(0.2, 0.55)
+	end
+	-- La pupille fendue, DEVANT les fibres (avant, elle etait derriere les
+	-- anneaux et l'on ne voyait qu'un disque noir). Une amande faite de
+	-- tranches : une seule barre droite barrait l'iris comme un panneau
+	-- d'interdiction (vu en image). Leur largeur est sur X : la vue du ciel
+	-- les resserre quand il cherche.
+	for _, cut in { { 0, 16, 34 }, { 22, 11, 12 }, { 32, 6, 9 }, { 39, 2.5, 6 } } do
+		for _, sign in (if cut[1] == 0 then { 1 } else { -1, 1 }) do
+			P(
+				eye,
+				"Pupille",
+				Vector3.new(cut[2], cut[3], 4),
+				look * CFrame.new(0, sign * cut[1], -(front + 9.5)),
+				Enum.Material.SmoothPlastic,
+				Color3.fromRGB(4, 2, 2),
+				noRay
+			)
+		end
+	end
+
+	-- LES PAUPIERES : la Fissure se referme sur l'Oeil entre deux Balayages et
+	-- la nuit (Josh : « qu'il se ferme quand il est pas actif »). Deux rideaux
+	-- noirs aux bords brulants, faits de bandes que la vue du ciel allonge ;
+	-- fermees, il ne reste qu'une couture rougeoyante. Elles passent SOUS le
+	-- globe (qui deborde de la dechirure), et depassent largement le trou pour
+	-- le cacher aussi vu de biais. Construites fermees.
+	do
+		local lids = folder(m, SKY.lids)
+		local lidY = eyeAt.Y - radius - 6
+		local strips = 32
+		local span = (halfLong + 30) * 2
+		local stripW = span / strips
+		for i = 1, strips do
+			local x = -span / 2 + (i - 0.5) * stripW
+			-- La demi-largeur du trou a cet endroit : le plus grand ecart des
+			-- points du bord dont l'abscisse tombe dans la bande.
+			local h = 0
+			for k = 0, 719 do
+				local a = k / 720 * math.pi * 2
+				local p = almond(a, 0)
+				if math.abs(p.X - x) <= stripW / 2 + 4 then
+					h = math.max(h, math.abs(p.Z))
+				end
+			end
+			h += 45
+			for _, side in { -1, 1 } do
+				local lid = P(
+					lids,
+					"Paupiere",
+					Vector3.new(stripW + 1, 2, h),
+					CFrame.new(x, lidY, side * h / 2),
+					Enum.Material.SmoothPlastic,
+					-- Une chair sombre, pas le noir de la dechirure : fermee,
+					-- on doit voir l'amande d'une paupiere (en noir, ce n'etait
+					-- qu'une tache, vu en jeu).
+					Color3.fromRGB(46, 18, 16),
+					noRay
+				)
+				lid:SetAttribute("X", x)
+				lid:SetAttribute("Demi", h)
+				lid:SetAttribute("Cote", side)
+				local edge = P(
+					lids,
+					"Bord",
+					Vector3.new(stripW + 1, 2.4, 6),
+					CFrame.new(x, lidY - 1.8, 0),
+					Enum.Material.Neon,
+					C.rift,
+					noRay
+				)
+				edge:SetAttribute("X", x)
+				edge:SetAttribute("Demi", h)
+				edge:SetAttribute("Cote", side)
+			end
+		end
+	end
 
 	-- LES DEBRIS : la ville qui monte vers la Fissure. Des morceaux de murs,
 	-- de toits, une voiture, un canape, des planches. La vue du ciel les fait
@@ -2061,23 +2306,65 @@ end
 -- Deux rues est-ouest bordees de maisons des deux cotes, trois rues nord-sud
 -- qui les relient, et entre les deux rangees du milieu une bande centrale
 -- (superette, terrain de basket, terrains vagues).
-local EW_ROADS = { -170, 170 }
-local NS_ROADS = { -250, 0, 250 }
+-- Pas tout a fait au cordeau : des rues decalees, pour qu'aucune moitie de la
+-- ville ne soit le miroir de l'autre (« trop symetrique », Josh).
+local EW_ROADS = { -176, 162 }
+local NS_ROADS = { -258, 6, 244 }
 local HALF_X, HALF_Z = 400, 400
 -- Le chemin de terre du bord, et les deux batiments du centre.
 local OUTER_ROAD = 372
+-- La campagne autour de la ville, jusqu'a FIELD (la zone jouable fait
+-- 2 x FIELD de cote), et les collines jusqu'a HORIZON.
+local FIELD = 700
+local HORIZON = 1050
+-- La largeur des chemins de terre de la campagne.
+local TRACK_W = 9
+-- La Planque : une ferme isolee au fond du coin sud-ouest, a l'ecart de la
+-- ville (decide avec Josh). Sa facade regarde le nord, la cave est derriere.
+local PLANQUE_AT = Vector3.new(-590, 0, -560)
+local SUPERETTE_X = -125
+local BASKET_X = 125
 -- Les reperes : on doit savoir ou l'on est sans carte.
 local CHURCH_X = -201
 local STATION_X = -301
 local TOWER = Vector3.new(200, 0, 392)
-local SUPERETTE_X = -125
-local BASKET_X = 125
--- Le centre, entre les batiments : la superette (et son parking) occupe
--- -165 a -89, le terrain de basket 95 a 155.
-local MIDDLE_SEGMENTS =
-	{ { -400, -268 }, { -232, -170 }, { -86, -18 }, { 18, 94 }, { 156, 232 }, { 268, 400 } }
--- Les morceaux de rue entre deux carrefours, ou l'on pose les parcelles.
-local SEGMENTS = { { -400, -268 }, { -232, -18 }, { 18, 232 }, { 268, 400 } }
+-- Les morceaux de rue entre deux carrefours, ou l'on pose les parcelles :
+-- deduits des rues nord-sud (18 studs de rue et de trottoir de chaque cote).
+local function segmentsBetween(from: number, to: number): { { number } }
+	local out: { { number } } = {}
+	local cursor = from
+	for _, xr in NS_ROADS do
+		table.insert(out, { cursor, xr - 18 })
+		cursor = xr + 18
+	end
+	table.insert(out, { cursor, to })
+	return out
+end
+local SEGMENTS = segmentsBetween(-400, 400)
+local SIDEWALK_SEGMENTS = segmentsBetween(-420, 420)
+-- Le centre : les memes morceaux, moins la superette (et son parking) et le
+-- terrain de basket.
+local MIDDLE_SEGMENTS: { { number } } = {}
+for _, seg in SEGMENTS do
+	local pieces = { { seg[1], seg[2] } }
+	for _, taken in { { SUPERETTE_X - 40, SUPERETTE_X + 36 }, { BASKET_X - 31, BASKET_X + 31 } } do
+		local next: { { number } } = {}
+		for _, piece in pieces do
+			if taken[2] <= piece[1] or taken[1] >= piece[2] then
+				table.insert(next, piece)
+			else
+				table.insert(next, { piece[1], taken[1] })
+				table.insert(next, { taken[2], piece[2] })
+			end
+		end
+		pieces = next
+	end
+	for _, piece in pieces do
+		if piece[2] - piece[1] >= 40 then
+			table.insert(MIDDLE_SEGMENTS, piece)
+		end
+	end
+end
 local PLOT_W = 66
 
 local function nearCrossing(x: number, margin: number): boolean
@@ -2214,7 +2501,7 @@ local function build(): string
 			C.asphalt
 		)
 		for _, sz in { -1, 1 } do
-			for _, seg in { { -420, -268 }, { -232, -18 }, { 18, 232 }, { 268, 420 } } do
+			for _, seg in SIDEWALK_SEGMENTS do
 				local len = seg[2] - seg[1]
 				local cx = (seg[1] + seg[2]) / 2
 				P(
@@ -2343,17 +2630,22 @@ local function build(): string
 			})
 		end
 	end
+	-- Le fond des jardins de la rangee de la rue `zr`, du cote `side`.
+	local function backOf(zr: number, side: number): number
+		return zr + side * 115
+	end
 	-- Le bord : maisons tournees vers le chemin de terre, dos aux jardins de la
 	-- rangee exterieure.
 	for _, zr in { -OUTER_ROAD, OUTER_ROAD } do
+		-- Le jardin s'arrete 1 stud avant la palissade de la rangee voisine :
+		-- deux palissades sur la meme ligne scintillent.
+		local neighbour = if zr > 0 then backOf(EW_ROADS[2], 1) else backOf(EW_ROADS[1], -1)
 		table.insert(rows, {
 			zr = zr,
 			side = if zr > 0 then -1 else 1,
 			front = 26,
 			edge = 7,
-			-- 86 et pas 87 : la palissade de la rangee voisine est a 285, deux
-			-- palissades sur la meme ligne scintillent.
-			back = 86,
+			back = math.abs(zr - neighbour) - 1,
 			segments = SEGMENTS,
 			width = 60,
 		})
@@ -2361,37 +2653,38 @@ local function build(): string
 	-- Le centre : deux rangees qui se font face de part et d'autre d'une allee
 	-- pietonne, autour de la superette et du terrain de basket.
 	for _, side in { -1, 1 } do
+		local neighbour = if side == 1 then backOf(EW_ROADS[2], -1) else backOf(EW_ROADS[1], 1)
 		table.insert(rows, {
 			zr = 0,
 			side = side,
 			front = 12,
 			edge = 4,
-			back = 55,
+			back = math.abs(neighbour) - 2,
 			segments = MIDDLE_SEGMENTS,
 			width = 60,
 		})
 	end
 
-	type Plot = { x: number, row: Row }
+	-- Des parcelles de largeurs inegales : d'une rangee a l'autre, les maisons
+	-- ne tombent jamais les unes en face des autres.
+	type Plot = { x: number, width: number, row: Row }
 	local plots: { Plot } = {}
 	for _, row in rows do
 		for _, seg in row.segments do
-			local n = math.max(1, math.floor((seg[2] - seg[1]) / row.width))
+			local length = seg[2] - seg[1]
+			local n = math.max(1, math.floor(length / row.width))
+			local weights: { number } = {}
+			local total = 0
 			for i = 1, n do
-				table.insert(plots, { x = seg[1] + (seg[2] - seg[1]) * (i - 0.5) / n, row = row })
+				weights[i] = random:NextNumber(0.8, 1.2)
+				total += weights[i]
 			end
-		end
-	end
-	-- La Planque : la parcelle la plus a l'ouest de la rangee sud exterieure
-	-- de la rue sud.
-	local planqueIndex = 0
-	for i, plot in plots do
-		if
-			plot.row.zr == EW_ROADS[1]
-			and plot.row.side == -1
-			and (planqueIndex == 0 or plot.x < plots[planqueIndex].x)
-		then
-			planqueIndex = i
+			local cursor = seg[1]
+			for i = 1, n do
+				local width = length * weights[i] / total
+				table.insert(plots, { x = cursor + width / 2, width = width, row = row })
+				cursor += width
+			end
 		end
 	end
 	-- Le terrain vide (la maison aspiree) : une rangee du milieu, pres du centre.
@@ -2618,25 +2911,33 @@ local function build(): string
 		end
 		local row = plot.row
 		local side = row.side
-		local front = row.zr + side * row.front
+		-- Chaque maison un peu plus en retrait, un peu decalee, un peu de
+		-- biais que sa voisine : une vraie rue n'est pas tracee a la regle.
+		local setback = if row.front >= 26 then random:NextNumber(0, 7) else random:NextNumber(0, 2)
+		local front = row.zr + side * (row.front + setback)
+		local shift = random:NextNumber(-1, 1) * math.max(plot.width / 2 - HOUSE_W / 2 - 16, 0)
+		local skew = CFrame.Angles(0, math.rad(random:NextNumber(-3, 3)), 0)
 		-- La facade regarde sa voie : vers -Z pour une maison au nord de la voie.
-		local cf = if side == 1
-			then CFrame.new(plot.x, 0, front)
-			else CFrame.new(plot.x, 0, front) * CFrame.Angles(0, math.pi, 0)
+		local cf = (
+			if side == 1
+				then CFrame.new(plot.x + shift, 0, front)
+				else CFrame.new(plot.x + shift, 0, front) * CFrame.Angles(0, math.pi, 0)
+		) * skew
 		-- Longueur de l'allee, de la facade au bord de la voie.
-		local walk = row.front - row.edge
-		local isPlanque = i == planqueIndex
+		local walk = row.front + setback - row.edge
 		local aspired = i == aspiredIndex
+		-- Un terrain vague de temps en temps : des herbes hautes, des gravats,
+		-- une epave, la ou une maison n'a jamais ete finie.
+		local vacant = not aspired and random:NextNumber() < 0.1
 		local damageRoll = random:NextNumber()
-		local damage = if isPlanque
+		local damage = if damageRoll < 0.12
 			then "ruine"
-			elseif damageRoll < 0.12 then "ruine"
 			elseif damageRoll < 0.3 then "trou"
 			else "intact"
 		local storeys = if damage == "intact" and random:NextNumber() < 0.4 then 2 else 1
 		local storyRoll = random:NextNumber()
 		-- Au centre, l'allee est trop etroite pour une voiture : pas de garage.
-		local garage = not isPlanque and not aspired and walk >= 15 and random:NextNumber() < 0.5
+		local garage = not vacant and not aspired and walk >= 15 and random:NextNumber() < 0.5
 		local name = "Maison" .. i
 
 		if walk >= 15 then
@@ -2681,7 +2982,23 @@ local function build(): string
 			C.concrete
 		)
 
-		if not aspired then
+		if vacant then
+			terrain:FillBlock(
+				cf * CFrame.new(0, -4, HOUSE_D / 2),
+				Vector3.new(plot.width - 6, 4, HOUSE_D + 10),
+				Enum.Material.LeafyGrass
+			)
+			-- Les gravats d'un cote, l'emplacement de l'autre : un emplacement
+			-- pose dans les gravats est bloque (vu a la mesure).
+			rubble(houses, (cf * CFrame.new(-9, 0.2, HOUSE_D / 2)).Position, 5, 10)
+			local kinds = { "Caisses", "Voiture", "Benne", "Buisson" }
+			anchor(
+				kinds[random:NextInteger(1, #kinds)],
+				cf
+					* CFrame.new(9, 0, HOUSE_D / 2 + 2)
+					* CFrame.Angles(0, math.rad(random:NextNumber(0, 360)), 0)
+			)
+		elseif not aspired then
 			local wood = random:NextNumber() < 0.55
 			local r = house(houses, cf, {
 				name = name,
@@ -2759,18 +3076,18 @@ local function build(): string
 			table.sort(gaps, function(g1, g2)
 				return g1[1] < g2[1]
 			end)
-			local cursor = plot.x - row.width / 2 + 2
+			local cursor = plot.x - plot.width / 2 + 2
 			for _, gap in gaps do
 				if gap[1] - gap[2] - cursor > 1 then
 					hedge(nature, Vector3.new(cursor, 0, hz), Vector3.new(gap[1] - gap[2], 0, hz))
 				end
 				cursor = gap[1] + gap[2]
 			end
-			if plot.x + row.width / 2 - 2 - cursor > 1 then
+			if plot.x + plot.width / 2 - 2 - cursor > 1 then
 				hedge(
 					nature,
 					Vector3.new(cursor, 0, hz),
-					Vector3.new(plot.x + row.width / 2 - 2, 0, hz)
+					Vector3.new(plot.x + plot.width / 2 - 2, 0, hz)
 				)
 			end
 		end
@@ -2778,14 +3095,14 @@ local function build(): string
 		local back = row.zr + side * row.back
 		fence(
 			nature,
-			Vector3.new(plot.x - row.width / 2, 0, back),
-			Vector3.new(plot.x + row.width / 2, 0, back),
+			Vector3.new(plot.x - plot.width / 2, 0, back),
+			Vector3.new(plot.x + plot.width / 2, 0, back),
 			6
 		)
 		fence(
 			nature,
-			Vector3.new(plot.x + row.width / 2, 0, row.zr + side * (row.front + HOUSE_D + 4)),
-			Vector3.new(plot.x + row.width / 2, 0, back),
+			Vector3.new(plot.x + plot.width / 2, 0, row.zr + side * (row.front + HOUSE_D + 4)),
+			Vector3.new(plot.x + plot.width / 2, 0, back),
 			5
 		)
 
@@ -2802,11 +3119,18 @@ local function build(): string
 				Vector3.new(lawnX, 0, row.zr + side * (row.edge + walk * 0.55)),
 				random:NextNumber() < 0.15
 			)
+			-- Un buisson touffu contre la haie, du cote oppose a l'arbre.
+			local away = if lawnX > plot.x then -1 else 1
+			anchor(
+				"Buisson",
+				CFrame.new(plot.x + away * (plot.width / 2 - 6), 0, row.zr + side * (row.edge + 8))
+					* CFrame.Angles(0, (if side == 1 then 0 else math.pi), 0)
+			)
 		end
 		-- Le jardin : ce qu'on y a laisse, un arbre, une cachette fragile.
 		local yardFront = row.front + HOUSE_D + 4
 		local yardDepth = row.back - yardFront
-		if not isPlanque and yardDepth > 14 then
+		if yardDepth > 14 then
 			local yardZ = function(t: number): number
 				return row.zr + side * (yardFront + yardDepth * t)
 			end
@@ -2830,8 +3154,16 @@ local function build(): string
 					random:NextNumber() < 0.25
 				)
 			end
+			-- Une tole appuyee contre la palissade, au fond du jardin (contre
+			-- la maison, elle tombait devant une porte de cote).
 			anchor(
-				if random:NextNumber() < 0.7 then "Abri" else "Caisses",
+				"Tole",
+				CFrame.new(plot.x + plot.width / 2 - 3.4, 0, yardZ(math.min(8 / yardDepth, 0.4)))
+					* CFrame.Angles(0, math.pi / 2, 0)
+			)
+			local roll = random:NextNumber()
+			anchor(
+				if roll < 0.5 then "Abri" elseif roll < 0.75 then "Caisses" else "Buisson",
 				CFrame.new(plot.x + random:NextNumber(10, 18), 0, yardZ(0.6)) * yardYaw
 			)
 		end
@@ -3040,7 +3372,7 @@ local function build(): string
 	-- L'eglise : une nef de pierre et un clocher, qu'on voit de partout au
 	-- centre.
 	do
-		local cf = CFrame.new(CHURCH_X, 0, 10)
+		local cf = CFrame.new(CHURCH_X, 0, 4)
 		local m = model(landmarks, "Eglise")
 		local w, d, h = 22, 40, 14
 		local stone = Color3.fromRGB(150, 144, 132)
@@ -3514,68 +3846,393 @@ local function build(): string
 		barricade(CFrame.new(-HALF_X - 8, 0.4, zr), 16)
 		barricade(CFrame.new(HALF_X + 8, 0.4, zr), 16)
 	end
-	-- LE LOINTAIN : la ville continue au-dela des barricades, en silhouettes
-	-- noyees dans la brume. Sans elles, le monde s'arretait net sur du vide
-	-- (vu en image le 5 novembre 2026). Peu de parts, aucune collision.
-	local far = folder(root, "Lointain")
-	local farOptions = { collide = false, query = false }
-	for _ = 1, 240 do
-		local angle = random:NextNumber(0, math.pi * 2)
-		local dx, dz = math.cos(angle), math.sin(angle)
-		-- Distance jusqu'au bord du quartier dans cette direction, puis au-dela.
-		local edge = math.min(math.abs((HALF_X + 40) / dx), math.abs((HALF_Z + 40) / dz))
-		-- Assez pres pour qu on ne voie pas de vide, assez sombre pour que la brume
-		-- en fasse des formes et non des boites.
-		local dist = edge + random:NextNumber(40, 520)
-		local at = Vector3.new(dx * dist, 0, dz * dist)
-		local yaw = CFrame.Angles(0, random:NextNumber(0, math.pi * 2), 0)
-		if random:NextNumber() < 0.55 then
-			local w, d, h =
-				random:NextNumber(18, 30), random:NextNumber(16, 24), random:NextNumber(9, 18)
-			local body = CFrame.new(at) * yaw
-			P(
-				far,
-				"Maison",
-				Vector3.new(w, h, d),
-				body * CFrame.new(0, h / 2, 0),
-				Enum.Material.SmoothPlastic,
-				-- Fonce : la brume eclaircit d'elle-meme ce qui est loin.
-				SIDINGS[random:NextInteger(1, #SIDINGS)]:Lerp(C.black, 0.55),
-				farOptions
+	-- LA CAMPAGNE. Autour de la ville, jusqu'a FIELD, une zone qu'on peut
+	-- parcourir : des bosses et des collines au hasard, des maisons isolees
+	-- abandonnees le long d'un chemin de terre, des epaves, des abris, des
+	-- bosquets. Remplace un anneau de collines regulier autour du quartier,
+	-- « bizarre » et « vide » pour Josh (5 novembre 2026).
+	local country = folder(root, "Campagne")
+	local function inCountry(x: number, z: number, margin: number): boolean
+		local outsideTown = math.abs(x) > HALF_X + 30 + margin or math.abs(z) > HALF_Z + 30 + margin
+		local insideField = math.abs(x) < FIELD - margin and math.abs(z) < FIELD - margin
+		return outsideTown and insideField
+	end
+
+	-- Les chemins de terre : ils partent des sorties de la ville et serpentent
+	-- vers le dehors, au hasard. Un autre mene a la Planque.
+	type Segment = { a: Vector3, b: Vector3 }
+	local tracks: { Segment } = {}
+	local function wander(start: Vector3, direction: Vector3, goal: Vector3?)
+		local at = start
+		local dir = direction.Unit
+		for _ = 1, 40 do
+			local turn = math.rad(random:NextNumber(-32, 32))
+			dir = Vector3.new(
+				dir.X * math.cos(turn) - dir.Z * math.sin(turn),
+				0,
+				dir.X * math.sin(turn) + dir.Z * math.cos(turn)
 			)
-		else
-			local h = random:NextNumber(14, 26)
-			P(
-				far,
-				"Tronc",
-				Vector3.new(h, 1.4, 1.4),
-				CFrame.new(at + Vector3.new(0, h / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-				Enum.Material.Wood,
-				C.bark,
-				{ shape = Enum.PartType.Cylinder, collide = false, query = false }
-			)
-			if random:NextNumber() < 0.7 then
-				local size = random:NextNumber(10, 16)
-				P(
-					far,
-					"Feuillage",
-					Vector3.new(size, size, size),
-					CFrame.new(at + Vector3.new(0, h, 0)),
-					Enum.Material.LeafyGrass,
-					C.leaves:Lerp(C.concreteDark, 0.3),
-					{ shape = Enum.PartType.Ball, collide = false, query = false }
-				)
+			-- Toujours un peu tire vers le dehors (ou vers son but) : un chemin
+			-- ne revient pas en ville.
+			local pull = if goal then (goal - at).Unit else Vector3.new(at.X, 0, at.Z).Unit
+			dir = (dir + pull * 0.6).Unit
+			local nextAt = at + dir * random:NextNumber(40, 75)
+			if goal and (goal - nextAt).Magnitude < 40 then
+				table.insert(tracks, { a = at, b = goal })
+				return
 			end
+			if math.max(math.abs(nextAt.X), math.abs(nextAt.Z)) > FIELD - 30 then
+				return
+			end
+			table.insert(tracks, { a = at, b = nextAt })
+			at = nextAt
+		end
+	end
+	local exits = {
+		{ Vector3.new(NS_ROADS[1], 0, -OUTER_ROAD - 7), Vector3.new(0, 0, -1) },
+		{ Vector3.new(NS_ROADS[2], 0, OUTER_ROAD + 7), Vector3.new(0, 0, 1) },
+		{ Vector3.new(NS_ROADS[3], 0, -OUTER_ROAD - 7), Vector3.new(0, 0, -1) },
+		{ Vector3.new(NS_ROADS[3], 0, OUTER_ROAD + 7), Vector3.new(0, 0, 1) },
+		{ Vector3.new(HALF_X, 0, 0), Vector3.new(1, 0, 0) },
+		{ Vector3.new(-HALF_X, 0, 0), Vector3.new(-1, 0, 0) },
+		{ Vector3.new(HALF_X, 0, EW_ROADS[1]), Vector3.new(1, 0, 0) },
+	}
+	for _, exit in exits do
+		wander(exit[1], exit[2], nil)
+	end
+	-- Le chemin de la Planque, depuis la sortie sud-ouest de la ville.
+	wander(
+		Vector3.new(-HALF_X, 0, EW_ROADS[1]),
+		Vector3.new(-1, 0, -0.4),
+		PLANQUE_AT + Vector3.new(0, 0, 12)
+	)
+	local function nearTrack(position: Vector3, distance: number): boolean
+		for _, t in tracks do
+			local ab = t.b - t.a
+			local along = math.clamp((position - t.a):Dot(ab) / ab:Dot(ab), 0, 1)
+			local closest = t.a + ab * along
+			if (Vector3.new(position.X, 0, position.Z) - closest).Magnitude < distance then
+				return true
+			end
+		end
+		return false
+	end
+	for _, t in tracks do
+		local mid = (t.a + t.b) / 2
+		local length = (t.b - t.a).Magnitude + TRACK_W
+		terrain:FillBlock(
+			CFrame.lookAt(mid + Vector3.new(0, -4, 0), t.b + Vector3.new(0, -4, 0)),
+			Vector3.new(TRACK_W, 4, length),
+			Enum.Material.Ground
+		)
+	end
+
+	-- Les fermes : quelques hameaux de deux a quatre maisons, et des maisons
+	-- seules, eparpillees au hasard (plus de boucle reguliere : « un cercle de
+	-- maisons », Josh). Jamais tout pres de la Planque.
+	local farmSpots: { Vector3 } = { PLANQUE_AT }
+	local farmCount = 0
+	local function farFromFarms(at: Vector3, distance: number): boolean
+		for _, spot in farmSpots do
+			if (spot - at).Magnitude < distance then
+				return false
+			end
+		end
+		return true
+	end
+	local function farm(at: Vector3, yaw: number)
+		local cf = CFrame.new(at) * CFrame.Angles(0, yaw, 0)
+		farmCount += 1
+		local roll = random:NextNumber()
+		local damage = if roll < 0.3 then "ruine" elseif roll < 0.55 then "trou" else "intact"
+		local wood = random:NextNumber() < 0.7
+		local r = house(houses, cf, {
+			name = "Ferme" .. farmCount,
+			siding = if wood
+				then SIDINGS[random:NextInteger(1, #SIDINGS)]:Lerp(C.woodGray, 0.4)
+				else C.brickBrown,
+			material = if wood then Enum.Material.WoodPlanks else Enum.Material.Brick,
+			roof = if random:NextNumber() < 0.5 then C.roofSlate else C.roofBrown,
+			damage = damage,
+			garage = random:NextNumber() < 0.35,
+			storeys = if damage == "intact" and random:NextNumber() < 0.3 then 2 else 1,
+			mirror = random:NextNumber() < 0.5,
+			bedroom = random:NextNumber() < 0.6,
+			story = if random:NextNumber() < 0.3
+				then "mot"
+				elseif random:NextNumber() < 0.2 then "barricadee"
+				else nil,
+		}, containers)
+		table.insert(insides, {
+			name = "Ferme" .. farmCount,
+			at = r.inside,
+			covered = damage == "intact",
+			ruin = damage == "ruine",
+		})
+		terrain:FillBlock(
+			cf * CFrame.new(0, -4, HOUSE_D / 2),
+			Vector3.new(HOUSE_W + 24, 4, HOUSE_D + 24),
+			Enum.Material.Ground
+		)
+		table.insert(farmSpots, (cf * CFrame.new(0, 0, HOUSE_D / 2)).Position)
+		-- Une tole debout devant la ferme, sur son panneau (contre le mur,
+		-- elle tombait devant une porte de cote ; sur le flanc, dans le
+		-- garage de certaines fermes).
+		anchor(
+			"Tole",
+			cf * CFrame.new(-14, 0, -7) * CFrame.Angles(0, random:NextNumber(0, math.pi * 2), 0)
+		)
+		anchor("Buisson", cf * CFrame.new(random:NextNumber(8, 11), 0, -5.5))
+		anchor(
+			if random:NextNumber() < 0.6 then "Abri" else "Caisses",
+			cf
+				* CFrame.new(random:NextNumber(-16, 16), 0, HOUSE_D + 14)
+				* CFrame.Angles(0, math.pi, 0)
+		)
+		fence(
+			country,
+			(cf * CFrame.new(-24, 0, HOUSE_D + 26)).Position,
+			(cf * CFrame.new(random:NextNumber(0, 20), 0, HOUSE_D + 26)).Position,
+			4
+		)
+		tree(
+			nature,
+			(cf * CFrame.new(
+				random:NextNumber(18, 26) * (if random:NextNumber() < 0.5 then 1 else -1),
+				0,
+				random:NextNumber(4, 20)
+			)).Position,
+			random:NextNumber() < 0.3
+		)
+		if random:NextNumber() < 0.5 then
+			anchor(
+				"Voiture",
+				cf
+					* CFrame.new(random:NextNumber(-8, 8), 0, -14)
+					* CFrame.Angles(0, math.rad(90), 0)
+			)
+		end
+	end
+	-- Les hameaux.
+	local hamlets = 0
+	for _ = 1, 200 do
+		if hamlets >= 6 then
+			break
+		end
+		local center =
+			Vector3.new(random:NextNumber(-FIELD, FIELD), 0, random:NextNumber(-FIELD, FIELD))
+		if
+			inCountry(center.X, center.Z, 50)
+			and farFromFarms(center, 170)
+			and (center - PLANQUE_AT).Magnitude > 200
+		then
+			hamlets += 1
+			local baseYaw = random:NextNumber(0, math.pi * 2)
+			for k = 1, random:NextInteger(2, 4) do
+				local angle = baseYaw + k * random:NextNumber(1.2, 1.9)
+				local at = center
+					+ Vector3.new(math.cos(angle), 0, math.sin(angle))
+						* random:NextNumber(30, 48)
+				if inCountry(at.X, at.Z, 30) and farFromFarms(at, 36) and not nearTrack(at, 16) then
+					-- Les maisons d'un hameau se tournent vers son centre.
+					local toCenter = center - at
+					farm(at, math.atan2(toCenter.X, toCenter.Z) + math.pi)
+				end
+			end
+			task.wait()
+		end
+	end
+	-- Les maisons seules.
+	local alone = 0
+	for _ = 1, 300 do
+		if alone >= 9 then
+			break
+		end
+		local at =
+			Vector3.new(random:NextNumber(-FIELD, FIELD), 0, random:NextNumber(-FIELD, FIELD))
+		if
+			inCountry(at.X, at.Z, 40)
+			and farFromFarms(at, 110)
+			and not nearTrack(at, 18)
+			and (at - PLANQUE_AT).Magnitude > 160
+		then
+			alone += 1
+			farm(at, random:NextNumber(0, math.pi * 2))
 		end
 	end
 
-	-- Murs invisibles : on ne sort pas du quartier.
+	-- LA PLANQUE : une ferme en ruine, seule au fond du coin sud-ouest, et sa
+	-- cave sous le jardin.
+	do
+		local cf = CFrame.new(PLANQUE_AT) * CFrame.Angles(0, math.pi, 0)
+		house(houses, cf, {
+			name = "FermePlanque",
+			siding = C.sidingGray:Lerp(C.woodGray, 0.5),
+			material = Enum.Material.WoodPlanks,
+			roof = C.roofBrown,
+			damage = "ruine",
+			garage = false,
+			storeys = 1,
+			mirror = false,
+			bedroom = false,
+			story = nil,
+		}, containers)
+		terrain:FillBlock(
+			cf * CFrame.new(0, -4, HOUSE_D / 2),
+			Vector3.new(HOUSE_W + 30, 4, HOUSE_D + 40),
+			Enum.Material.Ground
+		)
+		fence(
+			country,
+			(cf * CFrame.new(-26, 0, -6)).Position,
+			(cf * CFrame.new(-26, 0, HOUSE_D + 34)).Position,
+			5
+		)
+		tree(nature, (cf * CFrame.new(22, 0, 6)).Position, true)
+	end
+
+	local function clear(position: Vector3, distance: number): boolean
+		for _, spot in farmSpots do
+			if (spot - position).Magnitude < distance then
+				return false
+			end
+		end
+		return not nearTrack(position, distance * 0.4)
+	end
+
+	-- Les bosses : de petites boules de terrain a demi enterrees, partout dans
+	-- la campagne, loin des maisons et des chemins.
+	for _ = 1, 170 do
+		local at =
+			Vector3.new(random:NextNumber(-FIELD, FIELD), 0, random:NextNumber(-FIELD, FIELD))
+		local radius = random:NextNumber(10, 32)
+		if inCountry(at.X, at.Z, radius * 0.6) and clear(at, radius + 26) then
+			terrain:FillBall(
+				at - Vector3.new(0, radius * random:NextNumber(0.55, 0.75), 0),
+				radius,
+				if random:NextNumber() < 0.75 then Enum.Material.Grass else Enum.Material.LeafyGrass
+			)
+		end
+	end
+	-- Quelques vraies collines dans la campagne, et beaucoup au-dela : placees
+	-- au hasard, pas en anneau.
+	for _ = 1, 26 do
+		local at =
+			Vector3.new(random:NextNumber(-FIELD, FIELD), 0, random:NextNumber(-FIELD, FIELD))
+		local radius = random:NextNumber(30, 70)
+		if inCountry(at.X, at.Z, radius) and clear(at, radius + 30) then
+			terrain:FillBall(at - Vector3.new(0, radius * 0.62, 0), radius, Enum.Material.Grass)
+		end
+	end
+	for _ = 1, 140 do
+		local at = Vector3.new(
+			random:NextNumber(-HORIZON, HORIZON),
+			0,
+			random:NextNumber(-HORIZON, HORIZON)
+		)
+		-- Par endroits des collines hautes, ailleurs presque rien : un bruit
+		-- doux module leur taille, pour qu'elles ne fassent pas un anneau.
+		local patch = math.noise(at.X / 260, at.Z / 260, 0.37) + 0.5
+		if math.max(math.abs(at.X), math.abs(at.Z)) > FIELD + 40 and patch > 0.15 then
+			local radius = random:NextNumber(40, 125) * math.clamp(patch * 1.4, 0.4, 1.3)
+			terrain:FillBall(
+				at - Vector3.new(0, radius * random:NextNumber(0.45, 0.7), 0),
+				radius,
+				if random:NextNumber() < 0.7 then Enum.Material.Grass else Enum.Material.LeafyGrass
+			)
+		end
+	end
+	task.wait()
+
+	-- Les arbres, poses sur le sol (bosses comprises) : en bosquets dans la
+	-- campagne, en foret au-dela.
+	local groundRay = RaycastParams.new()
+	groundRay.FilterType = Enum.RaycastFilterType.Include
+	groundRay.FilterDescendantsInstances = { terrain }
+	local function groundAt(x: number, z: number): Vector3?
+		local hit = workspace:Raycast(Vector3.new(x, 300, z), Vector3.new(0, -500, 0), groundRay)
+		return hit and hit.Position
+	end
+	for g = 1, 22 do
+		local center =
+			Vector3.new(random:NextNumber(-FIELD, FIELD), 0, random:NextNumber(-FIELD, FIELD))
+		if inCountry(center.X, center.Z, 20) and clear(center, 40) then
+			for _ = 1, random:NextInteger(3, 7) do
+				local x, z =
+					center.X + random:NextNumber(-22, 22), center.Z + random:NextNumber(-22, 22)
+				local ground = groundAt(x, z)
+				if ground then
+					tree(nature, ground - Vector3.new(0, 0.5, 0), random:NextNumber() < 0.2)
+				end
+			end
+		end
+		if g % 6 == 0 then
+			task.wait()
+		end
+	end
+	for n = 1, 190 do
+		local x, z =
+			random:NextNumber(-HORIZON + 80, HORIZON - 80),
+			random:NextNumber(-HORIZON + 80, HORIZON - 80)
+		if math.max(math.abs(x), math.abs(z)) > FIELD + 20 then
+			local ground = groundAt(x, z)
+			if ground then
+				tree(country, ground - Vector3.new(0, 0.5, 0), random:NextNumber() < 0.25)
+			end
+		end
+		if n % 30 == 0 then
+			task.wait()
+		end
+	end
+
+	-- Les epaves le long des chemins (a fouiller), et des cachettes fragiles
+	-- un peu partout sur le plat.
+	for i = 1, 8 do
+		local t = tracks[random:NextInteger(1, #tracks)]
+		local at = t.a:Lerp(t.b, random:NextNumber(0.15, 0.85))
+		local dir = (t.b - t.a).Unit
+		local wreckCf = CFrame.lookAt(
+			at + Vector3.new(0, 0.4, 0) + Vector3.new(-dir.Z, 0, dir.X) * 8,
+			at + Vector3.new(0, 0.4, 0) + Vector3.new(-dir.Z, 0, dir.X) * 8 + dir
+		) * CFrame.Angles(0, random:NextNumber(-0.5, 0.5), 0)
+		local carModel = car(country, wreckCf, CAR_COLORS[random:NextInteger(1, #CAR_COLORS)], true)
+		carModel.Name = "EpaveCampagne" .. i
+		local glove = P(
+			containers,
+			"EpaveCampagne" .. i .. "_BoiteAGants",
+			Vector3.new(2, 1, 1.4),
+			wreckCf * CFrame.new(1.2, 3.2, -2.4),
+			Enum.Material.SmoothPlastic,
+			C.black,
+			{ transparency = 1, collide = false }
+		)
+		glove:SetAttribute("Table", "voiture")
+	end
+	local placedSpots = 0
+	for _ = 1, 400 do
+		if placedSpots >= 30 then
+			break
+		end
+		local x, z = random:NextNumber(-FIELD, FIELD), random:NextNumber(-FIELD, FIELD)
+		local ground = groundAt(x, z)
+		if ground and math.abs(ground.Y) < 0.6 and inCountry(x, z, 10) and clear(ground, 30) then
+			local kinds = { "Abri", "Caisses", "Benne", "Voiture", "Buisson", "Buisson", "Tole" }
+			anchor(
+				kinds[random:NextInteger(1, #kinds)],
+				CFrame.new(x, 0, z) * CFrame.Angles(0, random:NextNumber(0, math.pi * 2), 0)
+			)
+			placedSpots += 1
+		end
+	end
+	task.wait()
+
+	-- Murs invisibles : au bord de la campagne, au pied des collines.
 	for _, w in
 		{
-			{ Vector3.new(4, 40, HALF_Z * 2 + 40), Vector3.new(-HALF_X - 12, 20, 0) },
-			{ Vector3.new(4, 40, HALF_Z * 2 + 40), Vector3.new(HALF_X + 12, 20, 0) },
-			{ Vector3.new(HALF_X * 2 + 40, 40, 4), Vector3.new(0, 20, -HALF_Z - 12) },
-			{ Vector3.new(HALF_X * 2 + 40, 40, 4), Vector3.new(0, 20, HALF_Z + 12) },
+			{ Vector3.new(4, 60, FIELD * 2 + 40), Vector3.new(-FIELD - 12, 30, 0) },
+			{ Vector3.new(4, 60, FIELD * 2 + 40), Vector3.new(FIELD + 12, 30, 0) },
+			{ Vector3.new(FIELD * 2 + 40, 60, 4), Vector3.new(0, 30, -FIELD - 12) },
+			{ Vector3.new(FIELD * 2 + 40, 60, 4), Vector3.new(0, 30, FIELD + 12) },
 		}
 	do
 		P(
@@ -3633,8 +4290,9 @@ local function build(): string
 	buildPrefabs(prefabs)
 	task.wait()
 
-	local planquePlot = plots[planqueIndex]
-	local spawnAt = buildPlanque(root, terrain, planquePlot.x, planquePlot.row.zr - 70)
+	-- La cave : derriere la ferme (dont la facade regarde le nord, le jardin
+	-- est au sud).
+	local spawnAt = buildPlanque(root, terrain, PLANQUE_AT.X, PLANQUE_AT.Z - HOUSE_D - 8)
 	buildSky(root, Vector3.zero)
 	buildLighting()
 	task.wait()
@@ -3707,9 +4365,16 @@ local function build(): string
 			)
 		)
 		-- Une maison au toit perce peut couvrir son salon par endroits (un
-		-- chevron, l'etage) : seule une maison intacte DOIT couvrir, et une
-		-- ruine ne le doit jamais.
-		local wrong = (entry.covered and not ok) or (entry.ruin and ok)
+		-- chevron, l'etage) : seule une maison intacte DOIT couvrir. Une ruine
+		-- ne doit pas couvrir... quand l'Oeil la voit presque d'en haut. Plus
+		-- loin du centre, il regarde en biais et ses murs protegent : c'est vrai
+		-- en jeu aussi (vu a la mesure, les fermes de la campagne).
+		local flat = Vector3.new(entry.at.X, 0, entry.at.Z).Magnitude
+		local steep = flat < EYE_HEIGHT * 0.4
+		-- De meme, tres en biais, l'Oeil peut voir un salon intact par une
+		-- fenetre (vu a la mesure : une ferme a etage au bord de la carte).
+		-- C'est une vraie ligne de vue : on ne l'exige qu'a la verticale.
+		local wrong = (entry.covered and not ok and steep) or (entry.ruin and ok and steep)
 		if wrong then
 			problems += 1
 		end

@@ -7,6 +7,7 @@
 
 local Config = require("../../src/shared/Config")
 local Exposure = require("../../src/shared/Exposure")
+local Growth = require("../../src/shared/Growth")
 local Sweep = require("../../src/shared/Sweep")
 
 local harness = require("../harness")
@@ -67,6 +68,72 @@ return function(t: harness.Harness)
 	t.equal("l'Oeil s'y attarde", inspected[1].pause, 1.6)
 	t.equal("puis le rateau suit", #inspected, #line + 1)
 
+	t.section("Les arrachages au hasard, en passant")
+
+	local stops = Sweep.withStops(line, { { id = "toit-7", x = 190, z = 50 } }, 1.6)
+	t.equal("un detour et un retour de plus", #stops, #line + 2)
+	local detour = 0
+	for i, p in stops do
+		if p.spotId == "toit-7" then
+			detour = i
+		end
+	end
+	t.check("le detour n'est pas au debut : il arrache en passant", detour > 1)
+	t.check(
+		"il revient sur son trajet apres",
+		stops[detour + 1].x == stops[detour - 1].x and stops[detour + 1].z == stops[detour - 1].z
+	)
+	local rips = Config.eye.randomRips
+	-- Jusqu'au jour prevu pour finir le quartier, la ville s'abime sans se
+	-- vider ; si l'on s'attarde, l'Oeil s'impatiente et elle devient
+	-- invivable.
+	local function roofsBy(lastDay: number): number
+		local total = 0
+		for d = 1, lastDay do
+			total += Growth.onDay(rips.roofs, d) * Config.day.sweepsPerDay
+		end
+		return total
+	end
+	local pressure = Config.district.pressureDay
+	t.check(
+		string.format(
+			"au jour %d, %.0f toits arraches au hasard sur 91 : la ville tient",
+			pressure - 1,
+			roofsBy(pressure - 1)
+		),
+		roofsBy(pressure - 1) < 91 / 2
+	)
+	t.check(
+		string.format("au jour %d, %.0f toits : environ la moitie", pressure, roofsBy(pressure)),
+		math.abs(roofsBy(pressure) - 91 / 2) < 91 * 0.1
+	)
+	t.check(
+		string.format(
+			"au jour %d, %.0f toits : s'attarder rend la ville invivable",
+			pressure + 3,
+			roofsBy(pressure + 3)
+		),
+		roofsBy(pressure + 3) > 91 * 0.9
+	)
+	t.check(
+		"en s'attardant, de moins en moins de cachettes chaque matin",
+		Growth.onDay(Config.day.fragileShare, pressure + 3)
+			< Growth.onDay(Config.day.fragileShare, pressure - 1)
+	)
+	t.check(
+		"chaque Balayage arrache quand meme au moins une cachette au hasard",
+		Growth.onDay(rips.spots, 1) >= 1
+	)
+	-- Ejecte au centre du regard, le premier jour : pendant le repit il le
+	-- poursuit sans remplir la jauge ; en courant, on est hors du cercle a la
+	-- fin du repit.
+	local gap = (Config.movement.sprintSpeed - Growth.onDay(Config.eye.hunt.chaseSpeed, 1))
+		* Config.eye.ripGraceSeconds
+	t.check(
+		string.format("ejecte le jour 1 : %.0f studs d'avance a la fin du repit", gap),
+		gap > Config.eye.beamRadius
+	)
+
 	t.section("La zone d'un Balayage")
 
 	local district = { minX = -400, maxX = 400, minZ = -320, maxZ = 320 }
@@ -88,6 +155,53 @@ return function(t: harness.Harness)
 		{ id = "loin", x = 390, z = 300 },
 	}, zone, 60)
 	t.equal("il arrache celles de sa zone et de la marge, pas les autres", #near, 2)
+
+	t.section("La traque")
+
+	local nx, nz = Sweep.chaseStep(0, 0, 100, 0, 15, 1)
+	t.check("en une seconde, le regard avance de sa vitesse vers la cible", nx == 15 and nz == 0)
+	local ax, az = Sweep.chaseStep(0, 0, 3, 4, 15, 1)
+	t.check("il ne depasse jamais sa cible", ax == 3 and az == 4)
+
+	local hunt = Config.eye.hunt
+	local sprint = Config.movement.sprintSpeed
+	t.check("le premier jour, on lui echappe en courant", Growth.onDay(hunt.chaseSpeed, 1) < sprint)
+	-- Pris au centre du cercle le premier jour, on court droit devant : le
+	-- temps de sortir du cercle qui nous suit ne doit pas suffire a la jauge.
+	local escape = Config.eye.beamRadius / (sprint - Growth.onDay(hunt.chaseSpeed, 1))
+	t.check(
+		string.format(
+			"jour 1, du centre du cercle, en courant : dehors en %.1f s, pas aspire",
+			escape
+		),
+		not Exposure.isTaken(Exposure.step(0, 1, escape, Config.eye.exposure))
+	)
+	t.check(
+		"jour 1, il ne rattrape pas quelqu'un qui marche",
+		Growth.onDay(hunt.chaseSpeed, 1) < Config.movement.walkSpeed
+	)
+	t.check(
+		"au bout de dix jours, il court plus vite que nous",
+		Growth.onDay(hunt.chaseSpeed, 10) > sprint
+	)
+	t.check(
+		"il vise de plus en plus juste",
+		Growth.onDay(hunt.aimError, 8) < Growth.onDay(hunt.aimError, 1)
+	)
+	t.equal(
+		"jamais plus juste que le plancher",
+		Growth.onDay(hunt.aimError, 99),
+		hunt.aimError.limit
+	)
+	local late = { start = 1, perDay = 1, limit = 9, fromDay = 5 }
+	t.check(
+		"une courbe ne bouge pas avant son jour, puis monte",
+		Growth.onDay(late, 4) == 1 and Growth.onDay(late, 5) == 1 and Growth.onDay(late, 7) == 3
+	)
+	t.check(
+		"il garde la piste de plus en plus longtemps",
+		Growth.onDay(hunt.memorySeconds, 6) > Growth.onDay(hunt.memorySeconds, 1)
+	)
 
 	t.section("La jauge d'exposition")
 

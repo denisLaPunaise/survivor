@@ -271,36 +271,26 @@ function PlanqueService.obstacleNear(position: Vector3, range: number): ((number
 	end
 end
 
--- Le soir : ceux qui sont rentres mangent.
-function PlanqueService.serveDinner()
-	local guests: { Player } = {}
-	for _, player in Players:GetPlayers() do
-		if PlanqueService.isHome(player) and not player:GetAttribute("Taken") then
-			table.insert(guests, player)
-		end
-	end
-	if #guests == 0 then
+-- A la table de la Planque : manger sur la reserve commune (un plat du menu).
+-- Remplace le repas automatique du soir, que Josh ne trouvait pas clair : on
+-- mange ce qu'on porte (Y, le sac), ou ce qui est a la Planque, quand on veut.
+local function eatAtTable(player: Player)
+	if player:GetAttribute("Taken") or CombatService.isDowned(player) then
 		return
 	end
-	local fed = Planque.serveMeal(LootService.stock(), Config.planque.menu, #guests)
+	local fed = Planque.serveMeal(LootService.stock(), Config.planque.menu, 1)
+	if fed == 0 then
+		LootService.sendHud(player, "Rien à manger dans la réserve")
+		return
+	end
+	player:SetAttribute("Hunger", Config.needs.hungerMax)
 	local heal = if built.rechaud then buildsById.rechaud.heal :: number else 0
-	for i, player in guests do
-		if i <= fed then
-			player:SetAttribute("Hunger", Config.needs.hungerMax)
-			if heal > 0 and not CombatService.isDowned(player) then
-				CombatService.heal(player, heal)
-			end
-		end
+	if heal > 0 then
+		CombatService.heal(player, heal)
 	end
-	if fed < #guests then
-		LootService.broadcast(
-			string.format("Le repas : %d sur %d ont mangé. La réserve est vide.", fed, #guests)
-		)
-	else
-		LootService.broadcast(
-			if heal > 0 then "Le repas chaud vous a fait du bien" else "Vous avez mangé"
-		)
-	end
+	LootService.broadcast(
+		if heal > 0 then "Un repas chaud. Ça fait du bien." else "Repas pris sur la réserve"
+	)
 end
 
 -- L'aube : avec les lits, ceux qui ont dormi a la Planque repartent soignes.
@@ -348,6 +338,23 @@ function PlanqueService.start()
 		warn("[Survivor] Pas d'établi dans la Planque : la construction est fermée")
 	end
 	remote.OnServerEvent:Connect(RemoteGuard.wrap("Planque", onRequest))
+
+	local tablePart = planque:FindFirstChild(Config.world.table, true)
+	if tablePart and tablePart:IsA("BasePart") then
+		local onFoot = Config.controls.contexts.onFoot
+		local prompt = Instance.new("ProximityPrompt")
+		prompt.ActionText = "Manger (réserve)"
+		prompt.ObjectText = "Table"
+		prompt.HoldDuration = 1
+		prompt.MaxActivationDistance = Config.planque.useDistance
+		prompt.RequiresLineOfSight = false
+		prompt.GamepadKeyCode = (Enum.KeyCode :: any)[onFoot.interact.gamepad]
+		prompt.KeyboardKeyCode = (Enum.KeyCode :: any)[onFoot.interact.keyboard]
+		prompt.Parent = tablePart
+		prompt.Triggered:Connect(eatAtTable)
+	else
+		warn("[Survivor] Pas de table dans la Planque : on ne peut manger que son sac")
+	end
 
 	local function join(player: Player)
 		player:SetAttribute("Hunger", Config.needs.hungerMax)

@@ -8,6 +8,10 @@
 
 	Quand un Balayage tourne, l'Oeil suit le bout du faisceau : on voit ou il
 	cherche, et c'est un signe de plus pour savoir ou ne pas etre.
+
+	Les paupieres : la Fissure se referme sur lui entre deux Balayages et la
+	nuit, s'ouvre au signal, cligne de temps en temps ; sa pupille se resserre
+	quand il cherche.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -75,29 +79,103 @@ function SkyView.start()
 		end
 	end
 
-	-- La nuit, l'Oeil se ferme : il pâlit jusqu'a presque disparaitre.
-	local closed = false
-	local eyeParts: { BasePart } = {}
-	for _, part in eye:GetDescendants() do
-		if part:IsA("BasePart") then
-			table.insert(eyeParts, part)
+	-- Les paupieres : des bandes que l'on allonge depuis le bord du trou.
+	type Strip = { part: BasePart, x: number, y: number, half: number, side: number, edge: boolean }
+	local strips: { Strip } = {}
+	local lids = sky:FindFirstChild(w.lids)
+	if lids then
+		for _, part in lids:GetChildren() do
+			if part:IsA("BasePart") then
+				table.insert(strips, {
+					part = part,
+					x = part:GetAttribute("X") :: number,
+					-- Le bord passe un peu sous la paupiere : chacun garde sa hauteur.
+					y = part.Position.Y,
+					half = part:GetAttribute("Demi") :: number,
+					side = part:GetAttribute("Cote") :: number,
+					edge = part.Name == "Bord",
+				})
+			end
 		end
 	end
+	-- La pupille : des tranches en amande, que l'on resserre ensemble.
+	type Slice = { part: BasePart, size: Vector3 }
+	local pupil: { Slice } = {}
+	for _, part in eye:GetDescendants() do
+		if part:IsA("BasePart") and part.Name == "Pupille" then
+			table.insert(pupil, { part = part, size = part.Size })
+		end
+	end
+
+	-- Ouvert pendant les signes et le Balayage ; ferme sinon. Un joueur qui
+	-- arrive en plein Balayage le voit ouvert (le faisceau existe deja).
+	local wantOpen = workspace:FindFirstChild("Regard") ~= nil
+	local closure = if wantOpen then 0 else 1
+	local openedAt = os.clock()
+	local random = Random.new()
+	local nextBlink = os.clock()
+		+ random:NextNumber(s.blinkEverySeconds.min, s.blinkEverySeconds.max)
 	local remotes = Survivor:WaitForChild("Remotes")
 	local eyeState = remotes:WaitForChild("EyeState") :: RemoteEvent
 	eyeState.OnClientEvent:Connect(function(data: any)
-		if data.phase == "night" then
-			closed = true
-		elseif data.phase == "dawn" then
-			closed = false
+		local open = data.phase == "warning" or data.phase == "sweep"
+		if open and not wantOpen then
+			openedAt = os.clock()
 		end
+		wantOpen = open
 	end)
-	local openness = 1
+
+	local function placeLids(c: number)
+		for _, strip in strips do
+			local covered = strip.half * c
+			if strip.edge then
+				-- Le bord brulant suit l'avancee de la paupiere ; ouverte, il
+				-- disparait sous la levre de la Fissure.
+				strip.part.LocalTransparencyModifier = if c < 0.02 then 1 else 0
+				strip.part.CFrame =
+					CFrame.new(strip.x, strip.y, strip.side * (strip.half - covered))
+			else
+				local size = strip.part.Size
+				strip.part.Size = Vector3.new(size.X, size.Y, math.max(covered, 0.05))
+				strip.part.CFrame =
+					CFrame.new(strip.x, strip.y, strip.side * (strip.half - covered / 2))
+			end
+		end
+	end
 
 	RunService.RenderStepped:Connect(function(dt: number)
-		openness = math.clamp(openness + (if closed then -dt / 5 else dt / 5), 0, 1)
-		for _, part in eyeParts do
-			part.LocalTransparencyModifier = 1 - (0.15 + 0.85 * openness)
+		-- Les paupieres glissent vers leur but ; ouvert, un clignement rapide
+		-- de temps en temps.
+		local goal = if wantOpen then 0 else 1
+		local rate = if wantOpen then 1 / s.lidOpenSeconds else 1 / s.lidCloseSeconds
+		closure = if closure < goal
+			then math.min(closure + rate * dt, goal)
+			else math.max(closure - rate * dt, goal)
+		local shown = closure
+		local now = os.clock()
+		if wantOpen and closure < 0.05 then
+			if now >= nextBlink then
+				local t = (now - nextBlink) / s.blinkSeconds
+				if t >= 1 then
+					nextBlink = now
+						+ random:NextNumber(s.blinkEverySeconds.min, s.blinkEverySeconds.max)
+				else
+					-- Ferme puis rouvre : un triangle sur la duree du clignement.
+					shown = math.max(shown, 1 - math.abs(t * 2 - 1))
+				end
+			end
+		end
+		placeLids(shown)
+		-- A l'ouverture la pupille est large, puis elle se resserre : il
+		-- cherche. Redimensionner une part garde son centre : la fente reste
+		-- en place.
+		local focus = math.clamp((now - openedAt) / s.pupilFocusSeconds, 0, 1)
+		local scale = if wantOpen
+			then s.pupilWide + (s.pupilNarrow - s.pupilWide) * focus
+			else s.pupilWide
+		for _, slice in pupil do
+			-- La fente : sa largeur est sur X.
+			slice.part.Size = Vector3.new(slice.size.X * scale, slice.size.Y, slice.size.Z)
 		end
 		-- Ou regarde-t-il ? Le bout du faisceau, ou une derive lente.
 		local target: Vector3

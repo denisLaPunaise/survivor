@@ -77,15 +77,24 @@ Config.world = {
 	-- abritent : toits, plafonds, etage.
 	buildingAttribute = "Batiment",
 	roofAttribute = "Toiture",
+	-- Les objets legers d'un interieur, aspires avec le toit.
+	looseAttribute = "Aspirable",
+	-- Attribut du joueur : l'heure serveur (GetServerTimeNow) jusqu'a laquelle
+	-- l'Oeil ne remplit pas sa jauge, apres l'arrachage de sa cachette.
+	graceAttribute = "Repit",
 	-- Workspace.<folder>.<sky> : la Fissure, l'Oeil (<eye>, un Model dont
 	-- l'avant -Z regarde le sol) et les debris qu'il aspire (<debris>).
 	-- Dans la Planque : l'etabli (le menu de construction) et les
 	-- emplacements des constructions, une part `Slot<id>` par construction.
 	workbench = "Etabli",
+	-- La table de la Planque : on y mange sur la reserve commune.
+	table = "Table",
 	slotPrefix = "Slot",
 	sky = "Ciel",
 	eye = "Oeil",
 	debris = "Debris",
+	-- Sous Ciel : les bandes des paupieres (attributs X, Demi, Cote).
+	lids = "Paupieres",
 }
 
 --------------------------------------------------------------------------------
@@ -97,6 +106,20 @@ Config.sky = {
 	-- fraction par seconde du chemin restant ; 2,5 le fait suivre le faisceau
 	-- sans a-coups, avec un leger retard qui le rend vivant.
 	eyeTurnRate = 2.5,
+	-- Les paupieres (la Fissure qui se referme). L'Oeil s'ouvre au signal : 3 s,
+	-- assez vite pour qu'on le voie s'ouvrir pendant les 10 s de signes ; il se
+	-- referme plus lentement, 5 s, apres le Balayage. Fermees entre deux
+	-- Balayages et la nuit (Josh : « qu'il se ferme quand il est pas actif »).
+	lidOpenSeconds = 3,
+	lidCloseSeconds = 5,
+	-- Ouvert, il cligne de temps en temps, vite : il est vivant.
+	blinkEverySeconds = { min = 5, max = 11 },
+	blinkSeconds = 0.4,
+	-- La pupille fendue se resserre quand il cherche (focus), s'elargit quand
+	-- il s'ouvre : en fraction de sa largeur construite.
+	pupilWide = 1.5,
+	pupilNarrow = 0.45,
+	pupilFocusSeconds = 2,
 	-- Entre deux Balayages il derive lentement, comme s'il cherchait.
 	idleWanderSeconds = 9,
 	idleWanderRadius = 140,
@@ -106,6 +129,16 @@ Config.sky = {
 	debrisSpinSpeed = 0.15,
 	debrisLowest = 120,
 	debrisHighest = 560,
+	-- La nuit vue par le joueur. Vu en jeu le 5 novembre 2026 : a 0,6 de
+	-- luminosite et une ambiance a 50, l'ecran etait presque noir — on ne voit
+	-- pas venir un Repris, c'est injouable, pas inquietant. Assez pour lire
+	-- les silhouettes des maisons au clair de lune.
+	night = {
+		clockTime = 23.5,
+		brightness = 1.4,
+		-- En trois nombres (rouge, vert, bleu) : Config se charge sans Roblox.
+		outdoorAmbient = { 86, 92, 114 },
+	},
 }
 
 --------------------------------------------------------------------------------
@@ -116,6 +149,16 @@ Config.sky = {
 -- courte, pour tester la tension des Balayages sans attendre. La nuit n'existe
 -- dure `nightSeconds` : les Repris tombent de la Fissure et convergent vers la
 -- Planque.
+-- LE QUARTIER : combien de temps on peut s'y attarder.
+Config.district = {
+	-- Le jour ou l'Oeil s'impatiente : on vise 8 a 10 jours par quartier
+	-- (CONCEPT, 5 ter). A partir du jour 9, il arrache de plus en plus et la
+	-- ville offre de moins en moins de cachettes : s'attarder rend le quartier
+	-- invivable, et pousse a finir les quetes (Josh : « si ils mettent trop de
+	-- jours, ca va devenir complique »).
+	pressureDay = 9,
+}
+
 Config.day = {
 	sweepsPerDay = 4,
 	-- Le temps de sortir de la cave et de commencer a fouiller.
@@ -128,8 +171,17 @@ Config.day = {
 	-- Le concept vise ~6 min ; 4 pour les premiers essais.
 	nightSeconds = 240,
 	-- La part des emplacements qui portent une cachette fragile chaque matin.
-	-- Moins de la moitie vide les rues ; plus des trois quarts rend tout facile.
-	fragileShare = 0.6,
+	-- 0,4 sur 350 : ~140 cachettes, a peu pres une par maison. A 0,6 (210),
+	-- il y en avait dans chaque coin et se cacher ne demandait plus de
+	-- reflechir (Josh : « faut pas que le jeu soit trop facile »). Quand
+	-- l'Oeil s'impatiente, il en pose 4 % de moins chaque jour, jusqu'a la
+	-- moitie (70 cachettes au jour 14).
+	fragileShare = {
+		start = 0.4,
+		perDay = -0.04,
+		limit = 0.2,
+		fromDay = Config.district.pressureDay,
+	},
 	-- Le temps de lire « plus personne debout » avant que tout recommence.
 	wipeMessageSeconds = 6,
 }
@@ -168,6 +220,37 @@ Config.eye = {
 	-- La cachette arrachee monte vers le ciel et disparait.
 	ripLiftSeconds = 2,
 	ripLiftHeight = 120,
+	-- Les arrachages au hasard, en plus des cachettes marquees (decide avec
+	-- Josh) : a chaque Balayage, dans sa zone, autant de cachettes fragiles et
+	-- de toits. Une partie decimale est une chance (0,5 = un Balayage sur
+	-- deux). Les toits ne reviennent qu'a une defaite.
+	-- Jusqu'au jour 9, une dose fixe (la traque est ce qui monte dans la
+	-- Banlieue) : 1,25 toit par Balayage, 5 par jour, 45 sur 91 au jour 9 :
+	-- la moitie, comme le veut Josh (« vers le jour 8 ou 10, environ 50 % »),
+	-- plus ceux ou l'on s'est abrite. Ensuite l'Oeil s'impatiente et ca
+	-- s'accelere : +1 toit et +1 cachette par Balayage chaque jour ; au jour
+	-- 12, il ne reste presque plus de toit.
+	randomRips = {
+		spots = { start = 2, perDay = 1, limit = 6, fromDay = Config.district.pressureDay },
+		roofs = { start = 1.25, perDay = 1, limit = 6, fromDay = Config.district.pressureDay },
+	},
+	-- Une cachette arrachee avec quelqu'un dedans : il est ejecte, l'Oeil le
+	-- tient (il le poursuit), mais sa jauge ne monte pas pendant ce repit : le
+	-- temps de comprendre et de courir (Josh : « on peut courir un peu »).
+	ripGraceSeconds = 2,
+	-- L'arrachage d'un toit : il tremble d'abord, assez longtemps pour sortir
+	-- de la maison (Josh : « plusieurs secondes pour dire qu'il faut sortir »),
+	-- puis les morceaux partent un par un en tournoyant, dans la poussiere.
+	roofShakeSeconds = 3.5,
+	roofShakeStuds = 0.35,
+	roofLiftSeconds = 3.2,
+	roofLiftHeight = 260,
+	-- Les morceaux ne partent pas tous ensemble : jusqu'a 0,8 s d'ecart.
+	roofStaggerSeconds = 0.8,
+	-- Ecart lateral et rotation pendant la montee : une tempete, pas un
+	-- ascenseur.
+	roofDriftStuds = 24,
+	roofSpinTurns = 1.5,
 	exposure = {
 		-- Plein regard pendant 2 s = aspire. Traverser le cercle par le centre
 		-- (32 studs) en sprint prend ~1,45 s : on en sort a ~70 %, de justesse.
@@ -179,6 +262,28 @@ Config.eye = {
 	-- Le joueur aspire monte, puis disparait jusqu'au matin.
 	takenLiftSeconds = 3,
 	takenLiftHeight = 350,
+	-- LA TRAQUE (Josh, 5 novembre 2026 : « des zigzags au debut, c'est un peu
+	-- nul »). Des qu'il apercoit quelqu'un, l'Oeil le poursuit ; il le perd
+	-- s'il ne le voit plus pendant `memorySeconds`, et reprend son rateau. Il
+	-- traque mal au debut et de mieux en mieux, jour apres jour.
+	hunt = {
+		-- Vitesse du regard en poursuite, au sol. Jour 1 : 9, moins que la
+		-- marche (14) : le cercle (rayon 16) se remplit en 2 s, et a 15 un
+		-- joueur frole puis qui court etait aspire quand meme (vu en jeu le
+		-- 5 novembre 2026). A 9, on sort du cercle en courant meme depuis son
+		-- centre (16 / 13 = 1,2 s). Vers le jour 10 il court plus vite que
+		-- nous : il faut deja etre pres d'une cachette.
+		chaseSpeed = { start = 9, perDay = 1.5, limit = 26, fromDay = 1 },
+		-- Combien de temps il garde la piste de celui qu'il ne voit plus : il
+		-- suit d'abord sa derniere position, puis abandonne.
+		memorySeconds = { start = 1, perDay = 0.25, limit = 3.5, fromDay = 1 },
+		-- L'erreur de sa visee quand il choisit ou chercher : le jour 1, sa
+		-- zone tombe « dans le coin » (a 110 studs pres) ; plus tard, pile sur
+		-- l'un de nous.
+		aimError = { start = 110, perDay = -10, limit = 15, fromDay = 1 },
+		-- Une poursuite rallonge le Balayage, mais jamais au-dela de ca.
+		maxSweepSeconds = 75,
+	},
 	-- Une marque s'efface au bout de ce nombre de jours (decide : un ou deux).
 	markDays = 2,
 	-- Frequence des controles de ligne de vue : 10 par seconde suffisent a une
@@ -207,10 +312,25 @@ Config.repris = {
 		-- Passer a le frôler, meme en marchant.
 		touchRadius = 5,
 	},
-	-- La part des maisons intactes ou dorment des Repris chaque matin, et
-	-- combien. Un quart : on ne sait jamais, mais pas a chaque porte.
-	dormantHouseShare = 0.25,
+	-- LE JOUR, ils sont de plus en plus nombreux, jour apres jour, jusqu'a un
+	-- plafond (decide le 5 novembre 2026 : Josh demandait si ca augmentait).
+	-- Le premier jour on apprend ; vers le dixieme, on ne rentre plus dans une
+	-- maison sans y penser.
+	day = {
+		-- La part des maisons intactes ou ils dorment : un quart le premier jour,
+		-- puis +3 % par jour, jamais plus de la moitie.
+		houseShare = { start = 0.25, perDay = 0.03, limit = 0.5, fromDay = 1 },
+		-- Les cachettes fragiles deja occupees : on ouvre l'abri, il en sort un.
+		-- Une sur douze au debut : assez pour qu'on hesite, pas au point de ne
+		-- plus oser se cacher.
+		lurkerShare = { start = 0.08, perDay = 0.01, limit = 0.2, fromDay = 1 },
+		-- Debout dehors, immobiles, dans les rues, les jardins et la campagne.
+		-- 16 pour une carte de 1400 studs de cote, puis +3 par jour.
+		outdoor = { start = 16, perDay = 3, limit = 40, fromDay = 1 },
+	},
 	dormantPerHouse = { min = 1, max = 2 },
+	-- Jamais trop pres de la Planque : on doit pouvoir en sortir.
+	outdoorMinPlanqueDistance = 90,
 	-- Il abandonne une cible qu'il ne voit plus depuis ce temps : le jour il se
 	-- rendort sur place, la nuit il repart rôder.
 	forgetSeconds = 6,
@@ -326,7 +446,7 @@ Config.planque = {
 		{
 			id = "rechaud",
 			name = "Réchaud",
-			description = "Le repas chaud soigne aussi.",
+			description = "Manger à la table de la Planque soigne aussi.",
 			cost = { ferraille = 2, piles = 1 },
 			heal = 30,
 		},
@@ -371,8 +491,11 @@ Config.movement = {
 --------------------------------------------------------------------------------
 
 Config.items = {
-	conserve = { name = "Conserve", weight = 1 },
-	eau = { name = "Bouteille d'eau", weight = 1 },
+	-- `food` : ce que l'objet rend a la faim quand on le mange (Y, le sac).
+	-- `heal` : la sante qu'il rend. Une conserve et une eau font presque un
+	-- repas (65 sur 100).
+	conserve = { name = "Conserve", weight = 1, food = 40 },
+	eau = { name = "Bouteille d'eau", weight = 1, food = 25 },
 	piles = { name = "Piles", weight = 0.5 },
 	ferraille = { name = "Ferraille", weight = 2 },
 	planche = { name = "Planche", weight = 2 },
@@ -380,8 +503,8 @@ Config.items = {
 	corde = { name = "Corde", weight = 1 },
 	cle = { name = "Clé à molette", weight = 1.5 },
 	tissu = { name = "Tissu", weight = 0.5 },
-	bandage = { name = "Bandage", weight = 0.5 },
-	medicaments = { name = "Médicaments", weight = 0.5 },
+	bandage = { name = "Bandage", weight = 0.5, heal = 25 },
+	medicaments = { name = "Médicaments", weight = 0.5, heal = 50 },
 }
 
 Config.loot = {
@@ -503,7 +626,9 @@ Config.controls = {
 			crouchOrSlide = { gamepad = "ButtonB", keyboard = "C" },
 			-- Fouiller, ramasser, ouvrir, entrer dans une cachette.
 			interact = { gamepad = "ButtonX", keyboard = "E" },
-			bag = { gamepad = "ButtonY", keyboard = "Tab" },
+			-- Pas Tab au clavier : Roblox le garde pour la liste des joueurs (vu
+			-- en jeu le 5 novembre 2026, la touche n arrivait jamais).
+			bag = { gamepad = "ButtonY", keyboard = "I" },
 			previousItem = { gamepad = "ButtonL1", keyboard = "Q" },
 			nextItem = { gamepad = "ButtonR1", keyboard = "R" },
 			aimOrThrow = { gamepad = "ButtonL2", keyboard = "MouseButton2" },

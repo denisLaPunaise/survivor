@@ -4,6 +4,7 @@
 ]]
 
 local Config = require("../../src/shared/Config")
+local Growth = require("../../src/shared/Growth")
 local Repris = require("../../src/shared/Repris")
 
 local harness = require("../harness")
@@ -48,6 +49,29 @@ return function(t: harness.Harness)
 	local sprint = Config.movement.sprintSpeed
 	t.check("un Errant ne rattrape pas quelqu'un qui marche", r.kinds.errant.speed < walk)
 	t.check("un Coureur rattrape quelqu'un qui court", r.kinds.coureur.speed > sprint)
+
+	t.section("Le jour, ils sont de plus en plus nombreux")
+
+	local d = r.day
+	t.equal(
+		"le premier jour, un quart des maisons",
+		Growth.onDay(d.houseShare, 1),
+		d.houseShare.start
+	)
+	t.check(
+		"le cinquieme jour, plus",
+		Growth.onDay(d.houseShare, 5) > Growth.onDay(d.houseShare, 1)
+	)
+	t.equal("jamais plus que le plafond", Growth.onDay(d.houseShare, 999), d.houseShare.limit)
+	t.check("jamais plus de la moitie des maisons", d.houseShare.limit <= 0.5)
+	t.check(
+		"les cachettes restent utilisables : 1 sur 5 occupee au pire",
+		d.lurkerShare.limit <= 0.2
+	)
+	t.check(
+		"dehors, plus nombreux au jour 10 qu'au jour 1",
+		Growth.onDay(d.outdoor, 10) > Growth.onDay(d.outdoor, 1)
+	)
 
 	t.section("La taille des nuits")
 

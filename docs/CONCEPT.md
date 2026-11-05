@@ -119,6 +119,49 @@ Un jour ≈ 20 min ; une séance de 1 h 30 ≈ 4 à 5 jours.
   et **les arrache** : celui qui est dedans se retrouve à découvert, avec une ou
   deux secondes pour fuir. Une cachette solide ne s'arrache pas. La marque
   s'efface au bout d'un jour ou deux (**proposé**).
+- **Décidé** (5 novembre 2026) : l'Œil **arrache aussi au hasard**, sur son
+  passage, des cachettes fragiles et des toits, un peu plus chaque jour. Même
+  une cachette occupée : on est éjecté, il nous repère, mais on a un **répit**
+  (2 s sans que la jauge monte) pour courir. Un toit **tremble plusieurs
+  secondes** avant de partir, et ceux qui sont dessous sont prévenus. Les toits
+  ne reviennent pas : le quartier s'abîme jusqu'à ce qu'on le quitte.
+- **Décidé** : l'Œil **traque** : il vise de mieux en mieux, poursuit qui il
+  voit, garde sa piste un moment. Le premier jour, on lui échappe en marchant.
+
+## 5 bis. La force de l'Œil sur les 7 quartiers
+
+**Décidé** avec Josh (5 novembre 2026), sur son idée : **à chaque quartier,
+l'Œil gagne une amélioration qui monte jour après jour**, et il **garde toutes
+les précédentes**. Chaque amélioration a un plafond. On ressent ce qui change
+d'un quartier à l'autre, et on peut s'y préparer.
+
+| Quartier | Ce qui monte jour après jour | La parade qu'on y trouve (**proposé**) |
+| --- | --- | --- |
+| 1. La Banlieue | **La traque** : vitesse de poursuite (plus lente que la marche, puis plus rapide que la course), visée, mémoire de la piste | Le **fumigène** : un nuage qui coupe la ligne de vue, il perd ta piste (en plus de la radio et du périscope) |
+| 2. La Zone commerciale | **La taille de la zone** balayée (280 → ~450 studs) | Les **plaques d'égout** qu'on ouvre : passer sous la zone |
+| 3. Le Parc | **Les arrachages au hasard** : de plus en plus de cachettes et de toits | Le **filet de camouflage** : une cachette qui ne se marque pas et ne s'arrache pas au hasard |
+| 4. L'Hôpital | **Le nombre de Balayages** par jour (4 → 6) | La **montre** qui dit quand vient le prochain Balayage, et l'**adrénaline** (courir plus longtemps) |
+| 5. La Zone industrielle | **L'ouïe** : il vient vers le bruit (course, fouille, combat) | Le **leurre** bruyant qui l'attire ailleurs, les **semelles** silencieuses |
+| 6. Le Centre-ville | **Un deuxième faisceau** (« un deuxième Œil s'ouvre ») | La **bâche de plomb** : une cachette qu'il ne peut pas arracher |
+| 7. La Fissure | **Le faisceau plus large** | La **cape d'ombre** : la jauge monte deux fois moins vite |
+
+- **Décidé** : chaque quartier donne **au moins une nouvelle parade**, trouvée ou
+  fabriquée avec un matériau du quartier.
+- **Décidé** : le jeu ne doit **jamais devenir facile** (Josh : « faut pas qu'on
+  se dise : c'est facile, on se fait chier »). Ce qui s'additionne d'un
+  quartier à l'autre ne redescend pas. Une parade aide face à une menace, mais
+  ne l'annule jamais.
+- **Proposé** : une simulation vérifie, quartier par quartier, qu'un joueur
+  qui court vers la cachette la plus proche s'en sort *la plupart du temps*,
+  pas toujours.
+
+## 5 ter. Combien de temps dans un quartier
+
+- **Décidé** (5 novembre 2026) : on vise **8 à 10 jours par quartier**, mais le
+  suivant **ne s'ouvre pas au bout d'un nombre de jours** : il s'ouvre par des
+  **quêtes et des fabrications** (l'outil qui ouvre le passage, le boss). Des
+  amis efficaces passent plus vite ; d'autres restent plus longtemps, pendant
+  que l'Œil durcit et que la ville s'abîme, ce qui pousse à partir.
 
 ## 6. Une ville qui change chaque jour
 

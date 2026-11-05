@@ -51,7 +51,7 @@ print(
 		"[Survivor] Aspiré après %.1f s de plein regard ; %d emplacements, %d %% occupés chaque matin",
 		Config.eye.exposure.fillSeconds,
 		#world.anchors:GetChildren(),
-		math.floor(d.fragileShare * 100 + 0.5)
+		math.floor(d.fragileShare.start * 100 + 0.5)
 	)
 )
 print("================================================")

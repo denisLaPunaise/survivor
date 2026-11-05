@@ -23,6 +23,7 @@ local RunService = game:GetService("RunService")
 local Survivor = ReplicatedStorage:WaitForChild("Survivor")
 local Config = require(Survivor:WaitForChild("Config"))
 local Exposure = require(Survivor:WaitForChild("Exposure"))
+local Growth = require(Survivor:WaitForChild("Growth"))
 local Sweep = require(Survivor:WaitForChild("Sweep"))
 local Remotes = Survivor:WaitForChild("Remotes")
 
@@ -44,6 +45,8 @@ local groundY = 0
 local beam: BasePart? = nil
 local accumulated = 0
 local exposures: { [Player]: number } = {}
+-- Le dernier joueur que l'Oeil a vu pendant ce Balayage, et quand.
+local sighting: { player: Player, at: number }? = nil
 
 local rayParams = RaycastParams.new()
 rayParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -143,7 +146,21 @@ local function check(dt: number)
 			end
 		end
 		local level = exposures[player] or 0
-		level = Exposure.step(level, seenFactor(player), dt, Config.eye.exposure)
+		local seen = seenFactor(player)
+		if seen > 0 then
+			-- Il l'a vu : c'est lui qu'il va traquer (le plus recent l'emporte).
+			sighting = { player = player, at = os.clock() }
+		end
+		-- Ejecte de sa cachette arrachee : l'Oeil le tient et le poursuit,
+		-- mais sa jauge ne monte pas avant la fin du repit.
+		local grace = player:GetAttribute(Config.world.graceAttribute)
+		if typeof(grace) == "number" and workspace:GetServerTimeNow() < grace then
+			if looking then
+				sighting = { player = player, at = os.clock() }
+			end
+			seen = 0
+		end
+		level = Exposure.step(level, seen, dt, Config.eye.exposure)
 		exposures[player] = level
 		player:SetAttribute("Exposure", level)
 		if Exposure.isTaken(level) then
@@ -192,7 +209,7 @@ end
 
 -- Le centre du Balayage : un joueur encore debout, tire au hasard. Sans
 -- personne, un point au hasard du quartier.
-local function zoneCenter(bounds: Sweep.Bounds): (number, number, Player?)
+local function zoneCenter(bounds: Sweep.Bounds, dayNumber: number): (number, number, Player?)
 	local candidates: { Player } = {}
 	for _, player in Players:GetPlayers() do
 		if player.Character and not CrewService.isTaken(player) then
@@ -206,18 +223,35 @@ local function zoneCenter(bounds: Sweep.Bounds): (number, number, Player?)
 	end
 	local pick = candidates[random:NextInteger(1, #candidates)]
 	local at = (pick.Character :: Model):GetPivot().Position
-	return at.X, at.Z, pick
+	-- Il vise « dans le coin » au debut, de plus en plus juste ensuite.
+	local error = Growth.onDay(Config.eye.hunt.aimError, dayNumber)
+	local angle = random:NextNumber(0, math.pi * 2)
+	local miss = random:NextNumber(0, error)
+	return at.X + math.cos(angle) * miss, at.Z + math.sin(angle) * miss, pick
 end
 
 local function buildPath(
 	district: Sweep.Bounds,
 	targets: { HidingService.Target },
 	cx: number,
-	cz: number
+	cz: number,
+	dayNumber: number
 ): Sweep.Timeline
 	local eye = Config.eye
 	local bounds = Sweep.zoneAround(cx, cz, eye.zoneSize, district)
 	targets = Sweep.targetsIn(targets, bounds, eye.inspectMargin)
+	-- Les arrachages au hasard : un peu plus chaque jour (une partie decimale
+	-- est une chance).
+	local function count(curve: Growth.Curve): number
+		local value = Growth.onDay(curve, dayNumber)
+		local whole = math.floor(value)
+		return whole + (if random:NextNumber() < value - whole then 1 else 0)
+	end
+	local extra = HidingService.randomTargets(
+		bounds,
+		count(eye.randomRips.spots),
+		count(eye.randomRips.roofs)
+	)
 	local pattern = eye.patterns[random:NextInteger(1, #eye.patterns)]
 	local path = if pattern == "spiral"
 		then Sweep.spiralPath(bounds, eye.laneSpacing)
@@ -227,19 +261,24 @@ local function buildPath(
 			random:NextNumber() < 0.5,
 			random:NextNumber() < 0.5
 		)
-	local inspected = Sweep.withInspections(path, targets, eye.inspectSeconds)
+	local inspected = Sweep.withInspections(
+		Sweep.withStops(path, extra, eye.inspectSeconds),
+		targets,
+		eye.inspectSeconds
+	)
 	return Sweep.timeline(inspected, eye.beamSpeed)
 end
 
 -- Un Balayage complet : les signes, puis le regard. Rend la main a la fin.
 -- `stillCurrent` dit si la partie n'a pas ete remise a zero entre-temps.
-function EyeService.runSweep(stillCurrent: () -> boolean)
+function EyeService.runSweep(stillCurrent: () -> boolean, dayNumber: number)
 	local eye = Config.eye
+	local hunt = eye.hunt
 	local world = WorldService.get()
 	local bounds = boundsOf(world.bounds)
 	-- La zone se choisit AU SIGNAL : c'est la que l'Oeil cherchera, et la
 	-- radio de la Planque peut le dire a temps.
-	local cx, cz, aimed = zoneCenter(bounds)
+	local cx, cz, aimed = zoneCenter(bounds, dayNumber)
 	eyeState:FireAllClients({ phase = "warning", seconds = eye.warningSeconds })
 	if aimed and PlanqueService.has("radio") then
 		LootService.broadcast(
@@ -254,30 +293,78 @@ function EyeService.runSweep(stillCurrent: () -> boolean)
 	groundY = world.bounds.Position.Y
 	eyePosition =
 		Vector3.new(world.bounds.Position.X, groundY + eye.height, world.bounds.Position.Z)
-	local timeline = buildPath(bounds, HidingService.beginSweep(), cx, cz)
+	local timeline = buildPath(bounds, HidingService.beginSweep(), cx, cz, dayNumber)
 
 	eyeState:FireAllClients({ phase = "sweep", seconds = timeline.total })
 	beam = makeBeam()
+	sighting = nil
+	local chaseSpeed = Growth.onDay(hunt.chaseSpeed, dayNumber)
+	local memory = Growth.onDay(hunt.memorySeconds, dayNumber)
 	local started = os.clock()
+	local last = started
+	-- Le temps du rateau n'avance que quand l'Oeil suit le rateau : une
+	-- poursuite le met en pause, et il reprend la ou il s'etait arrete.
+	local patternTime = 0
 	local ripped = 0
+	local bx, bz = Sweep.sample(timeline, 0)
+	local mode = "pattern" -- "pattern" | "chase" | "return"
 	while stillCurrent() do
-		local elapsed = os.clock() - started
-		local x, z, reached = Sweep.sample(timeline, elapsed)
-		looking = { x = x, z = z }
-		placeBeam()
-		-- Arracher chaque cachette marquee au moment ou le regard l'atteint.
-		while ripped < reached do
-			ripped += 1
-			local spotId = timeline.points[ripped].spotId
-			if spotId then
-				HidingService.rip(spotId)
+		local now = os.clock()
+		local dt = now - last
+		last = now
+		local target = sighting
+		local targetRoot = target
+			and target.player.Character
+			and target.player.Character:FindFirstChild("HumanoidRootPart")
+		local tracking = target ~= nil
+			and now - target.at <= memory
+			and targetRoot ~= nil
+			and not HidingService.isHidden(target.player)
+			and not CrewService.isTaken(target.player)
+		if tracking and targetRoot and targetRoot:IsA("BasePart") then
+			-- La traque : il fonce sur celui qu'il a vu.
+			mode = "chase"
+			bx, bz = Sweep.chaseStep(
+				bx,
+				bz,
+				targetRoot.Position.X,
+				targetRoot.Position.Z,
+				chaseSpeed,
+				dt
+			)
+		else
+			local px, pz, reached = Sweep.sample(timeline, patternTime)
+			if mode ~= "pattern" then
+				-- Il a perdu sa proie : il revient a son rateau.
+				mode = "return"
+				bx, bz = Sweep.chaseStep(bx, bz, px, pz, eye.beamSpeed, dt)
+				if math.abs(bx - px) < 1 and math.abs(bz - pz) < 1 then
+					mode = "pattern"
+				end
+			else
+				patternTime += dt
+				px, pz, reached = Sweep.sample(timeline, patternTime)
+				bx, bz = px, pz
+				-- Arracher chaque cachette marquee au moment ou le regard
+				-- l'atteint. A part : un toit tremble une seconde, et le regard
+				-- ne doit pas s'arreter pendant ce temps.
+				while ripped < reached do
+					ripped += 1
+					local spotId = timeline.points[ripped].spotId
+					if spotId then
+						task.spawn(HidingService.rip, spotId)
+					end
+				end
 			end
 		end
-		if elapsed >= timeline.total then
+		looking = { x = bx, z = bz }
+		placeBeam()
+		if patternTime >= timeline.total or now - started >= hunt.maxSweepSeconds then
 			break
 		end
 		RunService.Heartbeat:Wait()
 	end
+	sighting = nil
 
 	looking = nil
 	if beam then
