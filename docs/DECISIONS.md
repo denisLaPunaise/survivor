@@ -44,3 +44,13 @@ n'importe laquelle.
   concept vise ~1000 × 1000) : un carrefour, huit parcelles.
 - **`Lighting.Technology` ne se règle pas depuis le pont MCP** (ni en lecture
   ni en écriture) : à passer sur *Future* à la main dans la place.
+
+## 5 novembre 2026 — première passe visuelle
+
+- **L'Œil suit le regard, côté client seulement** (`SkyView`) : c'est un
+  signe de plus, purement visuel, que le serveur n'a pas à connaître.
+- **La ville est aspirée en continu** : des débris montent lentement vers la
+  Fissure et s'effacent près d'elle. Idée de l'assistant, pas du concept.
+- **Arbres générés** (`docs/ASSETS.md`) : l'arbre feuillu est gardé, l'arbre
+  mort généré est refusé (tronc bleu de dessin animé).
+- **Ciel couvert à 92 %** : les trouées bleues disaient « beau temps ».

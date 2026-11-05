@@ -49,3 +49,17 @@ Dans l'ordre :
    marque avant). As-tu eu le temps de fuir ?
 7. **À plusieurs** : le Veilleur est-il trop facile ou trop dur à trois ? La
    vraie question de cette version : **se cacher du regard est-il amusant ?**
+
+## Première passe visuelle (5 novembre 2026)
+
+*Vu en image par l'assistant* : la Fissure, l'Œil, les débris, la rue, les
+poteaux et leurs fils, les arbres générés. *Vérifié en jeu, seul* : l'Œil
+tourne et les débris montent, sans erreur dans la console. *Jamais vu* : la
+lumière en mode Future (je ne peux pas la régler), et le jeu à plusieurs.
+
+1. **Lève les yeux** dès la sortie de la cave. L'Œil fait-il peur, ou fait-il
+   rire ? C'est le juge le plus important de l'ambiance.
+2. **Pendant un Balayage, regarde l'Œil** : il doit suivre le faisceau. Est-ce
+   qu'on comprend où il cherche ?
+3. **La rue** : est-ce assez « abandonné » ? Qu'est-ce qui fait encore faux
+   (les sacs poubelle en boules, les voitures en blocs, les maisons) ?

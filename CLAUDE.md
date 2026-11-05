@@ -113,9 +113,13 @@ GitHub Actions relance formatage, analyse, tests et build à chaque push.
   cachettes solides, la fouille et le sac, la Planque (cave) et sa réserve, la
   défaite qui fait tout recommencer, la première personne, la course et la
   glissade. Le quartier est construit par `tools/BuildBanlieue.luau`.
-- **Prochaine étape** : la passe visuelle (le quartier est propre mais pas
-  encore « beau » : l'Œil a l'air d'un soleil dessiné, les arbres sont des
-  boules), puis la nuit et les Repris.
+- **5 novembre 2026, première passe visuelle** : la Fissure en déchirure
+  noire, l'Œil sombre qui suit le regard (`SkyView`), les débris aspirés,
+  poteaux et fils, encadrements, gouttières, boîtes aux lettres, arbres
+  générés (`docs/ASSETS.md`, modèle dans `ServerStorage.SurvivorModeles`).
+- **Reste à rendre beau** : les voitures (blocs), les sacs poubelle (boules),
+  l'intérieur des maisons, la lumière en Future (réglage manuel de Josh).
+- **Ensuite** : la nuit et les Repris.
 
 ## Construire la ville depuis le pont
 

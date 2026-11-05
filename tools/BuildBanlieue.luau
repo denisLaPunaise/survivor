@@ -42,6 +42,9 @@ local CONTRACT = {
 -- la mesure de couverture.
 local EYE_HEIGHT = 600
 
+-- Le ciel, recopie de Config.world.
+local SKY = { folder = "Ciel", eye = "Oeil", debris = "Debris" }
+
 -- Les limites que l'Oeil balaie.
 local BOUNDS_SIZE = Vector3.new(300, 1, 230)
 
@@ -256,6 +259,28 @@ local function wall(
 		segment(left, right, o.t, height)
 		cursor = right
 
+		-- L'encadrement : c'est lui qui fait d'un trou une fenetre.
+		if o.kind == "window" or o.kind == "door" then
+			local fw = 0.35
+			for _, sx in { -1, 1 } do
+				P(
+					parent,
+					"Cadre",
+					Vector3.new(fw, o.t - o.b, thick + 0.3),
+					cf * CFrame.new(o.x + sx * (o.w / 2 + fw / 2), (o.b + o.t) / 2, 0),
+					Enum.Material.SmoothPlastic,
+					C.trim
+				)
+			end
+			P(
+				parent,
+				"Cadre",
+				Vector3.new(o.w + fw * 2, fw, thick + 0.3),
+				cf * CFrame.new(o.x, o.t + fw / 2, 0),
+				Enum.Material.SmoothPlastic,
+				C.trim
+			)
+		end
 		if o.kind == "window" then
 			local roll = random:NextNumber()
 			local glassCf = cf * CFrame.new(o.x, (o.b + o.t) / 2, 0)
@@ -324,7 +349,47 @@ end
 -- Les pieces de la ville
 --------------------------------------------------------------------------------
 
+-- Le modele d'arbre genere (docs/ASSETS.md), s'il est dans la place.
+local treeTemplate: Model? = nil
+local generatedTrees = 0
+
 local function tree(parent: Instance, position: Vector3, dead: boolean)
+	if not dead and treeTemplate then
+		local clone = treeTemplate:Clone()
+		clone.Name = "Arbre"
+		clone:ScaleTo(random:NextNumber(0.9, 1.3))
+		local size = clone:GetExtentsSize()
+		clone:PivotTo(
+			CFrame.new(position + Vector3.new(0, size.Y / 2, 0))
+				* CFrame.Angles(0, random:NextNumber(0, math.pi * 2), 0)
+		)
+		for _, part in clone:GetDescendants() do
+			if part:IsA("BasePart") then
+				part.Anchored = true
+				-- Le feuillage ne bloque pas les joueurs et ne couvre qu'a
+				-- moitie vu du ciel ; le tronc, lui, est une part a part.
+				part.CanCollide = false
+				part:SetAttribute(CONTRACT.cover, 0.55)
+			end
+		end
+		clone.Parent = parent
+		P(
+			clone,
+			"Tronc",
+			Vector3.new(size.Y * 0.45, 1.6, 1.6),
+			CFrame.new(position + Vector3.new(0, size.Y * 0.225, 0))
+				* CFrame.Angles(0, 0, math.rad(90)),
+			Enum.Material.Wood,
+			C.bark,
+			{
+				shape = Enum.PartType.Cylinder,
+				transparency = 1,
+				shadow = false,
+			}
+		)
+		generatedTrees += 1
+		return
+	end
 	local m = model(parent, "Arbre")
 	local height = random:NextNumber(14, 20)
 	-- Un cylindre prend sa longueur sur X : on le redresse.
@@ -785,6 +850,17 @@ local function house(
 				THICK,
 				o.material,
 				o.siding
+			)
+		end
+		-- Gouttieres le long des egouts.
+		for _, eave in { eaveFront, eaveBack } do
+			P(
+				m,
+				"Gouttiere",
+				Vector3.new(w + 2.4, 0.5, 0.5),
+				CFrame.new(eave - Vector3.new(0, 0.45, 0)) * (cf - cf.Position),
+				Enum.Material.Metal,
+				C.metal
 			)
 		end
 		-- Cheminee.
@@ -1283,30 +1359,115 @@ end
 --------------------------------------------------------------------------------
 
 local function buildSky(root: Instance, center: Vector3)
-	local m = model(root, "Ciel")
-	local eyeAt = center + Vector3.new(0, EYE_HEIGHT + 60, 0)
-	-- La Fissure : des eclats sombres bordes de lumiere, en etoile.
-	for i = 1, 14 do
-		local angle = (i / 14) * math.pi * 2 + random:NextNumber(-0.2, 0.2)
-		local length = random:NextNumber(120, 260)
-		local dir = Vector3.new(math.cos(angle), random:NextNumber(-0.08, 0.08), math.sin(angle))
-		local from = eyeAt + dir * 50
-		local to = eyeAt + dir * (50 + length)
-		local edge =
-			slab(m, from, to, random:NextNumber(6, 16), 2, Enum.Material.Neon, C.rift, "Fissure")
-		edge.CanCollide = false
-		edge.CanQuery = false
-		edge.CastShadow = false
-		edge.Transparency = 0.25
+	local m = model(root, SKY.folder)
+	-- Toujours charge chez chaque client : l'Oeil se voit de partout, et la
+	-- vue du ciel ne prend que les debris presents au demarrage.
+	m.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+	local noRay = { collide = false, query = false, shadow = false }
+	local riftY = center.Y + EYE_HEIGHT + 10
+	local eyeAt = center + Vector3.new(0, EYE_HEIGHT + 95, 0)
+
+	-- LA FISSURE : une dechirure noire en amande, orientee est-ouest, aux
+	-- bords irreguliers et brulants. On voit l'Oeil par le trou.
+	local halfLong, halfShort = 190, 105
+	local segments = 44
+	-- Le bord : une couronne pleine entre le trou et un contour exterieur
+	-- dechiquete, remplie de triangles (un seul plan, pas des pics).
+	local function almond(angle: number, grow: number): Vector3
+		local sx = math.cos(angle)
+		local sz = math.sin(angle) * (0.55 + 0.45 * math.abs(math.sin(angle)))
+		return Vector3.new(sx * (halfLong + grow), riftY, sz * (halfShort + grow))
 	end
-	-- L'Oeil, tourne vers le sol.
+	local inner: { Vector3 } = {}
+	local outer: { Vector3 } = {}
+	for i = 0, segments - 1 do
+		local a = (i / segments) * math.pi * 2
+		table.insert(inner, almond(a, random:NextNumber(-6, 6)))
+		-- Le contour exterieur alterne pointes et creux : une dechirure.
+		local reach = if i % 2 == 0 then random:NextNumber(90, 190) else random:NextNumber(35, 80)
+		table.insert(outer, almond(a, reach))
+	end
+	local black = Color3.fromRGB(10, 7, 9)
+	for i = 1, segments do
+		local j = (i % segments) + 1
+		triangle(m, inner[i], outer[i], outer[j], 3, Enum.Material.SmoothPlastic, black)
+		triangle(m, inner[i], outer[j], inner[j], 3, Enum.Material.SmoothPlastic, black)
+		-- La levre brulante, juste au bord du trou.
+		local lip = slab(
+			m,
+			inner[i] - Vector3.new(0, 2, 0),
+			inner[j] - Vector3.new(0, 2, 0),
+			random:NextNumber(3, 6),
+			1.5,
+			Enum.Material.Neon,
+			C.rift,
+			"Levre"
+		)
+		lip.CanCollide = false
+		lip.CanQuery = false
+		lip.CastShadow = false
+		-- Les coins du remplissage ne doivent ni bloquer ni ombrer.
+		for _, child in m:GetChildren() do
+			if child:IsA("BasePart") and child.Name == "Pignon" then
+				child.CanCollide = false
+				child.CanQuery = false
+				child.CastShadow = false
+				child.Name = "Dechirure"
+			end
+		end
+	end
+	-- Les fissures qui courent dans le ciel autour de la dechirure, en zigzag.
+	for i = 1, 16 do
+		local angle = (i / 16) * math.pi * 2 + random:NextNumber(-0.15, 0.15)
+		local dir = Vector3.new(math.cos(angle), 0, math.sin(angle))
+		local at = Vector3.new(dir.X * (halfLong + 80), riftY - 1, dir.Z * (halfShort + 80))
+		for _ = 1, random:NextInteger(4, 8) do
+			local turn = random:NextNumber(-0.7, 0.7)
+			local step = Vector3.new(
+				dir.X * math.cos(turn) - dir.Z * math.sin(turn),
+				0,
+				dir.X * math.sin(turn) + dir.Z * math.cos(turn)
+			) * random:NextNumber(40, 90)
+			local crack = slab(
+				m,
+				at,
+				at + step,
+				random:NextNumber(1.5, 4),
+				1.5,
+				Enum.Material.Neon,
+				C.rift,
+				"Fissure"
+			)
+			crack.CanCollide = false
+			crack.CanQuery = false
+			crack.CastShadow = false
+			crack.Transparency = random:NextNumber(0.1, 0.45)
+			at += step
+		end
+	end
+	-- Le fond de la dechirure : un noir profond derriere l'Oeil.
 	P(
 		m,
-		"Globe",
-		Vector3.new(140, 140, 140),
-		CFrame.new(eyeAt),
+		"Neant",
+		Vector3.new(halfLong * 2.4, 4, halfShort * 2.4),
+		CFrame.new(0, eyeAt.Y + 120, 0),
 		Enum.Material.SmoothPlastic,
-		C.eyeWhite,
+		Color3.fromRGB(4, 2, 4),
+		noRay
+	)
+
+	-- L'OEIL. Un modele dont l'avant (-Z) regarde le sol ; la vue du ciel le
+	-- tourne vers ce qu'il cherche.
+	local eye = model(m, SKY.eye)
+	local look = CFrame.lookAt(eyeAt, eyeAt - Vector3.new(0, 1, 0), Vector3.new(0, 0, 1))
+	local radius = 120
+	local globe = P(
+		eye,
+		"Globe",
+		Vector3.new(radius * 2, radius * 2, radius * 2),
+		look,
+		Enum.Material.SmoothPlastic,
+		Color3.fromRGB(184, 168, 136),
 		{
 			shape = Enum.PartType.Ball,
 			collide = false,
@@ -1314,21 +1475,44 @@ local function buildSky(root: Instance, center: Vector3)
 			shadow = false,
 		}
 	)
-	-- Iris et pupille : des disques (cylindres a plat) sous le globe.
-	local down = CFrame.new(eyeAt - Vector3.new(0, 66, 0)) * CFrame.Angles(0, 0, math.rad(90))
-	P(m, "Iris", Vector3.new(4, 70, 70), down, Enum.Material.Neon, C.eyeIris, {
-		shape = Enum.PartType.Cylinder,
-		collide = false,
-		query = false,
-		shadow = false,
-	})
+	eye.PrimaryPart = globe
+	-- Des veines rouges sur le devant du globe.
+	for i = 1, 22 do
+		local a = (i / 22) * math.pi * 2 + random:NextNumber(-0.1, 0.1)
+		local r0 = random:NextNumber(52, 62)
+		local r1 = random:NextNumber(85, 112)
+		local function onGlobe(r: number): Vector3
+			local local_ = Vector3.new(math.cos(a) * r, math.sin(a) * r, 0)
+			local z = -math.sqrt(math.max(radius * radius - r * r, 0)) - 0.4
+			return (look * CFrame.new(local_.X, local_.Y, z)).Position
+		end
+		local vein = slab(
+			eye,
+			onGlobe(r0),
+			onGlobe(r1),
+			random:NextNumber(0.8, 2.2),
+			0.6,
+			Enum.Material.Neon,
+			Color3.fromRGB(150, 30, 26),
+			"Veine"
+		)
+		vein.CanCollide = false
+		vein.CanQuery = false
+		vein.CastShadow = false
+	end
+	-- Iris, anneau sombre, pupille fendue. Un cylindre a son axe sur X : on le
+	-- tourne pour que son axe soit l'avant de l'Oeil.
+	local face = look * CFrame.Angles(0, math.rad(90), 0)
+	local front = radius - 6
+	-- Un liseré brulant autour d'un iris sombre : le neon partout faisait un
+	-- jouet rouge (vu en image le 5 novembre 2026).
 	P(
-		m,
-		"Pupille",
-		Vector3.new(4.4, 30, 30),
-		down * CFrame.new(-0.4, 0, 0),
-		Enum.Material.SmoothPlastic,
-		C.black,
+		eye,
+		"Lisere",
+		Vector3.new(13, 122, 122),
+		face * CFrame.new(front - 0.5, 0, 0),
+		Enum.Material.Neon,
+		Color3.fromRGB(170, 56, 26),
 		{
 			shape = Enum.PartType.Cylinder,
 			collide = false,
@@ -1336,6 +1520,94 @@ local function buildSky(root: Instance, center: Vector3)
 			shadow = false,
 		}
 	)
+	P(
+		eye,
+		"Iris",
+		Vector3.new(14, 116, 116),
+		face * CFrame.new(front, 0, 0),
+		Enum.Material.SmoothPlastic,
+		Color3.fromRGB(66, 20, 12),
+		{
+			shape = Enum.PartType.Cylinder,
+			collide = false,
+			query = false,
+			shadow = false,
+		}
+	)
+	P(
+		eye,
+		"AnneauIris",
+		Vector3.new(14, 84, 84),
+		face * CFrame.new(front + 1.5, 0, 0),
+		Enum.Material.SmoothPlastic,
+		Color3.fromRGB(32, 8, 6),
+		{
+			shape = Enum.PartType.Cylinder,
+			collide = false,
+			query = false,
+			shadow = false,
+		}
+	)
+	P(
+		eye,
+		"Pupille",
+		Vector3.new(4, 92, 26),
+		look * CFrame.new(0, 0, -(front + 8.5)),
+		Enum.Material.SmoothPlastic,
+		Color3.fromRGB(4, 2, 2),
+		noRay
+	)
+
+	-- LES DEBRIS : la ville qui monte vers la Fissure. Des morceaux de murs,
+	-- de toits, une voiture, un canape, des planches. La vue du ciel les fait
+	-- monter ; ils sont ancres et hors de portee des rayons.
+	local debris = folder(m, SKY.debris)
+	local kinds = {
+		{ Vector3.new(14, 10, 0.8), Enum.Material.WoodPlanks, C.sidingCream },
+		{ Vector3.new(12, 0.6, 9), Enum.Material.Slate, C.roofSlate },
+		{ Vector3.new(6, 2.4, 2.6), Enum.Material.Fabric, C.fabric },
+		{ Vector3.new(0.4, 0.4, 9), Enum.Material.WoodPlanks, C.woodGray },
+		{ Vector3.new(8, 8, 0.8), Enum.Material.Brick, C.brickRed },
+		{ Vector3.new(3, 3, 3), Enum.Material.WoodPlanks, C.wood },
+	}
+	for i = 1, 34 do
+		local k = kinds[(i % #kinds) + 1]
+		local angle = random:NextNumber(0, math.pi * 2)
+		local dist = random:NextNumber(40, 230)
+		local at =
+			Vector3.new(math.cos(angle) * dist, random:NextNumber(120, 560), math.sin(angle) * dist)
+		P(
+			debris,
+			"Debris",
+			k[1],
+			CFrame.new(at)
+				* CFrame.Angles(
+					random:NextNumber(0, 6),
+					random:NextNumber(0, 6),
+					random:NextNumber(0, 6)
+				),
+			k[2],
+			k[3],
+			noRay
+		)
+	end
+	for i = 1, 2 do
+		local angle = random:NextNumber(0, math.pi * 2)
+		local carModel = car(
+			debris,
+			CFrame.new(math.cos(angle) * 120, 260 + i * 120, math.sin(angle) * 120)
+				* CFrame.Angles(random:NextNumber(0, 6), random:NextNumber(0, 6), 0),
+			CAR_COLORS[i],
+			true
+		)
+		for _, part in carModel:GetDescendants() do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+				part.CanQuery = false
+				part.CastShadow = false
+			end
+		end
+	end
 end
 
 --------------------------------------------------------------------------------
@@ -1398,9 +1670,10 @@ local function buildLighting()
 	rays.Parent = Lighting
 
 	local clouds = workspace.Terrain:FindFirstChildOfClass("Clouds") or Instance.new("Clouds")
-	clouds.Cover = 0.78
-	clouds.Density = 0.55
-	clouds.Color = Color3.fromRGB(168, 164, 160)
+	-- Un ciel couvert, sans trouee bleue : le bleu disait « beau temps ».
+	clouds.Cover = 0.92
+	clouds.Density = 0.7
+	clouds.Color = Color3.fromRGB(140, 136, 134)
 	clouds.Parent = workspace.Terrain
 end
 
@@ -1410,6 +1683,10 @@ end
 
 local function build(): string
 	partCount = 0
+	generatedTrees = 0
+	local library = ServerStorage:FindFirstChild("SurvivorModeles")
+	local template = library and library:FindFirstChild("Arbre")
+	treeTemplate = if template and template:IsA("Model") then template else nil
 	-- Detruire ce qui repond au contrat, et la plaque de depart de Studio.
 	for _, name in { CONTRACT.folder, "Baseplate", "SpawnLocation" } do
 		local old = workspace:FindFirstChild(name)
@@ -1600,6 +1877,31 @@ local function build(): string
 		local cf = if plot.side == 1
 			then CFrame.new(plot.x, 0, front)
 			else CFrame.new(plot.x, 0, front) * CFrame.Angles(0, math.pi, 0)
+		-- La boite aux lettres au bord du trottoir, parfois renversee.
+		local fallen = random:NextNumber() < 0.3
+		local mailCf = cf
+			* CFrame.new(-7, 0, -19.4)
+			* (
+				if fallen
+					then CFrame.new(0, 0.4, 0) * CFrame.Angles(math.rad(80), 0, 0)
+					else CFrame.identity
+			)
+		P(
+			props,
+			"PoteauBoite",
+			Vector3.new(0.4, 3.6, 0.4),
+			mailCf * CFrame.new(0, 1.8, 0),
+			Enum.Material.Wood,
+			C.woodGray
+		)
+		P(
+			props,
+			"BoiteAuxLettres",
+			Vector3.new(1.2, 1.2, 2),
+			mailCf * CFrame.new(0, 4, 0),
+			Enum.Material.Metal,
+			if fallen then C.rust else C.metal
+		)
 		-- Allee du trottoir a la porte, sur un terrain sans herbe.
 		terrain:FillBlock(
 			cf * CFrame.new(-2.5, -4, -10.3),
@@ -1726,6 +2028,93 @@ local function build(): string
 		tree(nature, at, i % 4 == 0)
 	end
 	task.wait()
+
+	-- Les poteaux electriques et leurs fils : c'est ce qui dit « banlieue »
+	-- au premier coup d'oeil. Les fils sont des Beam (courbes, sans rayon).
+	local previous: { Attachment }? = nil
+	for x = -165, 165, 46 do
+		local leaning = math.abs(x - 19) < 1
+		local base = CFrame.new(x, 0.7, 21.5)
+			* (if leaning then CFrame.Angles(math.rad(-14), 0, math.rad(6)) else CFrame.identity)
+		local pole = P(
+			props,
+			"Poteau",
+			Vector3.new(24, 1.1, 1.1),
+			base * CFrame.new(0, 12, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			Enum.Material.Wood,
+			C.bark,
+			{ shape = Enum.PartType.Cylinder }
+		)
+		P(
+			props,
+			"Traverse",
+			Vector3.new(7, 0.5, 0.5),
+			base * CFrame.new(0, 21.5, 0),
+			Enum.Material.Wood,
+			C.bark
+		)
+		local current: { Attachment } = {}
+		for i, offset in { -3, 0, 3 } do
+			local a = Instance.new("Attachment")
+			a.Name = "Fil" .. i
+			-- Parenter AVANT de poser la position monde : sans parent,
+			-- WorldPosition se lit comme une position locale, et le fil
+			-- partait vers le ciel (vu en image).
+			a.Parent = pole
+			a.WorldPosition = (base * CFrame.new(offset, 21.9, 0)).Position
+			table.insert(current, a)
+		end
+		if previous then
+			for i = 1, 3 do
+				local wire = Instance.new("Beam")
+				wire.Attachment0 = previous[i]
+				wire.Attachment1 = current[i]
+				wire.Width0 = 0.12
+				wire.Width1 = 0.12
+				wire.Color = ColorSequence.new(Color3.fromRGB(20, 20, 22))
+				wire.LightInfluence = 1
+				wire.Segments = 12
+				wire.FaceCamera = true
+				-- La flèche du fil : un peu plus pour le poteau penche.
+				wire.CurveSize0 = -4
+				wire.CurveSize1 = 4
+				wire.Parent = pole
+			end
+		end
+		previous = current
+	end
+
+	-- Sacs poubelle eventres sur les trottoirs.
+	for _ = 1, 12 do
+		local at = Vector3.new(
+			random:NextNumber(-160, 160),
+			0.7,
+			(if random:NextNumber() < 0.5 then 1 else -1) * random:NextNumber(13, 19)
+		)
+		if math.abs(at.X) < 20 then
+			continue
+		end
+		for _ = 1, random:NextInteger(2, 4) do
+			local size = random:NextNumber(1.6, 2.4)
+			P(
+				props,
+				"Sac",
+				Vector3.new(size, size, size),
+				CFrame.new(
+					at
+						+ Vector3.new(
+							random:NextNumber(-1.4, 1.4),
+							size * 0.35,
+							random:NextNumber(-1, 1)
+						)
+				),
+				Enum.Material.Plastic,
+				Color3.fromRGB(26, 26, 28),
+				-- Sans collision : un sac ne doit jamais bloquer une cachette.
+				{ shape = Enum.PartType.Ball, collide = false }
+			)
+		end
+	end
 
 	-- Lampadaires (eteints), voitures abandonnees qu'on peut fouiller.
 	for x = -180, 180, 52 do
@@ -1996,6 +2385,14 @@ local function build(): string
 	)
 	table.insert(report, string.format("%d contenants à fouiller", #containers:GetChildren()))
 	table.insert(report, string.format("%d parts posées", partCount))
+	table.insert(
+		report,
+		string.format(
+			"%d arbres générés (modèle %s)",
+			generatedTrees,
+			if treeTemplate then "trouvé" else "ABSENT, arbres en parts"
+		)
+	)
 	table.insert(report, string.format("%d problème(s)", problems + blocked))
 	return table.concat(report, "\n")
 end

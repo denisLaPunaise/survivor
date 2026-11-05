@@ -72,6 +72,31 @@ Config.world = {
 	-- Attribut d'une part qui ne couvre qu'a moitie (buisson, grillage) :
 	-- la part du regard qu'elle laisse passer, entre 0 et 1.
 	coverAttribute = "Couvert",
+	-- Workspace.<folder>.<sky> : la Fissure, l'Oeil (<eye>, un Model dont
+	-- l'avant -Z regarde le sol) et les debris qu'il aspire (<debris>).
+	sky = "Ciel",
+	eye = "Oeil",
+	debris = "Debris",
+}
+
+--------------------------------------------------------------------------------
+-- LE CIEL — ce qu'on voit de l'Oeil (purement visuel, cote client)
+--------------------------------------------------------------------------------
+
+Config.sky = {
+	-- L'Oeil tourne vers ce qu'il regarde : on voit ou il cherche. Une
+	-- fraction par seconde du chemin restant ; 2,5 le fait suivre le faisceau
+	-- sans a-coups, avec un leger retard qui le rend vivant.
+	eyeTurnRate = 2.5,
+	-- Entre deux Balayages il derive lentement, comme s'il cherchait.
+	idleWanderSeconds = 9,
+	idleWanderRadius = 140,
+	-- Les debris montent vers la Fissure puis disparaissent et recommencent
+	-- en bas : la ville est aspiree en continu, lentement.
+	debrisRiseSpeed = 4,
+	debrisSpinSpeed = 0.15,
+	debrisLowest = 120,
+	debrisHighest = 560,
 }
 
 --------------------------------------------------------------------------------

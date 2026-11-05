@@ -14,6 +14,7 @@ local Config = require(Survivor:WaitForChild("Config"))
 
 local Controls = require(script.Parent:WaitForChild("Controls"))
 local Hud = require(script.Parent:WaitForChild("Hud"))
+local SkyView = require(script.Parent:WaitForChild("SkyView"))
 
 print(
 	string.format(
@@ -25,3 +26,4 @@ print(
 
 Hud.start()
 Controls.start()
+SkyView.start()
