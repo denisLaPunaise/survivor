@@ -16,6 +16,9 @@
 		},
 
 		"StarterPlayer": {
+			"$properties": {
+				"CameraMode": "LockFirstPerson"
+			},
 			"StarterPlayerScripts": {
 				"Survivor": {
 					"$path": "src/client"

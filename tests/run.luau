@@ -16,6 +16,9 @@ local harness = require("./harness")
 local suites = {
 	{ name = "Configuration", run = require("./specs/config") },
 	{ name = "Commandes manette et clavier", run = require("./specs/controls") },
+	{ name = "Le regard de l'Oeil", run = require("./specs/eye") },
+	{ name = "Cachettes et defaite", run = require("./specs/hiding") },
+	{ name = "Fouille et sac", run = require("./specs/loot") },
 	{ name = "Regles branchees", run = require("./specs/wiring") },
 }
 

@@ -17,11 +17,6 @@
 	chere d'Arena etait une table de Config testee mais lue par personne : le
 	jeu annoncait une regle qui ne s'appliquait pas. La duree des jours, l'Oeil
 	et les ameliorations arriveront avec leur service, pas avant.
-
-	UNE EXCEPTION, ASSUMEE ET A FERMER : `controls`. C'est le contrat de boutons
-	fixe avec Josh avant le code, pour que la manette guide la conception. Aucun
-	module ne le lit encore ; le module d'entrees de la premiere version doit le
-	lire, et ce paragraphe doit alors disparaitre.
 ]]
 
 local Config = {}
@@ -43,6 +38,205 @@ Config.network = {
 		burst = 8,
 		perSecond = 4,
 	},
+}
+
+--------------------------------------------------------------------------------
+-- LA VILLE — le contrat de nommage entre le code et la place
+--------------------------------------------------------------------------------
+
+-- Seule interface entre le code et ce qui est construit dans Studio. Le
+-- serveur verifie ces noms au demarrage et dit exactement ce qui manque.
+Config.world = {
+	-- Workspace.<folder> contient tout le quartier.
+	folder = "Ville",
+	-- Un Model : la cave de depart. Contient `spawn` et `chest`.
+	planque = "Planque",
+	spawn = "Depart",
+	chest = "Coffre",
+	-- Une part invisible qui couvre la zone que l'Oeil balaie.
+	bounds = "Limites",
+	-- Les cachettes solides, fixes (caves, dessous de pont).
+	solidSpots = "CachettesSolides",
+	-- Les emplacements possibles des cachettes fragiles : des parts portant
+	-- l'attribut `Prefab` (le nom du modele a poser). Noms uniques.
+	anchors = "Emplacements",
+	-- Les contenants a fouiller : parts ou modeles portant l'attribut `Table`.
+	containers = "Fouilles",
+	-- ServerStorage.<prefabs> : les modeles de cachettes fragiles. Hors Rojo :
+	-- construits par la recette de tools/.
+	prefabs = "SurvivorCachettes",
+	-- Dans chaque cachette (fragile ou solide) : ou l'on se tient cache, et ou
+	-- l'on ressort.
+	spotInside = "Interieur",
+	spotExit = "Sortie",
+	-- Attribut d'une part qui ne couvre qu'a moitie (buisson, grillage) :
+	-- la part du regard qu'elle laisse passer, entre 0 et 1.
+	coverAttribute = "Couvert",
+}
+
+--------------------------------------------------------------------------------
+-- LA JOURNEE
+--------------------------------------------------------------------------------
+
+-- A REGLER. Le concept vise un jour de ~12 min ; la premiere version est plus
+-- courte, pour tester la tension des Balayages sans attendre. La nuit n'existe
+-- pas encore : elle passe en `nightSkipSeconds`, tout le monde a la Planque.
+Config.day = {
+	sweepsPerDay = 4,
+	-- Le temps de sortir de la cave et de commencer a fouiller.
+	firstSweepSeconds = 45,
+	-- Entre la fin d'un Balayage et le signal du suivant : assez pour fouiller
+	-- une maison et changer de rue, pas assez pour tout faire.
+	gapSeconds = { min = 70, max = 110 },
+	-- Apres le dernier Balayage : le temps de rentrer avant la nuit.
+	duskSeconds = 30,
+	nightSkipSeconds = 8,
+	-- La part des emplacements qui portent une cachette fragile chaque matin.
+	-- Moins de la moitie vide les rues ; plus des trois quarts rend tout facile.
+	fragileShare = 0.6,
+	-- Le temps de lire « plus personne debout » avant que tout recommence.
+	wipeMessageSeconds = 6,
+}
+
+--------------------------------------------------------------------------------
+-- L'OEIL
+--------------------------------------------------------------------------------
+
+Config.eye = {
+	-- Au-dessus du centre des Limites. Haut, pour que les toits couvrent : vu
+	-- de presque a la verticale, un toit cache ce qui est dessous.
+	height = 600,
+	-- Les signes avant le Balayage (decide : ~10 s).
+	warningSeconds = 10,
+	-- Rayon du regard au sol, en studs. Un trottoir plus une voie.
+	beamRadius = 16,
+	-- Vitesse du regard au sol. 45 studs/s : on le voit venir, on court plus
+	-- vite que lui en ligne droite (22 en sprint) seulement s'il ne vous suit
+	-- pas — il ne vous suit pas.
+	beamSpeed = 45,
+	-- Ecart entre deux passages du rateau et deux tours de spirale. Plus de
+	-- deux fois le rayon : il reste des bandes jamais touchees.
+	laneSpacing = 55,
+	patterns = { "line", "spiral" },
+	-- Le temps que l'Oeil s'attarde sur une cachette marquee : il l'arrache au
+	-- debut, celui qui est dedans a ce temps-la pour fuir le cercle.
+	inspectSeconds = 1.6,
+	-- La cachette arrachee monte vers le ciel et disparait.
+	ripLiftSeconds = 2,
+	ripLiftHeight = 120,
+	exposure = {
+		-- Plein regard pendant 2 s = aspire. Traverser le cercle par le centre
+		-- (32 studs) en sprint prend ~1,45 s : on en sort a ~70 %, de justesse.
+		-- A 1,4 s on y restait : le test l'a montre.
+		fillSeconds = 2,
+		-- Hors du regard, la jauge se vide en 3 s.
+		drainSeconds = 3,
+	},
+	-- Le joueur aspire monte, puis disparait jusqu'au matin.
+	takenLiftSeconds = 3,
+	takenLiftHeight = 350,
+	-- Une marque s'efface au bout de ce nombre de jours (decide : un ou deux).
+	markDays = 2,
+	-- Frequence des controles de ligne de vue : 10 par seconde suffisent a une
+	-- jauge qui met 1,4 s a se remplir.
+	checkSeconds = 0.1,
+	-- Une part plus transparente que ca ne cache rien (vitres) : un rayon
+	-- trouve de la geometrie, pas ce qu'on voit.
+	seeThroughTransparency = 0.5,
+	-- Nombre de parts transparentes ou couvrantes qu'un rayon traverse avant
+	-- d'abandonner (et de considerer le joueur cache).
+	maxRayHops = 8,
+}
+
+--------------------------------------------------------------------------------
+-- LES DEPLACEMENTS
+--------------------------------------------------------------------------------
+
+-- A REGLER en jouant. Vitesses en studs/s ; la marche de Roblox est a 16.
+Config.movement = {
+	walkSpeed = 14,
+	sprintSpeed = 22,
+	crouchSpeed = 7,
+	-- La camera descend quand on s'accroupit : c'est ce qui se sent.
+	crouchCameraOffset = -1.6,
+	-- La glissade : un elan dans la direction de la course, accroupi.
+	slideSpeed = 34,
+	slideSeconds = 0.6,
+	slideCooldownSeconds = 1.2,
+}
+
+--------------------------------------------------------------------------------
+-- LA FOUILLE ET LE SAC
+--------------------------------------------------------------------------------
+
+Config.items = {
+	conserve = { name = "Conserve", weight = 1 },
+	eau = { name = "Bouteille d'eau", weight = 1 },
+	piles = { name = "Piles", weight = 0.5 },
+	ferraille = { name = "Ferraille", weight = 2 },
+	planche = { name = "Planche", weight = 2 },
+	plomb = { name = "Plaque de plomb", weight = 3 },
+	corde = { name = "Corde", weight = 1 },
+	cle = { name = "Clé à molette", weight = 1.5 },
+	tissu = { name = "Tissu", weight = 0.5 },
+	bandage = { name = "Bandage", weight = 0.5 },
+	medicaments = { name = "Médicaments", weight = 0.5 },
+}
+
+Config.loot = {
+	-- Maintenir X : assez long pour qu'on hesite a fouiller quand le ciel
+	-- rougit, assez court pour ne pas lasser.
+	searchSeconds = 1.6,
+	promptDistance = 7,
+	hidePromptDistance = 6,
+	-- Chaque matin, un contenant deja fouille a cette chance de se remplir :
+	-- le butin revient un peu, le meilleur est toujours plus loin.
+	restockChance = 0.35,
+	tables = {
+		cuisine = {
+			rolls = { min = 1, max = 3 },
+			entries = {
+				{ item = "conserve", weight = 5 },
+				{ item = "eau", weight = 4 },
+				{ item = "piles", weight = 1 },
+			},
+		},
+		garage = {
+			rolls = { min = 1, max = 3 },
+			entries = {
+				{ item = "ferraille", weight = 4 },
+				{ item = "planche", weight = 3 },
+				{ item = "corde", weight = 2 },
+				{ item = "cle", weight = 1 },
+				{ item = "plomb", weight = 1 },
+			},
+		},
+		salleDeBain = {
+			rolls = { min = 1, max = 2 },
+			entries = {
+				{ item = "bandage", weight = 4 },
+				{ item = "tissu", weight = 3 },
+				{ item = "medicaments", weight = 2 },
+			},
+		},
+		voiture = {
+			rolls = { min = 1, max = 2 },
+			entries = {
+				{ item = "piles", weight = 3 },
+				{ item = "ferraille", weight = 2 },
+				{ item = "eau", weight = 2 },
+				{ item = "tissu", weight = 1 },
+			},
+		},
+	},
+}
+
+Config.bag = {
+	slots = 8,
+	-- Jusqu'a 6 de poids on court normalement ; a 14 on avance a 60 %.
+	freeWeight = 6,
+	maxWeight = 14,
+	slowestFactor = 0.6,
 }
 
 --------------------------------------------------------------------------------

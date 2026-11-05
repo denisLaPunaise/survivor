@@ -12,6 +12,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Survivor = ReplicatedStorage:WaitForChild("Survivor")
 local Config = require(Survivor:WaitForChild("Config"))
 
+local Controls = require(script.Parent:WaitForChild("Controls"))
+local Hud = require(script.Parent:WaitForChild("Hud"))
+
 print(
 	string.format(
 		"[Survivor] Client démarré pour %s — réglages version %d",
@@ -19,3 +22,6 @@ print(
 		Config.version
 	)
 )
+
+Hud.start()
+Controls.start()

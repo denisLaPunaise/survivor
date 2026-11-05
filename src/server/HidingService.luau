@@ -1,0 +1,295 @@
+--!strict
+--[[
+	HidingService — les cachettes : y entrer, en sortir, les marquer, les
+	arracher, et les replacer chaque matin.
+
+	Caché, le joueur est ANCRE a l'interieur de la cachette : il ne voit pas
+	dehors (le client noircit l'ecran) et l'Oeil ne peut pas le voir tant que
+	la cachette tient. C'est la regle n°1 : bien caché, on est en sécurité.
+
+	Etat expose au client par attributs du joueur : `Hidden` (booleen).
+]]
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+
+local Survivor = ReplicatedStorage:WaitForChild("Survivor")
+local Config = require(Survivor:WaitForChild("Config"))
+local Hiding = require(Survivor:WaitForChild("Hiding"))
+local Remotes = Survivor:WaitForChild("Remotes")
+
+local RemoteGuard = require(script.Parent:WaitForChild("RemoteGuard"))
+local WorldService = require(script.Parent:WaitForChild("WorldService"))
+
+local HidingService = {}
+
+export type Target = {
+	id: string,
+	x: number,
+	z: number,
+}
+
+type Spot = {
+	id: string,
+	model: Instance,
+	fragile: boolean,
+	inside: BasePart,
+	exit: BasePart,
+	prompt: ProximityPrompt,
+	occupant: Player?,
+}
+
+local random = Random.new()
+
+local spots: { [string]: Spot } = {}
+local hiddenIn: { [Player]: Spot } = {}
+local marks: { [string]: Hiding.Mark } = {}
+-- Emplacements arraches aujourd'hui : demain, ils restent vides.
+local rippedToday: { [string]: boolean } = {}
+local fragileFolder: Folder? = nil
+
+local day = 1
+local sweepNumber = 0
+
+local function nextInt(lo: number, hi: number): number
+	return random:NextInteger(lo, hi)
+end
+
+local function rootOf(player: Player): BasePart?
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if root and root:IsA("BasePart") then
+		return root
+	end
+	return nil
+end
+
+local function release(player: Player, toExit: boolean)
+	local spot = hiddenIn[player]
+	if spot == nil then
+		return
+	end
+	hiddenIn[player] = nil
+	spot.occupant = nil
+	if spot.prompt.Parent then
+		spot.prompt.Enabled = true
+	end
+	local root = rootOf(player)
+	if root then
+		root.Anchored = false
+		if toExit then
+			root.CFrame = spot.exit.CFrame
+		end
+	end
+	player:SetAttribute("Hidden", false)
+end
+
+local function enter(player: Player, spot: Spot)
+	if hiddenIn[player] or spot.occupant then
+		return
+	end
+	if player:GetAttribute("Taken") then
+		return
+	end
+	local root = rootOf(player)
+	if root == nil then
+		return
+	end
+	spot.occupant = player
+	spot.prompt.Enabled = false
+	hiddenIn[player] = spot
+	root.CFrame = spot.inside.CFrame
+	root.Anchored = true
+	player:SetAttribute("Hidden", true)
+	if spot.fragile then
+		Hiding.mark(marks, spot.id, day, sweepNumber)
+		-- La marque se voit, de tous : une lueur pale (decide).
+		local glow = Instance.new("Highlight")
+		glow.Name = "Marque"
+		glow.FillTransparency = 1
+		glow.OutlineColor = Color3.fromRGB(235, 225, 200)
+		glow.OutlineTransparency = 0.35
+		glow.Parent = spot.model
+	end
+end
+
+local function register(id: string, model: Instance, fragile: boolean)
+	local w = Config.world
+	local inside = model:FindFirstChild(w.spotInside, true) :: BasePart
+	local exit = model:FindFirstChild(w.spotExit, true) :: BasePart
+	local onFoot = Config.controls.contexts.onFoot
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.ActionText = "Se cacher"
+	prompt.ObjectText = if fragile then "Cachette fragile" else "Cachette solide"
+	prompt.HoldDuration = 0
+	prompt.MaxActivationDistance = Config.loot.hidePromptDistance
+	prompt.RequiresLineOfSight = false
+	prompt.GamepadKeyCode = (Enum.KeyCode :: any)[onFoot.interact.gamepad]
+	prompt.KeyboardKeyCode = (Enum.KeyCode :: any)[onFoot.interact.keyboard]
+	prompt.Parent = exit
+	local spot: Spot = {
+		id = id,
+		model = model,
+		fragile = fragile,
+		inside = inside,
+		exit = exit,
+		prompt = prompt,
+		occupant = nil,
+	}
+	prompt.Triggered:Connect(function(player: Player)
+		enter(player, spot)
+	end)
+	spots[id] = spot
+end
+
+-- Entrer dans une cachette par son identifiant. C'est ce que fait l'invite ;
+-- c'est aussi ce que les sondes de test appellent, parce que les touches
+-- simulees par le pont MCP n'atteignent pas les invites de Roblox.
+function HidingService.tryEnter(player: Player, spotId: string): boolean
+	local spot = spots[spotId]
+	if spot == nil then
+		return false
+	end
+	enter(player, spot)
+	return hiddenIn[player] == spot
+end
+
+function HidingService.isHidden(player: Player): boolean
+	return hiddenIn[player] ~= nil
+end
+
+-- Sortir tout le monde, sans les deplacer : pour un joueur aspire, une
+-- defaite, ou la nuit.
+function HidingService.releaseAll()
+	for player in hiddenIn do
+		release(player, true)
+	end
+end
+
+function HidingService.release(player: Player)
+	release(player, false)
+end
+
+-- Appele au signal de chaque Balayage, avant de calculer son trajet.
+function HidingService.beginSweep(): { Target }
+	sweepNumber += 1
+	local out: { Target } = {}
+	for _, spotId in Hiding.marked(marks, day, sweepNumber, Config.eye.markDays) do
+		local spot = spots[spotId]
+		if spot then
+			local p = spot.inside.Position
+			table.insert(out, { id = spotId, x = p.X, z = p.Z })
+		end
+	end
+	return out
+end
+
+-- L'Oeil arrache une cachette marquee : elle monte vers le ciel et disparait.
+-- Celui qui etait dedans se retrouve a decouvert, la ou il etait.
+function HidingService.rip(spotId: string)
+	local spot = spots[spotId]
+	if spot == nil or not spot.fragile then
+		return
+	end
+	spots[spotId] = nil
+	marks[spotId] = nil
+	rippedToday[spotId] = true
+	local occupant = spot.occupant
+	if occupant then
+		release(occupant, false)
+	end
+	spot.prompt:Destroy()
+	local lift = Config.eye.ripLiftHeight
+	local info =
+		TweenInfo.new(Config.eye.ripLiftSeconds, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	for _, part in spot.model:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.Anchored = true
+			part.CanCollide = false
+			TweenService:Create(part, info, {
+				CFrame = part.CFrame + Vector3.new(0, lift, 0),
+				Transparency = 1,
+			}):Play()
+		end
+	end
+	task.delay(Config.eye.ripLiftSeconds, function()
+		spot.model:Destroy()
+	end)
+end
+
+-- Chaque matin : les cachettes fragiles changent de place (decide avec Josh).
+function HidingService.newDay(dayNumber: number)
+	day = dayNumber
+	local world = WorldService.get()
+	HidingService.releaseAll()
+
+	for id, spot in spots do
+		if spot.fragile then
+			spots[id] = nil
+		end
+	end
+	if fragileFolder then
+		fragileFolder:Destroy()
+	end
+	local folder = Instance.new("Folder")
+	folder.Name = "CachettesFragiles"
+	fragileFolder = folder
+
+	local anchorsById: { [string]: BasePart } = {}
+	local ids: { string } = {}
+	for _, anchor in world.anchors:GetChildren() do
+		if anchor:IsA("BasePart") then
+			anchor.Transparency = 1
+			anchor.CanCollide = false
+			anchor.CanQuery = false
+			anchorsById[anchor.Name] = anchor
+			table.insert(ids, anchor.Name)
+		end
+	end
+	local count = math.floor(#ids * Config.day.fragileShare + 0.5)
+	local avoid = rippedToday
+	rippedToday = {}
+
+	for _, id in Hiding.pickAnchors(ids, count, nextInt, avoid) do
+		local anchor = anchorsById[id]
+		local prefab =
+			world.prefabs:FindFirstChild(anchor:GetAttribute("Prefab") :: string) :: Model
+		local model = prefab:Clone()
+		model.Name = id
+		model:PivotTo(anchor.CFrame)
+		model.Parent = folder
+		register(id, model, true)
+	end
+	folder.Parent = world.root
+end
+
+-- Une defaite : la memoire du Veilleur repart de zero aussi.
+function HidingService.reset()
+	table.clear(marks)
+	table.clear(rippedToday)
+	sweepNumber = 0
+end
+
+function HidingService.start()
+	local world = WorldService.get()
+	for _, spot in world.solidSpots:GetChildren() do
+		register(spot.Name, spot, false)
+	end
+
+	local leave = Remotes:WaitForChild("LeaveHiding") :: RemoteEvent
+	leave.OnServerEvent:Connect(RemoteGuard.wrap("LeaveHiding", function(player: Player)
+		release(player, true)
+	end))
+
+	Players.PlayerRemoving:Connect(function(player: Player)
+		local spot = hiddenIn[player]
+		if spot then
+			spot.occupant = nil
+			spot.prompt.Enabled = true
+			hiddenIn[player] = nil
+		end
+	end)
+end
+
+return HidingService

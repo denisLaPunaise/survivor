@@ -1,0 +1,17 @@
+{
+	"className": "Folder",
+	"children": [
+		{
+			"name": "Hud",
+			"className": "RemoteEvent"
+		},
+		{
+			"name": "EyeState",
+			"className": "RemoteEvent"
+		},
+		{
+			"name": "LeaveHiding",
+			"className": "RemoteEvent"
+		}
+	]
+}

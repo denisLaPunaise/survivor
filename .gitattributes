@@ -1,0 +1,4 @@
+# Fins de ligne Unix partout : StyLua les exige (line_endings = "Unix"), et
+# sans cette regle Git sous Windows les convertirait en CRLF a l'extraction,
+# ce qui ferait echouer `stylua --check` sur la machine de Josh.
+* text=auto eol=lf

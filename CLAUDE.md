@@ -107,7 +107,27 @@ GitHub Actions relance formatage, analyse, tests et build à chaque push.
 
 - **5 novembre 2026** : concept fixé avec Josh, projet monté (outils, CI,
   `Config`, points d'entrée, tests). Aucune mécanique branchée.
-- **Prochaine étape** : la première version jouable, belle dès le départ
-  (voir `docs/CONCEPT.md` §17) : un morceau de Banlieue, la fouille, l'Œil et
-  ses signes, cachettes fragiles et solides, la glissade, être aspiré, une
-  Planque simple, à la première personne.
+- **5 novembre 2026, première version jouable** : la journée, l'Œil (signes,
+  Balayages en râteau ou spirale, ligne de vue, jauge, aspiration), les
+  cachettes fragiles qui changent chaque matin et que l'Œil arrache, deux
+  cachettes solides, la fouille et le sac, la Planque (cave) et sa réserve, la
+  défaite qui fait tout recommencer, la première personne, la course et la
+  glissade. Le quartier est construit par `tools/BuildBanlieue.luau`.
+- **Prochaine étape** : la passe visuelle (le quartier est propre mais pas
+  encore « beau » : l'Œil a l'air d'un soleil dessiné, les arbres sont des
+  boules), puis la nuit et les Repris.
+
+## Construire la ville depuis le pont
+
+`HttpService` ne peut pas joindre `127.0.0.1` depuis le pont (« not in the
+Assistant HTTP allowlist », vu le 5 novembre 2026). Pour lancer une recette :
+la copier dans `src/server/RecetteJetable.luau`, laisser Rojo la synchroniser,
+en `require` un CLONE depuis `execute_luau`, l'appeler, puis **supprimer la
+copie** du dépôt. Elle ne doit jamais être commitée.
+
+`Lighting.Technology` ne se lit ni ne s'écrit depuis le pont.
+
+Les touches simulées (`user_keyboard_input`) n'atteignent pas les
+`ProximityPrompt`, et `InputHoldBegin` depuis le pont non plus : les sondes
+passent par `HidingService.tryEnter` et `LootService.trySearch`, qui suivent le
+même chemin que les invites.
