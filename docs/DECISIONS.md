@@ -333,3 +333,25 @@ l'assistant régler la difficulté.
   la plupart, quelques-unes brûlantes), un reflet humide, un iris en anneaux
   (un liseré, un anneau qui rougeoie, un cœur sombre) et 48 fibres.
 - L'ancien fondu de l'Œil la nuit est remplacé par les paupières.
+
+## 5 novembre 2026 — le laser sort de la pupille, une jointure en braise
+
+- **Le regard part du bout de la pupille**, tournée vers le point visé
+  (Josh : « que le laser sorte de la pupille »). Pour que le jeu ne mente pas,
+  la **ligne de vue part du même point** : l'EyeService mesure le globe et la
+  pupille sur le modèle du ciel au début de chaque Balayage. Comme c'est le
+  modèle qui donne la hauteur, `Config.eye.height` est supprimé. La mesure
+  de la recette vise de la même façon.
+- **Pendant un Balayage, l'Œil suit son faisceau de près** (vitesse de
+  rotation 12 au lieu de 2,5). Mesuré en jeu : 0,2° d'écart entre son regard
+  et le faisceau, qui part à 8 studs du centre de la pupille.
+- **La jointure des paupières fermées** n'est plus une droite jaune :
+  - la paupière du haut descend plus loin que celle du bas ne remonte, donc
+    elles se rejoignent sur une courbe ;
+  - le bord est une ligne continue qui s'efface aux coins de l'œil ;
+  - fermée, elle respire comme une braise (rouge sombre ↔ orange, toutes les
+    3,5 s).
+- **Les éclairs autour de la Fissure s'animent** : une lueur court le long de
+  chaque branche, du trou vers le dehors (toutes les 2,5 à 6 s), avec un léger
+  crépitement. Ils restent à 35 % de leur éclat quand l'Œil est fermé et
+  montent à 80 % quand il est ouvert.

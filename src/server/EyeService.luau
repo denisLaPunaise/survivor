@@ -52,6 +52,30 @@ local rayParams = RaycastParams.new()
 rayParams.FilterType = Enum.RaycastFilterType.Exclude
 rayParams.RespectCanCollide = false
 
+-- Le globe de l'Oeil dans le ciel et la distance de son centre au bout de
+-- la pupille : le regard (et la ligne de vue) partent de la pupille, tournee
+-- vers ce qu'il vise (Josh : « que le laser sorte de la pupille »). Mesure
+-- sur le modele, qui n'est tourne que chez les clients : cote serveur, il est
+-- tel que la recette l'a pose.
+local function eyeGeometry(): (Vector3, number)
+	local w = Config.world
+	local root = workspace:FindFirstChild(w.folder)
+	local sky = root and root:FindFirstChild(w.sky)
+	local model = sky and sky:FindFirstChild(w.eye)
+	local globe = model and (model :: Model).PrimaryPart
+	if globe == nil then
+		error("[Survivor] Pas de globe pour l'Oeil : la recette de la ville n'a pas tourne ?")
+	end
+	local center = globe.Position
+	local reach = globe.Size.X / 2
+	for _, part in (model :: Model):GetDescendants() do
+		if part:IsA("BasePart") and part.Name == "Pupille" then
+			reach = math.max(reach, (part.Position - center).Magnitude + part.Size.Z / 2)
+		end
+	end
+	return center, reach
+end
+
 local function boundsOf(part: BasePart): Sweep.Bounds
 	local half = part.Size / 2
 	local c = part.Position
@@ -291,8 +315,12 @@ function EyeService.runSweep(stillCurrent: () -> boolean, dayNumber: number)
 	end
 
 	groundY = world.bounds.Position.Y
-	eyePosition =
-		Vector3.new(world.bounds.Position.X, groundY + eye.height, world.bounds.Position.Z)
+	local globeCenter, pupilReach = eyeGeometry()
+	-- Le bout de la pupille, tournee vers le point vise.
+	local function aimFrom(x: number, z: number): Vector3
+		local target = Vector3.new(x, groundY, z)
+		return globeCenter + (target - globeCenter).Unit * pupilReach
+	end
 	local timeline = buildPath(bounds, HidingService.beginSweep(), cx, cz, dayNumber)
 
 	eyeState:FireAllClients({ phase = "sweep", seconds = timeline.total })
@@ -358,6 +386,7 @@ function EyeService.runSweep(stillCurrent: () -> boolean, dayNumber: number)
 			end
 		end
 		looking = { x = bx, z = bz }
+		eyePosition = aimFrom(bx, bz)
 		placeBeam()
 		if patternTime >= timeline.total or now - started >= hunt.maxSweepSeconds then
 			break

@@ -98,6 +98,32 @@ function SkyView.start()
 			end
 		end
 	end
+	-- Les eclairs : chaque branche a son rythme ; la lueur la parcourt.
+	type Crack = { part: BasePart, rank: number, branch: number }
+	local cracks: { Crack } = {}
+	local branchRhythm: { [number]: { period: number, phase: number, ranks: number } } = {}
+	local rhythmRandom = Random.new()
+	for _, part in sky:GetDescendants() do
+		local branch = part:GetAttribute("Branche")
+		local rank = part:GetAttribute("Rang")
+		if part:IsA("BasePart") and typeof(branch) == "number" and typeof(rank) == "number" then
+			table.insert(cracks, { part = part, rank = rank, branch = branch })
+			local rhythm = branchRhythm[branch]
+			if rhythm == nil then
+				rhythm = {
+					period = rhythmRandom:NextNumber(
+						s.crackPulseSeconds.min,
+						s.crackPulseSeconds.max
+					),
+					phase = rhythmRandom:NextNumber(),
+					ranks = 0,
+				}
+				branchRhythm[branch] = rhythm
+			end
+			rhythm.ranks = math.max(rhythm.ranks, rank)
+		end
+	end
+
 	-- La pupille : des tranches en amande, que l'on resserre ensemble.
 	type Slice = { part: BasePart, size: Vector3 }
 	local pupil: { Slice } = {}
@@ -125,20 +151,66 @@ function SkyView.start()
 		wantOpen = open
 	end)
 
-	local function placeLids(c: number)
+	-- Les bords brulants, cote par cote et d'ouest en est : chacun relie sa
+	-- bande a la suivante, pour que la jointure soit une courbe continue et
+	-- non un escalier.
+	local edges: { [number]: { Strip } } = { [-1] = {}, [1] = {} }
+	local reachX = 0
+	for _, strip in strips do
+		if strip.edge then
+			table.insert(edges[strip.side], strip)
+		end
+		reachX = math.max(reachX, math.abs(strip.x))
+	end
+	for _, list in edges do
+		table.sort(list, function(a, b)
+			return a.x < b.x
+		end)
+	end
+	local ember = Color3.fromRGB(table.unpack(s.seamEmber))
+	local hot = Color3.fromRGB(table.unpack(s.seamHot))
+
+	-- La part de la demi-largeur que couvre la paupiere `side` : la paupiere
+	-- du haut descend plus loin que celle du bas remonte, comme un vrai oeil.
+	-- Elles se rejoignent sur une courbe en sourire, pas sur une droite.
+	local function coverOf(strip: Strip, c: number): number
+		return strip.half * c * (1 + strip.side * s.lidSeamBias)
+	end
+
+	local function placeLids(c: number, glow: Color3)
 		for _, strip in strips do
-			local covered = strip.half * c
-			if strip.edge then
-				-- Le bord brulant suit l'avancee de la paupiere ; ouverte, il
-				-- disparait sous la levre de la Fissure.
-				strip.part.LocalTransparencyModifier = if c < 0.02 then 1 else 0
-				strip.part.CFrame =
-					CFrame.new(strip.x, strip.y, strip.side * (strip.half - covered))
-			else
+			if not strip.edge then
+				local covered = coverOf(strip, c)
 				local size = strip.part.Size
 				strip.part.Size = Vector3.new(size.X, size.Y, math.max(covered, 0.05))
 				strip.part.CFrame =
 					CFrame.new(strip.x, strip.y, strip.side * (strip.half - covered / 2))
+			end
+		end
+		for _, list in edges do
+			for i, strip in list do
+				local nextStrip = list[i + 1]
+				-- Ouverte, la jointure disparait sous la levre de la Fissure ;
+				-- la derniere bande n'a pas de voisine a rejoindre.
+				if c < 0.02 or nextStrip == nil then
+					strip.part.LocalTransparencyModifier = 1
+					continue
+				end
+				local a =
+					Vector3.new(strip.x, strip.y, strip.side * (strip.half - coverOf(strip, c)))
+				local b = Vector3.new(
+					nextStrip.x,
+					nextStrip.y,
+					nextStrip.side * (nextStrip.half - coverOf(nextStrip, c))
+				)
+				local length = (b - a).Magnitude
+				strip.part.Size = Vector3.new(s.seamWidth, strip.part.Size.Y, length + 0.6)
+				strip.part.CFrame = CFrame.lookAt((a + b) / 2, b)
+				strip.part.Color = glow
+				-- Aux coins de l'oeil, la jointure s'efface.
+				local tip = math.abs((a.X + b.X) / 2) / reachX
+				strip.part.LocalTransparencyModifier =
+					math.clamp((tip - s.seamFadeFrom) / (1 - s.seamFadeFrom), 0, 1)
 			end
 		end
 	end
@@ -165,7 +237,11 @@ function SkyView.start()
 				end
 			end
 		end
-		placeLids(shown)
+		-- Fermee, la jointure respire comme une braise ; en mouvement, elle
+		-- brule.
+		local breath = 0.5 + 0.5 * math.sin(now * math.pi * 2 / s.seamBreathSeconds)
+		local glow = if wantOpen or closure < 0.98 then hot else ember:Lerp(hot, breath * 0.6)
+		placeLids(shown, glow)
 		-- A l'ouverture la pupille est large, puis elle se resserre : il
 		-- cherche. Redimensionner une part garde son centre : la fente reste
 		-- en place.
@@ -191,9 +267,26 @@ function SkyView.start()
 					math.noise(t, 23) * s.idleWanderRadius * 2
 				)
 		end
-		local alpha = math.clamp(dt * s.eyeTurnRate, 0, 1)
+		-- Pendant un Balayage il suit son faisceau de pres : le regard sort de
+		-- sa pupille, il doit la tourner vers ce qu'il vise.
+		local turnRate = if beam then s.eyeTurnRateSweep else s.eyeTurnRate
+		local alpha = math.clamp(dt * turnRate, 0, 1)
 		looking = looking:Lerp(target, alpha)
 		eye:PivotTo(CFrame.lookAt(center, looking))
+
+		-- Les eclairs : une lueur qui court du trou vers le dehors, et un
+		-- leger crepitement.
+		local rest = s.crackRest + (s.crackRestAwake - s.crackRest) * (1 - closure)
+		for _, crack in cracks do
+			local rhythm = branchRhythm[crack.branch]
+			-- La position de la lueur sur la branche, un peu avant le premier
+			-- rang et un peu apres le dernier : elle entre et sort en douceur.
+			local wave = ((now / rhythm.period + rhythm.phase) % 1) * (rhythm.ranks + 3) - 1
+			local pulse = math.exp(-((crack.rank - wave) ^ 2))
+			local crackle = math.noise(now * 6, crack.branch, crack.rank) * 0.15
+			local shine = math.clamp(rest + pulse * (1 - rest) + crackle, 0, 1)
+			crack.part.LocalTransparencyModifier = 1 - shine
+		end
 
 		-- La ville qui monte.
 		for _, d in drifters do

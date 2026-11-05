@@ -106,6 +106,10 @@ Config.sky = {
 	-- fraction par seconde du chemin restant ; 2,5 le fait suivre le faisceau
 	-- sans a-coups, avec un leger retard qui le rend vivant.
 	eyeTurnRate = 2.5,
+	-- Pendant un Balayage : le faisceau sort de sa pupille (le serveur le
+	-- tire de la pupille tournee vers le point vise), l'Oeil doit le suivre de
+	-- pres. A 12, le retard est a peine visible au bout du faisceau.
+	eyeTurnRateSweep = 12,
 	-- Les paupieres (la Fissure qui se referme). L'Oeil s'ouvre au signal : 3 s,
 	-- assez vite pour qu'on le voie s'ouvrir pendant les 10 s de signes ; il se
 	-- referme plus lentement, 5 s, apres le Balayage. Fermees entre deux
@@ -120,6 +124,24 @@ Config.sky = {
 	pupilWide = 1.5,
 	pupilNarrow = 0.45,
 	pupilFocusSeconds = 2,
+	-- La jointure des paupieres fermees : la paupiere du haut descend plus loin
+	-- (un quart de la demi-largeur de plus) : elles se rejoignent sur une
+	-- courbe, pas sur la droite jaune d'avant (Josh : « on peut faire
+	-- mieux »). Elle s'efface aux coins de l'oeil et respire comme une braise.
+	lidSeamBias = 0.25,
+	seamWidth = 4,
+	seamFadeFrom = 0.7,
+	seamBreathSeconds = 3.5,
+	-- En trois nombres (rouge, vert, bleu) : Config se charge sans Roblox.
+	seamEmber = { 110, 22, 10 },
+	seamHot = { 255, 140, 60 },
+	-- Les eclairs autour de la Fissure : une lueur court le long de chaque
+	-- branche, du trou vers le dehors, une fois toutes les 2,5 a 6 s. Au
+	-- repos ils restent a 35 % de leur eclat ; l'Oeil ouvert, a 80 % : le ciel
+	-- s'allume quand il regarde.
+	crackPulseSeconds = { min = 2.5, max = 6 },
+	crackRest = 0.35,
+	crackRestAwake = 0.8,
 	-- Entre deux Balayages il derive lentement, comme s'il cherchait.
 	idleWanderSeconds = 9,
 	idleWanderRadius = 140,
@@ -191,9 +213,9 @@ Config.day = {
 --------------------------------------------------------------------------------
 
 Config.eye = {
-	-- Au-dessus du centre des Limites. Haut, pour que les toits couvrent : vu
-	-- de presque a la verticale, un toit cache ce qui est dessous.
-	height = 600,
+	-- Sa hauteur n'est pas ici : le regard part du bout de sa pupille, mesure
+	-- sur le modele que pose la recette de la ville (haut, pour que les toits
+	-- couvrent : vu presque a la verticale, un toit cache ce qui est dessous).
 	-- Les signes avant le Balayage (decide : ~10 s).
 	warningSeconds = 10,
 	-- Rayon du regard au sol, en studs. Un trottoir plus une voie.

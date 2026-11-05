@@ -231,3 +231,16 @@ fermeture en mouvement (seulement les états ouvert et fermé).
    signe pour se cacher ?
 2. **Fermé** : la couture se voit-elle de partout dans la ville ?
 3. **Les clignements** : trop souvent, pas assez ?
+
+## Le laser, la jointure, les éclairs (5 novembre 2026)
+
+*Mesuré en jeu* : le regard de l'Œil et son faisceau sont alignés à 0,2° près,
+et le faisceau part juste devant la pupille. *Vu à l'écran* : la jointure
+courbe quand il est fermé, les éclairs plus vifs quand il est ouvert.
+*Jamais vu en mouvement* : la lueur qui court dans les éclairs, la braise qui
+respire.
+
+1. **Le laser** : sort-il bien de l'œil, de partout dans la ville ?
+2. **Fermé** : la jointure est-elle plus belle que la droite jaune ?
+3. **Les éclairs** : l'animation est-elle trop rapide, trop lente,
+   ou fatigante à la longue ?

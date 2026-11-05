@@ -155,6 +155,9 @@ GitHub Actions relance formatage, analyse, tests et build à chaque push.
   lui hors des Balayages), clignements, pupille qui se resserre, iris et
   veines retravaillés (`SkyView`, `Config.sky`) ; la moitié des toits
   arrachés vers le jour 9.
+- **5 novembre 2026, le laser** : le regard (et la ligne de vue) part du bout
+  de la pupille, mesurée sur le modèle (`Config.eye.height` supprimé) ;
+  jointure des paupières en braise courbe ; éclairs animés.
 - **Ensuite** : ce que Josh dira après avoir joué ; un vrai modèle de
   créature pour les Repris ; puis la jauge de
   Visibilité de la Planque, la construction libre sur grille, les autres

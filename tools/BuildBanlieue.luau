@@ -44,8 +44,9 @@ local CONTRACT = {
 	cover = "Couvert",
 }
 
--- La hauteur de l'Oeil au-dessus du sol, recopiee de Config.eye.height pour
--- la mesure de couverture.
+-- La hauteur de l'Oeil au-dessus du sol : la Fissure s'ouvre juste au-dessus,
+-- le globe un peu plus haut. Le jeu fait partir le regard du bout de la
+-- pupille, mesure sur ce modele ; la mesure de fin fait de meme.
 local EYE_HEIGHT = 600
 
 -- Le ciel, recopie de Config.world.
@@ -1894,7 +1895,7 @@ local function buildSky(root: Instance, center: Vector3)
 		local angle = (i / 16) * math.pi * 2 + random:NextNumber(-0.15, 0.15)
 		local dir = Vector3.new(math.cos(angle), 0, math.sin(angle))
 		local at = Vector3.new(dir.X * (halfLong + 80), riftY - 1, dir.Z * (halfShort + 80))
-		for _ = 1, random:NextInteger(4, 8) do
+		for rank = 1, random:NextInteger(4, 8) do
 			local turn = random:NextNumber(-0.7, 0.7)
 			local step = Vector3.new(
 				dir.X * math.cos(turn) - dir.Z * math.sin(turn),
@@ -1915,6 +1916,10 @@ local function buildSky(root: Instance, center: Vector3)
 			crack.CanQuery = false
 			crack.CastShadow = false
 			crack.Transparency = random:NextNumber(0.1, 0.45)
+			-- La vue du ciel fait courir une lueur le long de chaque branche,
+			-- du trou vers le dehors.
+			crack:SetAttribute("Branche", i)
+			crack:SetAttribute("Rang", rank)
 			at += step
 		end
 	end
@@ -4302,7 +4307,20 @@ local function build(): string
 	----------------------------------------------------------------------------
 	local report: { string } = {}
 	local problems = 0
-	local eye = Vector3.new(0, EYE_HEIGHT, 0)
+	-- Comme l'EyeService : le regard part du bout de la pupille, tournee
+	-- vers le point vise.
+	local sky = root:FindFirstChild(SKY.folder) :: Model
+	local eyeModel = sky:FindFirstChild(SKY.eye) :: Model
+	local globe = eyeModel.PrimaryPart :: BasePart
+	local reach = globe.Size.X / 2
+	for _, part in eyeModel:GetDescendants() do
+		if part:IsA("BasePart") and part.Name == "Pupille" then
+			reach = math.max(reach, (part.Position - globe.Position).Magnitude + part.Size.Z / 2)
+		end
+	end
+	local function eyeToward(target: Vector3): Vector3
+		return globe.Position + (target - globe.Position).Unit * reach
+	end
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	params.RespectCanCollide = false
@@ -4311,7 +4329,7 @@ local function build(): string
 	-- part opaque (meme regle que l'EyeService, en plus simple).
 	local function coveredFromEye(target: Vector3, ignore: { Instance }): boolean
 		local filter = table.clone(ignore)
-		local origin = eye
+		local origin = eyeToward(target)
 		for _ = 1, 8 do
 			params.FilterDescendantsInstances = filter
 			local hit = workspace:Raycast(origin, target - origin, params)
