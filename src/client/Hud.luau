@@ -135,6 +135,35 @@ function Hud.start()
 	gaugeText.Text = "IL TE VOIT"
 	gaugeText.TextColor3 = DANGER
 
+	-- La sante, en bas au centre : visible seulement quand elle n'est pas pleine.
+	local healthBar = Instance.new("Frame")
+	healthBar.Name = "Sante"
+	healthBar.AnchorPoint = Vector2.new(0.5, 1)
+	healthBar.Position = UDim2.new(0.5, 0, 1, -28)
+	healthBar.Size = UDim2.fromOffset(220, 8)
+	healthBar.BackgroundColor3 = PANEL
+	healthBar.BackgroundTransparency = 0.3
+	healthBar.BorderSizePixel = 0
+	healthBar.Parent = gui
+	local healthFill = Instance.new("Frame")
+	healthFill.Name = "Plein"
+	healthFill.Size = UDim2.fromScale(1, 1)
+	healthFill.BackgroundColor3 = INK
+	healthFill.BorderSizePixel = 0
+	healthFill.Parent = healthBar
+
+	-- A terre : un voile rouge sombre, et ce qu'il faut attendre.
+	local downed = Instance.new("Frame")
+	downed.Name = "ATerre"
+	downed.Size = UDim2.fromScale(1, 1)
+	downed.BackgroundColor3 = Color3.fromRGB(60, 8, 6)
+	downed.BackgroundTransparency = 0.45
+	downed.Visible = false
+	downed.Parent = gui
+	local downedText =
+		label(downed, "Texte", UDim2.fromScale(0.7, 0.2), UDim2.fromScale(0.5, 0.62), 24)
+	downedText.Text = "À terre.\nUn ami peut te relever. Sinon, tu te relèveras à l'aube."
+
 	local message = label(gui, "Message", UDim2.fromScale(0.6, 0.08), UDim2.fromScale(0.5, 0.3), 26)
 	message.ZIndex = 4
 
@@ -206,8 +235,41 @@ function Hud.start()
 			:Create(tint, TweenInfo.new(seconds), { TintColor = color, Saturation = saturation })
 			:Play()
 	end
+	-- La nuit, cote client seulement : l'heure et la lumiere baissent. Le
+	-- serveur garde la lumiere du jour (c'est la sienne qui sert aux rayons, et
+	-- l'Oeil ne regarde pas la nuit).
+	local dayClock = Lighting.ClockTime
+	local dayBrightness = Lighting.Brightness
+	local dayOutdoor = Lighting.OutdoorAmbient
+	local function nightTo(on: boolean)
+		local info = TweenInfo.new(6)
+		if on then
+			TweenService:Create(Lighting, info, {
+				ClockTime = 23.5,
+				Brightness = 0.6,
+				OutdoorAmbient = Color3.fromRGB(46, 50, 62),
+			}):Play()
+		else
+			TweenService:Create(Lighting, info, {
+				ClockTime = dayClock,
+				Brightness = dayBrightness,
+				OutdoorAmbient = dayOutdoor,
+			}):Play()
+		end
+	end
+
 	local eyeState = Remotes:WaitForChild("EyeState") :: RemoteEvent
 	eyeState.OnClientEvent:Connect(function(data: any)
+		if data.phase == "night" then
+			show("La nuit tombe. Ils descendent.")
+			tintTo(Color3.fromRGB(170, 180, 215), -0.45, 6)
+			nightTo(true)
+			return
+		elseif data.phase == "dawn" then
+			tintTo(Color3.new(1, 1, 1), 0, 6)
+			nightTo(false)
+			return
+		end
 		if data.phase == "warning" then
 			show("Le ciel rougit…")
 			tintTo(Color3.fromRGB(255, 196, 186), -0.15, data.seconds)
@@ -224,7 +286,33 @@ function Hud.start()
 		hiddenText.Text = "Caché. Tu ne vois rien dehors.\nSortir : "
 			.. buttonName(Config.controls.contexts.hidden.leave)
 		taken.Visible = player:GetAttribute("Taken") == true
+		downed.Visible = player:GetAttribute("Downed") == true
 	end
+	player:GetAttributeChangedSignal("Downed"):Connect(refreshStates)
+	player:GetAttributeChangedSignal("Health"):Connect(function()
+		local health = player:GetAttribute("Health")
+		local ratio = if typeof(health) == "number" then health / Config.combat.playerHealth else 1
+		healthFill.Size = UDim2.fromScale(math.clamp(ratio, 0, 1), 1)
+		healthBar.Visible = ratio < 0.999
+	end)
+	healthBar.Visible = false
+
+	-- La faim, sous la sante : elle se voit des qu'elle baisse d'un quart.
+	local hungerBar = healthBar:Clone()
+	hungerBar.Name = "Faim"
+	hungerBar.Position = UDim2.new(0.5, 0, 1, -14)
+	hungerBar.Size = UDim2.fromOffset(220, 5)
+	hungerBar.Parent = gui
+	local hungerFill = hungerBar:FindFirstChild("Plein") :: Frame
+	hungerFill.BackgroundColor3 = Color3.fromRGB(196, 150, 82)
+	local function refreshHunger()
+		local hunger = player:GetAttribute("Hunger")
+		local ratio = if typeof(hunger) == "number" then hunger / Config.needs.hungerMax else 1
+		hungerFill.Size = UDim2.fromScale(math.clamp(ratio, 0, 1), 1)
+		hungerBar.Visible = ratio < 0.75
+	end
+	player:GetAttributeChangedSignal("Hunger"):Connect(refreshHunger)
+	refreshHunger()
 	player:GetAttributeChangedSignal("Hidden"):Connect(refreshStates)
 	player:GetAttributeChangedSignal("Taken"):Connect(refreshStates)
 	UserInputService.LastInputTypeChanged:Connect(refreshStates)

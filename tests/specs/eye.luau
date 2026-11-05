@@ -67,6 +67,28 @@ return function(t: harness.Harness)
 	t.equal("l'Oeil s'y attarde", inspected[1].pause, 1.6)
 	t.equal("puis le rateau suit", #inspected, #line + 1)
 
+	t.section("La zone d'un Balayage")
+
+	local district = { minX = -400, maxX = 400, minZ = -320, maxZ = 320 }
+	local zone = Sweep.zoneAround(0, 0, 280, district)
+	t.check("centree sur le joueur", zone.minX == -140 and zone.maxX == 140 and zone.minZ == -140)
+	local edge = Sweep.zoneAround(395, -318, 280, district)
+	t.check(
+		"au bord, ramenee dans le quartier",
+		edge.maxX == 400 and edge.minX == 120 and edge.minZ == -320
+	)
+	local tiny = Sweep.zoneAround(0, 0, 280, { minX = 0, maxX = 100, minZ = 0, maxZ = 100 })
+	t.check(
+		"un quartier plus petit que la zone : tout le quartier",
+		tiny.minX == 0 and tiny.maxX == 100
+	)
+	local near = Sweep.targetsIn({
+		{ id = "dedans", x = 10, z = 10 },
+		{ id = "marge", x = 180, z = 0 },
+		{ id = "loin", x = 390, z = 300 },
+	}, zone, 60)
+	t.equal("il arrache celles de sa zone et de la marge, pas les autres", #near, 2)
+
 	t.section("La jauge d'exposition")
 
 	local settings = Config.eye.exposure

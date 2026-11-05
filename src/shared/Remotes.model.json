@@ -12,6 +12,14 @@
 		{
 			"name": "LeaveHiding",
 			"className": "RemoteEvent"
+		},
+		{
+			"name": "Attack",
+			"className": "RemoteEvent"
+		},
+		{
+			"name": "Planque",
+			"className": "RemoteEvent"
 		}
 	]
 }

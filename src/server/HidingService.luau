@@ -52,6 +52,34 @@ local fragileFolder: Folder? = nil
 local day = 1
 local sweepNumber = 0
 
+-- Les batiments ou l'on peut s'abriter (maisons au toit entier, superette).
+-- S'y abriter pendant un Balayage les marque comme une cachette fragile ; au
+-- Balayage suivant, l'Oeil arrache leur toit. Decide avec Josh le 5 novembre
+-- 2026 : sans ca, entrer dans n'importe quelle maison suffisait a ne jamais
+-- risquer rien.
+type RoofPart = {
+	part: BasePart,
+	transparency: number,
+	collide: boolean,
+	query: boolean,
+}
+
+type Building = {
+	id: string,
+	model: Model,
+	box: CFrame,
+	size: Vector3,
+	roof: { RoofPart },
+	ripped: boolean,
+}
+
+local buildings: { [string]: Building } = {}
+local buildingList: { Building } = {}
+
+function HidingService.buildingCount(): number
+	return #buildingList
+end
+
 local function nextInt(lo: number, hi: number): number
 	return random:NextInteger(lo, hi)
 end
@@ -177,17 +205,80 @@ function HidingService.beginSweep(): { Target }
 	local out: { Target } = {}
 	for _, spotId in Hiding.marked(marks, day, sweepNumber, Config.eye.markDays) do
 		local spot = spots[spotId]
+		local building = buildings[spotId]
 		if spot then
 			local p = spot.inside.Position
+			table.insert(out, { id = spotId, x = p.X, z = p.Z })
+		elseif building and not building.ripped then
+			local p = building.box.Position
 			table.insert(out, { id = spotId, x = p.X, z = p.Z })
 		end
 	end
 	return out
 end
 
+-- Le batiment intact qui contient ce point, s'il y en a un.
+local function buildingAt(position: Vector3): Building?
+	for _, building in buildingList do
+		if not building.ripped then
+			local p = building.box:PointToObjectSpace(position)
+			local half = building.size / 2
+			if math.abs(p.X) <= half.X and math.abs(p.Y) <= half.Y and math.abs(p.Z) <= half.Z then
+				return building
+			end
+		end
+	end
+	return nil
+end
+
+-- Appele par l'EyeService pendant un Balayage, pour chaque joueur qui n'est
+-- pas dans une cachette : s'il s'abrite dans un batiment, ce batiment est
+-- marque. Meme regle que les cachettes fragiles : l'Oeil vient le chercher
+-- au Balayage SUIVANT, jamais a celui-ci.
+function HidingService.noteShelter(position: Vector3)
+	local building = buildingAt(position)
+	if building then
+		Hiding.mark(marks, building.id, day, sweepNumber)
+	end
+end
+
+-- Arracher la toiture : la vraie disparait (invisible, traversee par les
+-- rayons) et une copie monte vers le ciel. Rien n'est detruit : une defaite
+-- remet les toits en place.
+local function ripRoof(building: Building)
+	building.ripped = true
+	marks[building.id] = nil
+	local lift = Config.eye.ripLiftHeight
+	local info =
+		TweenInfo.new(Config.eye.ripLiftSeconds, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	for _, entry in building.roof do
+		local ghost = entry.part:Clone()
+		ghost.CanCollide = false
+		ghost.CanQuery = false
+		ghost.Parent = workspace
+		TweenService:Create(ghost, info, {
+			CFrame = ghost.CFrame + Vector3.new(0, lift, 0),
+			Transparency = 1,
+		}):Play()
+		task.delay(Config.eye.ripLiftSeconds, function()
+			ghost:Destroy()
+		end)
+		entry.part.Transparency = 1
+		entry.part.CanCollide = false
+		entry.part.CanQuery = false
+	end
+end
+
 -- L'Oeil arrache une cachette marquee : elle monte vers le ciel et disparait.
 -- Celui qui etait dedans se retrouve a decouvert, la ou il etait.
 function HidingService.rip(spotId: string)
+	local building = buildings[spotId]
+	if building then
+		if not building.ripped then
+			ripRoof(building)
+		end
+		return
+	end
 	local spot = spots[spotId]
 	if spot == nil or not spot.fragile then
 		return
@@ -264,8 +355,19 @@ function HidingService.newDay(dayNumber: number)
 	folder.Parent = world.root
 end
 
--- Une defaite : la memoire du Veilleur repart de zero aussi.
+-- Une defaite : la memoire du Veilleur repart de zero aussi, et les toits
+-- arraches reviennent (la partie recommence depuis le debut).
 function HidingService.reset()
+	for _, building in buildingList do
+		if building.ripped then
+			building.ripped = false
+			for _, entry in building.roof do
+				entry.part.Transparency = entry.transparency
+				entry.part.CanCollide = entry.collide
+				entry.part.CanQuery = entry.query
+			end
+		end
+	end
 	table.clear(marks)
 	table.clear(rippedToday)
 	sweepNumber = 0
@@ -275,6 +377,36 @@ function HidingService.start()
 	local world = WorldService.get()
 	for _, spot in world.solidSpots:GetChildren() do
 		register(spot.Name, spot, false)
+	end
+
+	local w = Config.world
+	for _, model in world.root:GetDescendants() do
+		if model:IsA("Model") and model:GetAttribute(w.buildingAttribute) == true then
+			local roof: { RoofPart } = {}
+			for _, part in model:GetDescendants() do
+				if part:IsA("BasePart") and part:GetAttribute(w.roofAttribute) == true then
+					table.insert(roof, {
+						part = part,
+						transparency = part.Transparency,
+						collide = part.CanCollide,
+						query = part.CanQuery,
+					})
+				end
+			end
+			local box, size = model:GetBoundingBox()
+			local building: Building = {
+				-- Les noms de maisons sont uniques dans la recette ; le prefixe
+				-- evite toute collision avec un nom de cachette.
+				id = "Batiment:" .. model:GetFullName(),
+				model = model,
+				box = box,
+				size = size,
+				roof = roof,
+				ripped = false,
+			}
+			buildings[building.id] = building
+			table.insert(buildingList, building)
+		end
 	end
 
 	local leave = Remotes:WaitForChild("LeaveHiding") :: RemoteEvent

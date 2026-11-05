@@ -18,6 +18,7 @@ local Survivor = ReplicatedStorage:WaitForChild("Survivor")
 local Config = require(Survivor:WaitForChild("Config"))
 local Crew = require(Survivor:WaitForChild("Crew"))
 
+local CombatService = require(script.Parent:WaitForChild("CombatService"))
 local HidingService = require(script.Parent:WaitForChild("HidingService"))
 local LootService = require(script.Parent:WaitForChild("LootService"))
 local WorldService = require(script.Parent:WaitForChild("WorldService"))
@@ -30,7 +31,8 @@ local wipeListeners: { () -> () } = {}
 local function standingMap(): { [Player]: boolean }
 	local out: { [Player]: boolean } = {}
 	for _, player in Players:GetPlayers() do
-		out[player] = not player:GetAttribute("Taken")
+		-- Tombe ou aspire : plus debout (decide avec Josh).
+		out[player] = not player:GetAttribute("Taken") and not CombatService.isDowned(player)
 	end
 	return out
 end
@@ -71,9 +73,52 @@ function CrewService.take(player: Player)
 		end)
 	end
 
+	CrewService.checkWipe()
+end
+
+function CrewService.checkWipe()
 	if Crew.isWiped(standingMap()) then
 		for _, listener in wipeListeners do
 			task.spawn(listener)
+		end
+	end
+end
+
+-- A l'aube, celui que personne n'a releve se releve seul, affaibli.
+function CrewService.dawn()
+	for _, player in Players:GetPlayers() do
+		if CombatService.isDowned(player) then
+			CombatService.standUp(player, Config.combat.dawnHealth)
+		end
+	end
+end
+
+-- La nuit, chacun porte une petite lumiere : on voit ses amis, et un peu
+-- devant soi. Pose sur le personnage, donc vue de tous.
+local lampsOn = false
+local function applyLamp(character: Model)
+	local root = character:FindFirstChild("HumanoidRootPart")
+	if root == nil then
+		return
+	end
+	local lamp = root:FindFirstChild("Lampe")
+	if lampsOn and lamp == nil then
+		local light = Instance.new("PointLight")
+		light.Name = "Lampe"
+		light.Range = 18
+		light.Brightness = 0.9
+		light.Color = Color3.fromRGB(255, 220, 180)
+		light.Parent = root
+	elseif not lampsOn and lamp then
+		lamp:Destroy()
+	end
+end
+
+function CrewService.setLamps(on: boolean)
+	lampsOn = on
+	for _, player in Players:GetPlayers() do
+		if player.Character then
+			applyLamp(player.Character)
 		end
 	end
 end
@@ -111,12 +156,16 @@ function CrewService.gatherAtPlanque()
 	for _, player in Players:GetPlayers() do
 		player:SetAttribute("Taken", false)
 		player:SetAttribute("Exposure", 0)
+		CombatService.reset(player)
 		placeAt(player, world.spawn.CFrame)
 	end
 end
 
 function CrewService.start()
 	local world = WorldService.get()
+	CombatService.onDowned(function()
+		CrewService.checkWipe()
+	end)
 	Players.CharacterAutoLoads = false
 
 	local function join(player: Player)
@@ -126,6 +175,7 @@ function CrewService.start()
 		-- Mort pour une autre raison (une chute) : on repart de la Planque.
 		-- Branche AVANT le premier personnage, sinon sa mort passe inapercue.
 		player.CharacterAdded:Connect(function(character: Model)
+			task.defer(applyLamp, character)
 			local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 			humanoid.Died:Connect(function()
 				task.wait(2)

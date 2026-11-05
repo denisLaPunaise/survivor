@@ -19,6 +19,8 @@ local suites = {
 	{ name = "Le regard de l'Oeil", run = require("./specs/eye") },
 	{ name = "Cachettes et defaite", run = require("./specs/hiding") },
 	{ name = "Fouille et sac", run = require("./specs/loot") },
+	{ name = "Les Repris", run = require("./specs/repris") },
+	{ name = "La faim et la Planque", run = require("./specs/planque") },
 	{ name = "Regles branchees", run = require("./specs/wiring") },
 }
 

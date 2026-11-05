@@ -75,7 +75,30 @@ function SkyView.start()
 		end
 	end
 
+	-- La nuit, l'Oeil se ferme : il pâlit jusqu'a presque disparaitre.
+	local closed = false
+	local eyeParts: { BasePart } = {}
+	for _, part in eye:GetDescendants() do
+		if part:IsA("BasePart") then
+			table.insert(eyeParts, part)
+		end
+	end
+	local remotes = Survivor:WaitForChild("Remotes")
+	local eyeState = remotes:WaitForChild("EyeState") :: RemoteEvent
+	eyeState.OnClientEvent:Connect(function(data: any)
+		if data.phase == "night" then
+			closed = true
+		elseif data.phase == "dawn" then
+			closed = false
+		end
+	end)
+	local openness = 1
+
 	RunService.RenderStepped:Connect(function(dt: number)
+		openness = math.clamp(openness + (if closed then -dt / 5 else dt / 5), 0, 1)
+		for _, part in eyeParts do
+			part.LocalTransparencyModifier = 1 - (0.15 + 0.85 * openness)
+		end
 		-- Ou regarde-t-il ? Le bout du faisceau, ou une derive lente.
 		local target: Vector3
 		local beam = workspace:FindFirstChild("Regard")

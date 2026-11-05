@@ -23,10 +23,13 @@ local CrewService = require(script.Parent:WaitForChild("CrewService"))
 local EyeService = require(script.Parent:WaitForChild("EyeService"))
 local HidingService = require(script.Parent:WaitForChild("HidingService"))
 local LootService = require(script.Parent:WaitForChild("LootService"))
+local PlanqueService = require(script.Parent:WaitForChild("PlanqueService"))
+local ReprisService = require(script.Parent:WaitForChild("ReprisService"))
 
 local DayService = {}
 
 local random = Random.new()
+local eyeState = Survivor:WaitForChild("Remotes"):WaitForChild("EyeState") :: RemoteEvent
 local generation = 0
 
 local function announce(message: string)
@@ -44,8 +47,12 @@ local function runGame(myGeneration: number)
 
 	while current() do
 		dayNumber += 1
+		eyeState:FireAllClients({ phase = "dawn" })
+		PlanqueService.dawn()
+		CrewService.dawn()
 		HidingService.newDay(dayNumber)
 		LootService.newDay()
+		ReprisService.newDay()
 		CrewService.returnTaken()
 		announce(string.format("Jour %d", dayNumber))
 
@@ -53,6 +60,15 @@ local function runGame(myGeneration: number)
 		for i = 1, d.sweepsPerDay do
 			if not current() then
 				return
+			end
+			-- Le periscope voit le ciel rougir avant les autres.
+			local periscope = PlanqueService.build("periscope")
+			if periscope and PlanqueService.has("periscope") then
+				announce("Le périscope : le ciel va rougir.")
+				task.wait(periscope.earlySeconds :: number)
+				if not current() then
+					return
+				end
 			end
 			EyeService.runSweep(current)
 			if i < d.sweepsPerDay and current() then
@@ -68,9 +84,14 @@ local function runGame(myGeneration: number)
 		if not current() then
 			return
 		end
-		announce("La nuit passe…")
-		CrewService.gatherAtPlanque()
-		task.wait(d.nightSkipSeconds)
+		-- La nuit : l'Oeil se ferme, les Repris tombent de la Fissure.
+		announce("La nuit tombe. Ils descendent.")
+		eyeState:FireAllClients({ phase = "night", seconds = d.nightSeconds })
+		CrewService.setLamps(true)
+		PlanqueService.serveDinner()
+		ReprisService.beginNight(dayNumber)
+		task.wait(d.nightSeconds)
+		CrewService.setLamps(false)
 	end
 end
 
@@ -89,6 +110,9 @@ function DayService.start()
 		task.wait(Config.day.wipeMessageSeconds)
 		HidingService.reset()
 		LootService.reset()
+		ReprisService.clear()
+		PlanqueService.reset()
+		CrewService.setLamps(false)
 		CrewService.gatherAtPlanque()
 		DayService.restart()
 	end)

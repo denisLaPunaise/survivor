@@ -12,6 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Survivor = ReplicatedStorage:WaitForChild("Survivor")
 local Config = require(Survivor:WaitForChild("Config"))
 
+local BuildPanel = require(script.Parent:WaitForChild("BuildPanel"))
 local Controls = require(script.Parent:WaitForChild("Controls"))
 local Hud = require(script.Parent:WaitForChild("Hud"))
 local SkyView = require(script.Parent:WaitForChild("SkyView"))
@@ -27,3 +28,4 @@ print(
 Hud.start()
 Controls.start()
 SkyView.start()
+BuildPanel.start()

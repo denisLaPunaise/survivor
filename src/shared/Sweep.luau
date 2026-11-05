@@ -134,6 +134,40 @@ function Sweep.withInspections(
 	return out
 end
 
+-- La zone qu'un Balayage couvre : un carre de `size` centre sur (x, z),
+-- ramene dans les limites du quartier (un joueur au bord ne fait pas
+-- balayer le vide au-dela).
+function Sweep.zoneAround(x: number, z: number, size: number, bounds: Bounds): Bounds
+	local width = math.min(size, bounds.maxX - bounds.minX)
+	local depth = math.min(size, bounds.maxZ - bounds.minZ)
+	local cx = math.clamp(x, bounds.minX + width / 2, bounds.maxX - width / 2)
+	local cz = math.clamp(z, bounds.minZ + depth / 2, bounds.maxZ - depth / 2)
+	return {
+		minX = cx - width / 2,
+		maxX = cx + width / 2,
+		minZ = cz - depth / 2,
+		maxZ = cz + depth / 2,
+	}
+end
+
+-- Les cachettes marquees que l'Oeil vient verifier pendant CE Balayage : celles
+-- de sa zone, elargie de `margin`. Aller en arracher une a l'autre bout du
+-- quartier prendrait plus de temps que le Balayage lui-meme.
+function Sweep.targetsIn(targets: { Target }, zone: Bounds, margin: number): { Target }
+	local out: { Target } = {}
+	for _, target in targets do
+		if
+			target.x >= zone.minX - margin
+			and target.x <= zone.maxX + margin
+			and target.z >= zone.minZ - margin
+			and target.z <= zone.maxZ + margin
+		then
+			table.insert(out, target)
+		end
+	end
+	return out
+end
+
 function Sweep.timeline(points: { Point }, speed: number): Timeline
 	local arrive: { number } = {}
 	local depart: { number } = {}

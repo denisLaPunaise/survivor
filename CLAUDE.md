@@ -117,9 +117,22 @@ GitHub Actions relance formatage, analyse, tests et build à chaque push.
   noire, l'Œil sombre qui suit le regard (`SkyView`), les débris aspirés,
   poteaux et fils, encadrements, gouttières, boîtes aux lettres, arbres
   générés (`docs/ASSETS.md`, modèle dans `ServerStorage.SurvivorModeles`).
-- **Reste à rendre beau** : les voitures (blocs), les sacs poubelle (boules),
-  l'intérieur des maisons, la lumière en Future (réglage manuel de Josh).
-- **Ensuite** : la nuit et les Repris.
+- **5 novembre 2026, la Banlieue en grand** (puis remplie : 800 × 800, 75 maisons, rangées du centre et du bord, jardins habités) : d'abord 800 × 640, 39 maisons (dont à
+  étage), bande centrale (supérette, basket), intérieurs meublés, voitures
+  générées, le lointain dans la brume ; le Balayage couvre une zone autour
+  d'un joueur. La recette tourne en tâche de fond (`task.spawn`, rapport en
+  attribut `RapportRecette`) : elle dépasse le délai d'un appel au pont.
+- **Reste à rendre beau** : les sacs poubelle, la lumière en Future (réglage
+  manuel de Josh).
+- **5 novembre 2026, points 1 à 4** : l'Œil arrache les toits des bâtiments
+  où l'on s'est abrité (`HidingService`) ; les Repris (`ReprisService`,
+  `CombatService`) endormis le jour, à l'assaut la nuit, le joueur à terre et
+  relevé ; la faim, le repas du soir et l'établi de la Planque
+  (`PlanqueService`, `BuildPanel`) ; quatre intérieurs, maisons qui
+  racontent, trois repères. Détail dans `docs/DECISIONS.md`.
+- **Ensuite** : ce que Josh dira après avoir joué ; puis la jauge de
+  Visibilité de la Planque, la construction libre sur grille, les autres
+  Repris (Rampant, Hurleur, Guetteur, Brute), les quêtes.
 
 ## Construire la ville depuis le pont
 

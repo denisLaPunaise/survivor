@@ -16,6 +16,7 @@ local Config = require(Survivor:WaitForChild("Config"))
 local Loot = require(Survivor:WaitForChild("Loot"))
 local Remotes = Survivor:WaitForChild("Remotes")
 
+local ReprisService = require(script.Parent:WaitForChild("ReprisService"))
 local WorldService = require(script.Parent:WaitForChild("WorldService"))
 
 local LootService = {}
@@ -105,6 +106,11 @@ local function search(player: Player, container: Instance, prompt: ProximityProm
 	end
 	emptied[container] = true
 	prompt.Enabled = false
+	-- Fouiller fait du bruit : ceux qui dorment dans la maison l'entendent.
+	local part = anchorPart(container)
+	if part then
+		ReprisService.noise(part.Position, "search")
+	end
 	refreshSpeed(player)
 	LootService.sendHud(player, "Trouvé : " .. table.concat(taken, ", "))
 end
@@ -141,6 +147,19 @@ end
 
 function LootService.tryDeposit(player: Player)
 	deposit(player)
+end
+
+-- La reserve commune : la Planque y prend ce qu'elle construit et ce qu'on
+-- mange. Rendue telle quelle (pas une copie) : la Planque la modifie.
+function LootService.stock(): { [string]: number }
+	return stock
+end
+
+-- Apres un changement de la reserve, tout le monde voit les nouveaux chiffres.
+function LootService.broadcast(message: string?)
+	for _, player in Players:GetPlayers() do
+		LootService.sendHud(player, message)
+	end
 end
 
 -- Un joueur aspire perd ce qu'il portait (decide).

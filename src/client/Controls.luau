@@ -26,6 +26,7 @@ local Controls = {}
 
 local player = Players.LocalPlayer
 local leaveHiding = Remotes:WaitForChild("LeaveHiding") :: RemoteEvent
+local attack = Remotes:WaitForChild("Attack") :: RemoteEvent
 
 local sprinting = false
 local crouching = false
@@ -55,10 +56,23 @@ local function refresh()
 	end
 	local m = Config.movement
 	local factor = player:GetAttribute("SpeedFactor")
-	local scale = if typeof(factor) == "number" then factor else 1
-	local base = if crouching then m.crouchSpeed elseif sprinting then m.sprintSpeed else m.walkSpeed
-	h.WalkSpeed = base * scale
-	h.CameraOffset = Vector3.new(0, if crouching then m.crouchCameraOffset else 0, 0)
+	local hunger = player:GetAttribute("HungerFactor")
+	-- Le sac lourd et la faim ralentissent, et ca se cumule.
+	local scale = (if typeof(factor) == "number" then factor else 1)
+		* (if typeof(hunger) == "number" then hunger else 1)
+	local downed = player:GetAttribute("Downed") == true
+	local base = if downed
+		then Config.combat.downedSpeed
+		elseif crouching then m.crouchSpeed
+		elseif sprinting then m.sprintSpeed
+		else m.walkSpeed
+	h.WalkSpeed = if downed then base else base * scale
+	-- A terre, la camera est au ras du sol.
+	h.CameraOffset = Vector3.new(
+		0,
+		if crouching or downed then m.crouchCameraOffset * (if downed then 1.6 else 1) else 0,
+		0
+	)
 end
 
 local function slide()
@@ -130,6 +144,12 @@ local function bindOnFoot()
 		end
 		refresh()
 	end)
+	-- Frapper : le serveur verifie la cadence, la portee et l'angle.
+	bind("SurvivorHit", onFoot.useOrHit, function(state)
+		if state == Enum.UserInputState.Begin and not player:GetAttribute("Downed") then
+			attack:FireServer()
+		end
+	end)
 	bind("SurvivorCrouch", onFoot.crouchOrSlide, function(state)
 		if state ~= Enum.UserInputState.Begin then
 			return
@@ -147,6 +167,7 @@ end
 local function unbindOnFoot()
 	ContextActionService:UnbindAction("SurvivorSprint")
 	ContextActionService:UnbindAction("SurvivorCrouch")
+	ContextActionService:UnbindAction("SurvivorHit")
 end
 
 local function onHiddenChanged()
@@ -165,6 +186,11 @@ end
 
 function Controls.start()
 	player:GetAttributeChangedSignal("SpeedFactor"):Connect(refresh)
+	player:GetAttributeChangedSignal("HungerFactor"):Connect(refresh)
+	player:GetAttributeChangedSignal("Downed"):Connect(function()
+		sprinting = false
+		refresh()
+	end)
 	player:GetAttributeChangedSignal("Hidden"):Connect(onHiddenChanged)
 	player.CharacterAdded:Connect(function()
 		sprinting = false

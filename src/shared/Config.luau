@@ -72,8 +72,17 @@ Config.world = {
 	-- Attribut d'une part qui ne couvre qu'a moitie (buisson, grillage) :
 	-- la part du regard qu'elle laisse passer, entre 0 et 1.
 	coverAttribute = "Couvert",
+	-- Un batiment ou l'on peut s'abriter (attribut booleen sur son Model) et
+	-- les parts que l'Oeil arrache quand il vient chercher ceux qui s'y
+	-- abritent : toits, plafonds, etage.
+	buildingAttribute = "Batiment",
+	roofAttribute = "Toiture",
 	-- Workspace.<folder>.<sky> : la Fissure, l'Oeil (<eye>, un Model dont
 	-- l'avant -Z regarde le sol) et les debris qu'il aspire (<debris>).
+	-- Dans la Planque : l'etabli (le menu de construction) et les
+	-- emplacements des constructions, une part `Slot<id>` par construction.
+	workbench = "Etabli",
+	slotPrefix = "Slot",
 	sky = "Ciel",
 	eye = "Oeil",
 	debris = "Debris",
@@ -105,7 +114,8 @@ Config.sky = {
 
 -- A REGLER. Le concept vise un jour de ~12 min ; la premiere version est plus
 -- courte, pour tester la tension des Balayages sans attendre. La nuit n'existe
--- pas encore : elle passe en `nightSkipSeconds`, tout le monde a la Planque.
+-- dure `nightSeconds` : les Repris tombent de la Fissure et convergent vers la
+-- Planque.
 Config.day = {
 	sweepsPerDay = 4,
 	-- Le temps de sortir de la cave et de commencer a fouiller.
@@ -115,7 +125,8 @@ Config.day = {
 	gapSeconds = { min = 70, max = 110 },
 	-- Apres le dernier Balayage : le temps de rentrer avant la nuit.
 	duskSeconds = 30,
-	nightSkipSeconds = 8,
+	-- Le concept vise ~6 min ; 4 pour les premiers essais.
+	nightSeconds = 240,
 	-- La part des emplacements qui portent une cachette fragile chaque matin.
 	-- Moins de la moitie vide les rues ; plus des trois quarts rend tout facile.
 	fragileShare = 0.6,
@@ -143,6 +154,14 @@ Config.eye = {
 	-- deux fois le rayon : il reste des bandes jamais touchees.
 	laneSpacing = 55,
 	patterns = { "line", "spiral" },
+	-- Un Balayage ne couvre pas tout le quartier (800 studs : plusieurs
+	-- minutes) mais une zone de ce cote, centree sur un joueur tire au hasard
+	-- (decision du 5 novembre 2026). 280 : un pate de maisons et ses jardins,
+	-- parcouru en ~30 s ; se disperser rend plus probable d'etre pris.
+	zoneSize = 280,
+	-- Les cachettes marquees que l'Oeil va arracher : celles de la zone, plus
+	-- cette marge.
+	inspectMargin = 60,
 	-- Le temps que l'Oeil s'attarde sur une cachette marquee : il l'arrache au
 	-- debut, celui qui est dedans a ce temps-la pour fuir le cercle.
 	inspectSeconds = 1.6,
@@ -171,6 +190,163 @@ Config.eye = {
 	-- Nombre de parts transparentes ou couvrantes qu'un rayon traverse avant
 	-- d'abandonner (et de considerer le joueur cache).
 	maxRayHops = 8,
+}
+
+--------------------------------------------------------------------------------
+-- LES REPRIS
+--------------------------------------------------------------------------------
+
+-- A REGLER : premiere version, aucun de ces chiffres n'a ete joue.
+Config.repris = {
+	-- Ce qui reveille un Repris endormi (le jour, dans les maisons).
+	wake = {
+		-- Courir pres de lui, dans la piece d'a cote : il entend.
+		sprintRadius = 24,
+		-- Fouiller un placard dans la meme maison.
+		searchRadius = 20,
+		-- Passer a le frôler, meme en marchant.
+		touchRadius = 5,
+	},
+	-- La part des maisons intactes ou dorment des Repris chaque matin, et
+	-- combien. Un quart : on ne sait jamais, mais pas a chaque porte.
+	dormantHouseShare = 0.25,
+	dormantPerHouse = { min = 1, max = 2 },
+	-- Il abandonne une cible qu'il ne voit plus depuis ce temps : le jour il se
+	-- rendort sur place, la nuit il repart rôder.
+	forgetSeconds = 6,
+	-- Il recalcule son chemin a cette frequence : assez pour suivre un joueur
+	-- qui tourne au coin, sans saturer le serveur a trente Repris.
+	thinkSeconds = 0.3,
+	repathSeconds = 1,
+	kinds = {
+		-- L'Errant : lent, encaisse, la base. Plus lent que la marche (14).
+		errant = {
+			name = "Errant",
+			speed = 10,
+			health = 60,
+			damage = 14,
+			attackRange = 4.5,
+			attackSeconds = 1.3,
+			chaseRadius = 70,
+		},
+		-- Le Coureur : plus rapide que la course (22), fragile.
+		coureur = {
+			name = "Coureur",
+			speed = 23,
+			health = 30,
+			damage = 9,
+			attackRange = 4,
+			attackSeconds = 0.9,
+			chaseRadius = 90,
+		},
+	},
+	-- La nuit : combien descendent de la Fissure.
+	night = {
+		base = 5,
+		perNight = 2,
+		perPlayer = 2,
+		-- Au-dela, le serveur et la lisibilite souffrent.
+		max = 30,
+		runnerShareStart = 0,
+		runnerSharePerNight = 0.1,
+		runnerShareMax = 0.5,
+	},
+	-- Ils tombent du ciel a au moins cette distance de tout joueur : on les
+	-- voit descendre, on a le temps de se preparer.
+	spawnMinDistance = 90,
+	spawnHeight = 60,
+}
+
+--------------------------------------------------------------------------------
+-- LE COMBAT ET LA SANTE
+--------------------------------------------------------------------------------
+
+Config.combat = {
+	-- Le pied-de-biche du depart : trois coups pour un Errant, deux pour un
+	-- Coureur.
+	meleeDamage = 22,
+	meleeRange = 7,
+	-- Un coup tous les 0,6 s : on ne peut pas tenir un groupe a distance.
+	meleeSeconds = 0.6,
+	-- Le coup part devant soi : cosinus de l'angle maximal (environ 50 deg).
+	meleeCone = 0.64,
+	playerHealth = 100,
+	-- Relever un ami tombe : maintenir X pres de lui.
+	reviveSeconds = 3,
+	reviveDistance = 7,
+	-- Relevé, on repart avec cette sante ; et a l'aube, celui que personne n'a
+	-- releve se releve seul, affaibli (concept).
+	reviveHealth = 35,
+	dawnHealth = 30,
+	-- A terre, on rampe.
+	downedSpeed = 2,
+}
+
+--------------------------------------------------------------------------------
+-- LA FAIM ET LA PLANQUE
+--------------------------------------------------------------------------------
+
+-- A REGLER. La faim descend de 100 a 0 en ~25 min, soit environ deux jours :
+-- sauter un repas se sent, en sauter deux se paie.
+Config.needs = {
+	hungerMax = 100,
+	hungerPerMinute = 4,
+	-- Affame : on ralentit.
+	hungryBelow = 30,
+	hungrySpeedFactor = 0.85,
+	-- Vide : on perd de la sante, jusqu'a tomber.
+	starvingDamagePerSecond = 0.5,
+}
+
+Config.planque = {
+	-- Est « a la Planque » celui qui est a cette distance du point de depart
+	-- (la cave entiere et le haut de l'escalier).
+	radius = 26,
+	-- Le repas du soir, par convive : le premier plat que la reserve permet.
+	menu = {
+		{ conserve = 1, eau = 1 },
+		{ conserve = 2 },
+	},
+	-- Se servir de l'etabli : a portee de bras.
+	useDistance = 8,
+	builds = {
+		{
+			id = "barricade",
+			name = "Barricade de l'escalier",
+			description = "Les Repris doivent la casser pour descendre.",
+			cost = { planche = 3, ferraille = 2 },
+			health = 300,
+		},
+		{
+			id = "lit",
+			name = "Lits de camp",
+			description = "À l'aube, ceux qui ont dormi ici repartent en pleine santé.",
+			cost = { tissu = 2, planche = 2 },
+		},
+		{
+			id = "rechaud",
+			name = "Réchaud",
+			description = "Le repas chaud soigne aussi.",
+			cost = { ferraille = 2, piles = 1 },
+			heal = 30,
+		},
+		{
+			id = "periscope",
+			name = "Périscope",
+			description = "Il voit le ciel rougir plus tôt.",
+			cost = { plomb = 1, ferraille = 2 },
+			earlySeconds = 8,
+		},
+		{
+			id = "radio",
+			name = "Radio réparée",
+			description = "Elle dit de quel côté l'Œil va chercher.",
+			cost = { piles = 2, cle = 1 },
+		},
+	},
+	-- Reparer la barricade abimee.
+	repairCost = { planche = 1 },
+	repairAmount = 120,
 }
 
 --------------------------------------------------------------------------------
@@ -242,6 +418,26 @@ Config.loot = {
 				{ item = "bandage", weight = 4 },
 				{ item = "tissu", weight = 3 },
 				{ item = "medicaments", weight = 2 },
+			},
+		},
+		-- L'armoire d'une chambre : du tissu, de quoi se soigner.
+		chambre = {
+			rolls = { min = 1, max = 2 },
+			entries = {
+				{ item = "tissu", weight = 4 },
+				{ item = "bandage", weight = 2 },
+				{ item = "piles", weight = 2 },
+				{ item = "medicaments", weight = 1 },
+			},
+		},
+		-- La superette du centre : de quoi manger, mais tout le monde y pense.
+		superette = {
+			rolls = { min = 1, max = 3 },
+			entries = {
+				{ item = "conserve", weight = 5 },
+				{ item = "eau", weight = 5 },
+				{ item = "piles", weight = 2 },
+				{ item = "bandage", weight = 1 },
 			},
 		},
 		voiture = {

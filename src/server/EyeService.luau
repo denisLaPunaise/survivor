@@ -28,6 +28,8 @@ local Remotes = Survivor:WaitForChild("Remotes")
 
 local CrewService = require(script.Parent:WaitForChild("CrewService"))
 local HidingService = require(script.Parent:WaitForChild("HidingService"))
+local LootService = require(script.Parent:WaitForChild("LootService"))
+local PlanqueService = require(script.Parent:WaitForChild("PlanqueService"))
 local WorldService = require(script.Parent:WaitForChild("WorldService"))
 
 local EyeService = {}
@@ -133,6 +135,13 @@ end
 
 local function check(dt: number)
 	for _, player in Players:GetPlayers() do
+		-- Pendant un Balayage, s'abriter dans un batiment le marque.
+		if looking and not HidingService.isHidden(player) and not CrewService.isTaken(player) then
+			local character = player.Character
+			if character then
+				HidingService.noteShelter(character:GetPivot().Position)
+			end
+		end
 		local level = exposures[player] or 0
 		level = Exposure.step(level, seenFactor(player), dt, Config.eye.exposure)
 		exposures[player] = level
@@ -181,8 +190,34 @@ local function makeBeam(): BasePart
 	return part
 end
 
-local function buildPath(bounds: Sweep.Bounds, targets: { HidingService.Target }): Sweep.Timeline
+-- Le centre du Balayage : un joueur encore debout, tire au hasard. Sans
+-- personne, un point au hasard du quartier.
+local function zoneCenter(bounds: Sweep.Bounds): (number, number, Player?)
+	local candidates: { Player } = {}
+	for _, player in Players:GetPlayers() do
+		if player.Character and not CrewService.isTaken(player) then
+			table.insert(candidates, player)
+		end
+	end
+	if #candidates == 0 then
+		return random:NextNumber(bounds.minX, bounds.maxX),
+			random:NextNumber(bounds.minZ, bounds.maxZ),
+			nil
+	end
+	local pick = candidates[random:NextInteger(1, #candidates)]
+	local at = (pick.Character :: Model):GetPivot().Position
+	return at.X, at.Z, pick
+end
+
+local function buildPath(
+	district: Sweep.Bounds,
+	targets: { HidingService.Target },
+	cx: number,
+	cz: number
+): Sweep.Timeline
 	local eye = Config.eye
+	local bounds = Sweep.zoneAround(cx, cz, eye.zoneSize, district)
+	targets = Sweep.targetsIn(targets, bounds, eye.inspectMargin)
 	local pattern = eye.patterns[random:NextInteger(1, #eye.patterns)]
 	local path = if pattern == "spiral"
 		then Sweep.spiralPath(bounds, eye.laneSpacing)
@@ -200,18 +235,26 @@ end
 -- `stillCurrent` dit si la partie n'a pas ete remise a zero entre-temps.
 function EyeService.runSweep(stillCurrent: () -> boolean)
 	local eye = Config.eye
+	local world = WorldService.get()
+	local bounds = boundsOf(world.bounds)
+	-- La zone se choisit AU SIGNAL : c'est la que l'Oeil cherchera, et la
+	-- radio de la Planque peut le dire a temps.
+	local cx, cz, aimed = zoneCenter(bounds)
 	eyeState:FireAllClients({ phase = "warning", seconds = eye.warningSeconds })
+	if aimed and PlanqueService.has("radio") then
+		LootService.broadcast(
+			"La radio grésille : il va chercher du côté de " .. aimed.DisplayName
+		)
+	end
 	task.wait(eye.warningSeconds)
 	if not stillCurrent() then
 		return
 	end
 
-	local world = WorldService.get()
-	local bounds = boundsOf(world.bounds)
 	groundY = world.bounds.Position.Y
 	eyePosition =
 		Vector3.new(world.bounds.Position.X, groundY + eye.height, world.bounds.Position.Z)
-	local timeline = buildPath(bounds, HidingService.beginSweep())
+	local timeline = buildPath(bounds, HidingService.beginSweep(), cx, cz)
 
 	eyeState:FireAllClients({ phase = "sweep", seconds = timeline.total })
 	beam = makeBeam()

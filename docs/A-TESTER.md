@@ -63,3 +63,50 @@ lumière en mode Future (je ne peux pas la régler), et le jeu à plusieurs.
    qu'on comprend où il cherche ?
 3. **La rue** : est-ce assez « abandonné » ? Qu'est-ce qui fait encore faux
    (les sacs poubelle en boules, les voitures en blocs, les maisons) ?
+
+## La Banlieue en grand (5 novembre 2026)
+
+*Vérifié seul* : le quartier se construit sans problème mesuré (87
+emplacements, 107 contenants, 6 cachettes solides) ; un Balayage vient bien
+chercher autour du joueur (au plus près 15 studs) et dure ~45 s.
+
+1. **La taille et la densité** (75 maisons depuis le 5 novembre) : est-ce
+   qu'on s'y perd un peu, ou trop ? Reste-t-il des coins vides ? Combien de temps
+   pour aller de la Planque (tout au sud-ouest) jusqu'à la supérette ?
+2. **Le Balayage qui vient vers vous** : est-ce injuste, ou juste stressant ?
+   Séparez-vous une fois, et restez groupés une autre fois.
+3. **Les maisons à étage** : on ne peut pas monter. Est-ce que ça gêne ?
+
+## Les points 1 à 4 (5 novembre 2026)
+
+*Vérifié seul dans Studio* : un toit est arraché quand on s'y est abrité au
+Balayage précédent ; un Repris endormi ne bouge pas quand on passe en silence
+et se réveille à une fouille toute proche ; au contact il frappe et fait
+tomber, et seul à terre la partie recommence ; quatre coups de pied-de-biche
+tuent un Errant ; une nuit fait tomber le bon nombre de Repris, qui se
+rapprochent de la Planque ; les cinq constructions se bâtissent en payant la
+réserve ; la barricade perd ses points sous les coups ; le repas remet la faim
+à plein. Les 211 tests passent.
+
+*Jamais vu à l'écran* : les Repris eux-mêmes (leur allure), le panneau de
+l'établi, la nuit côté joueur, les mots sur les murs (la capture d'écran ne
+montre pas leur texte). *Jamais tenu en main* : tout ce qui suit.
+
+1. **Les maisons ne sont plus sûres** : abrite-toi deux Balayages de suite
+   dans la même maison. Le toit part-il bien au deuxième, et as-tu le temps
+   de fuir ?
+2. **Les Repris endormis** : entre dans quelques maisons. Est-ce qu'on les voit
+   assez tôt ? Passer à côté en marchant doit être possible ; courir ou
+   fouiller près d'eux les réveille. Est-ce lisible ?
+3. **Le combat** : R2 frappe. Est-ce que le coup « porte » (on sent qu'on
+   touche) ? Trois coups pour un Errant, est-ce juste ?
+4. **À terre et relevé** : à deux, laisse-toi tomber et fais-toi relever
+   (maintenir X près de toi).
+5. **La nuit** : est-ce trop sombre, assez inquiétant ? La petite lumière
+   suffit-elle ?
+6. **L'établi** : à la manette, le panneau doit s'ouvrir avec X devant
+   l'établi, se parcourir à la croix, construire avec A, se fermer avec B.
+7. **Le repas** : rentrer le soir avec des conserves et de l'eau, et sentir la
+   différence le lendemain si on ne l'a pas fait.
+8. **La variété** : les maisons se ressemblent-elles encore trop ? Les mots,
+   les repères (église, station, château d'eau) aident-ils à se repérer ?

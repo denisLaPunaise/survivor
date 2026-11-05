@@ -54,3 +54,90 @@ n'importe laquelle.
 - **Arbres générés** (`docs/ASSETS.md`) : l'arbre feuillu est gardé, l'arbre
   mort généré est refusé (tronc bleu de dessin animé).
 - **Ciel couvert à 92 %** : les trouées bleues disaient « beau temps ».
+
+## 5 novembre 2026 — la Banlieue en grand
+
+- **Où regarde l'Œil** (Josh : « fais comme tu le sens ») : chaque Balayage
+  couvre une zone de 280 × 280 studs **centrée sur un joueur encore debout,
+  tiré au hasard**. Il reste menaçant où que l'on soit, et se disperser rend
+  plus probable d'être pris. L'Œil n'arrache que les cachettes marquées de sa
+  zone (plus 60 studs). Réglable dans `Config.eye`.
+- **800 × 640 studs** (Josh avait choisi ~800 × 800 ; 640 de profondeur suffit
+  à quatre rangées de maisons et une bande centrale).
+- **Le plan** : deux rues est-ouest bordées de maisons, trois rues nord-sud,
+  39 maisons et un terrain vide, une bande centrale avec une supérette (son
+  propre butin), un terrain de basket grillagé et des terrains vagues.
+- **Des maisons à étage** (environ 40 % des intactes) : l'étage n'est pas
+  accessible, il sert à la silhouette et couvre le rez-de-chaussée.
+- **Les voitures sont générées** (deux modèles, `docs/ASSETS.md`) : chaque
+  emplacement de voiture tire l'un des deux.
+- **Le lointain** : le terrain s'étend loin au-delà des barricades, avec des
+  silhouettes sombres de maisons et d'arbres dans la brume.
+
+## 5 novembre 2026 — un quartier rempli
+
+Josh a vu juste : l'agrandissement avait étalé les mêmes maisons dans des
+pelouses vides. Le quartier passe à **800 × 800** et à **75 maisons** :
+
+- deux rangées qui se font face de part et d'autre d'une **allée piétonne**
+  au centre, autour de la supérette et du terrain de basket (pas de garage :
+  l'allée est trop étroite) ;
+- deux rangées au bord, tournées vers un **chemin de terre**, dos aux jardins
+  de la rue voisine, avec un rideau d'arbres derrière ;
+- des **jardins habités** : balançoire, piscine vide, étendoir, table de
+  jardin, potager, niche et jouets ;
+- les terrains vagues du centre ont disparu au profit des maisons ;
+- le lointain est plus dense et plus proche.
+
+## 5 novembre 2026 — les points 1 à 4 (validés par Josh)
+
+Josh a validé l'ordre et les idées ; ce qui suit précise ce que l'assistant a
+tranché pour les mettre en place.
+
+**1. L'Œil arrache les toits.** S'abriter dans un bâtiment (maison au toit
+entier, supérette, église, station-service) pendant un Balayage le marque. Au
+Balayage suivant, si le bâtiment est dans la zone, l'Œil arrache sa toiture :
+toits, plafonds et tout l'étage. Le toit arraché ne revient pas de la partie :
+le quartier s'abîme jour après jour. La cave de la Planque et les buses restent
+sûres.
+
+**2. Les Repris.**
+- Le jour, ils dorment dans un quart des maisons (1 ou 2 par maison) et se
+  réveillent si l'on court (à moins de 24 studs), fouille (20) ou les frôle (5).
+  Réveillés par un bruit, ils vont voir d'où il vient ; s'ils ne voient
+  personne pendant 6 s, ils se rendorment là où ils sont.
+- La nuit (4 min pour l'instant, le concept en vise 6), ils tombent de la
+  Fissure, loin des joueurs, et convergent vers la Planque. Leur nombre monte
+  chaque nuit et avec le nombre de joueurs ; les Coureurs arrivent à partir de
+  la deuxième nuit.
+- Deux types pour commencer : l'Errant (lent, plus lent que la marche) et le
+  Coureur (plus rapide que la course, fragile).
+- Le combat : R2 frappe avec le pied-de-biche (3 coups pour un Errant). On ne
+  meurt pas : on tombe, on rampe, un ami relève en maintenant X (3 s) ; sinon
+  on se relève seul à l'aube, affaibli. Tombé compte comme « pas debout » pour
+  la défaite.
+- La nuit, chacun porte une petite lumière, vue de tous.
+
+**3. La faim et la Planque.**
+- La faim descend en ~25 min (environ deux jours). Affamé, on ralentit ; vide,
+  on perd de la santé.
+- **Le repas du soir** plutôt que manger dans un menu : à la tombée de la nuit,
+  ceux qui sont rentrés à la Planque mangent sur la réserve commune (une
+  conserve et une eau, ou deux conserves). Manger dans un menu à la manette,
+  au milieu des Balayages, aurait été une corvée.
+- **L'établi** de la cave ouvre un panneau (à la manette : A construit, B
+  ferme). Cinq constructions pour commencer, posées à des emplacements fixes
+  de la cave (la construction libre sur grille du concept viendra ensuite) :
+  la barricade de l'escalier (les Repris doivent la casser, on la répare), les
+  lits (soignent à l'aube), le réchaud (le repas soigne), le périscope (8 s de
+  préavis en plus), la radio (dit vers quel joueur l'Œil va chercher).
+
+**4. La variété.**
+- Quatre intérieurs : le plan d'origine, son miroir, et chacun avec une
+  chambre (lit et armoire à fouiller, nouveau butin « chambre ») à la place de
+  la salle à manger.
+- Des maisons qui racontent : barricadées de l'intérieur (~10 %), brûlées
+  (~8 %), ou avec un mot écrit au mur (~14 %). Les mots sont des bribes, sans
+  explication.
+- Trois repères : l'église au centre (clocher), la station-service au
+  nord-ouest, le château d'eau au nord, plus haut que tout.

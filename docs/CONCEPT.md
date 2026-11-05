@@ -233,7 +233,7 @@ conserves et un pied-de-biche. Rien d'autre.
   précédent. Dans un quartier aussi, tout ne s'ouvre pas tout de suite
   (bâtiments à clé, coffres à code, sous-sols barricadés).
 - **Décidé** : **7 quartiers**.
-- **Proposé** : ~1000 × 1000 studs par quartier (~280 m de côté), la Planque
+- **Décidé** pour la Banlieue : ~800 × 800 (construit en 800 × 640). Ancienne proposition : ~1000 × 1000 studs par quartier (~280 m de côté), la Planque
   **en bordure** du premier quartier, pour que partir fouiller soit un vrai
   trajet. En ligne droite on traverse en ~1 min, mais avec les clôtures, les
   intérieurs et les Balayages, un aller-retour réel prend plusieurs minutes. Les

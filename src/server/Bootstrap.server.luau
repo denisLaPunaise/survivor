@@ -16,11 +16,14 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Survivor = ReplicatedStorage:WaitForChild("Survivor")
 local Config = require(Survivor:WaitForChild("Config"))
 
+local CombatService = require(script.Parent:WaitForChild("CombatService"))
 local CrewService = require(script.Parent:WaitForChild("CrewService"))
 local DayService = require(script.Parent:WaitForChild("DayService"))
 local EyeService = require(script.Parent:WaitForChild("EyeService"))
 local HidingService = require(script.Parent:WaitForChild("HidingService"))
 local LootService = require(script.Parent:WaitForChild("LootService"))
+local PlanqueService = require(script.Parent:WaitForChild("PlanqueService"))
+local ReprisService = require(script.Parent:WaitForChild("ReprisService"))
 local WorldService = require(script.Parent:WaitForChild("WorldService"))
 
 print("================================================")
@@ -55,6 +58,17 @@ print("================================================")
 
 LootService.start()
 HidingService.start()
+print(
+	string.format(
+		"[Survivor] %d bâtiments où s'abriter, et dont l'Œil peut arracher le toit",
+		HidingService.buildingCount()
+	)
+)
+CombatService.start()
 CrewService.start()
 EyeService.start()
+ReprisService.start()
+PlanqueService.start()
+-- Les Repris frappent la barricade de la Planque sans la connaitre.
+ReprisService.setObstacleProvider(PlanqueService.obstacleNear)
 DayService.start()
