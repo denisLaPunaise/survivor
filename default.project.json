@@ -1,0 +1,26 @@
+{
+	"name": "Survivor",
+	"tree": {
+		"$className": "DataModel",
+
+		"ReplicatedStorage": {
+			"Survivor": {
+				"$path": "src/shared"
+			}
+		},
+
+		"ServerScriptService": {
+			"Survivor": {
+				"$path": "src/server"
+			}
+		},
+
+		"StarterPlayer": {
+			"StarterPlayerScripts": {
+				"Survivor": {
+					"$path": "src/client"
+				}
+			}
+		}
+	}
+}
