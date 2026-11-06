@@ -55,18 +55,22 @@ local function runGame(myGeneration: number)
 		LootService.newDay()
 		ReprisService.newDay(dayNumber)
 		-- S'attarder dans le quartier : on le dit, chaque matin.
-		announce(
-			if dayNumber >= Config.district.pressureDay
-				then string.format(
-					"Jour %d. L'Œil s'impatiente : la ville ne tiendra plus longtemps.",
-					dayNumber
-				)
-				else string.format("Jour %d", dayNumber),
-			"day"
-		)
+		local title = if dayNumber >= Config.district.pressureDay
+			then string.format(
+				"Jour %d. L'Œil s'impatiente : la ville ne tiendra plus longtemps.",
+				dayNumber
+			)
+			else string.format("Jour %d", dayNumber)
+		-- Garde aussi en attribut : l'ecran d'un joueur qui arrive (ou qui
+		-- charge apres le premier matin) le montre en arrivant.
+		workspace:SetAttribute(Config.world.dayAttribute, title)
+		announce(title, "day")
 		QuestService.dawn(dayNumber)
+		-- Des l'aube : celui qui est dans le Ventre sait combien il en reste.
+		workspace:SetAttribute(Config.world.sweepsLeftAttribute, d.sweepsPerDay)
 
 		task.wait(d.firstSweepSeconds)
+		local left = Config.world.sweepsLeftAttribute
 		for i = 1, d.sweepsPerDay do
 			if not current() then
 				return
@@ -81,6 +85,7 @@ local function runGame(myGeneration: number)
 				end
 			end
 			EyeService.runSweep(current, dayNumber)
+			workspace:SetAttribute(left, d.sweepsPerDay - i)
 			if i < d.sweepsPerDay and current() then
 				task.wait(random:NextNumber(d.gapSeconds.min, d.gapSeconds.max))
 			end

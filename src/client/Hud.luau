@@ -110,8 +110,10 @@ function Hud.start()
 	fade.Transparency = NumberSequence.new(0, 1)
 	fade.Parent = glow
 
-	local hiddenText =
-		label(dark, "Texte", UDim2.fromScale(0.6, 0.05), UDim2.fromScale(0.5, 0.93), 17)
+	local hiddenText = label(dark, "Texte", UDim2.fromScale(0.8, 0), UDim2.fromScale(0.5, 0.93), 17)
+	-- La hauteur suit le texte : a hauteur fixe, « Tes amis doivent venir te
+	-- detacher » etait coupe (vu en jeu).
+	hiddenText.AutomaticSize = Enum.AutomaticSize.Y
 	hiddenText.ZIndex = 3
 	hiddenText.TextTransparency = 0.25
 
@@ -222,7 +224,9 @@ function Hud.start()
 		label(downed, "Texte", UDim2.fromScale(0.7, 0.2), UDim2.fromScale(0.5, 0.62), 24)
 	downedText.Text = "À terre.\nUn ami peut te relever. Sinon, tu te relèveras à l'aube."
 
-	local message = label(gui, "Message", UDim2.fromScale(0.6, 0.08), UDim2.fromScale(0.5, 0.3), 24)
+	local message = label(gui, "Message", UDim2.fromScale(0.6, 0), UDim2.fromScale(0.5, 0.3), 24)
+	-- Meme raison : un long message s'arretait au milieu de sa phrase.
+	message.AutomaticSize = Enum.AutomaticSize.Y
 	message.ZIndex = 5
 	-- Un contour leger plutot qu'un bandeau : un bandeau faisait une boite aux
 	-- bords durs (vu en jeu le 6 novembre 2026).
@@ -319,6 +323,12 @@ function Hud.start()
 		end)
 	end
 
+	-- Le jour en cours, pour qui arrive apres l'annonce du matin.
+	local dayNow = workspace:GetAttribute(Config.world.dayAttribute)
+	if typeof(dayNow) == "string" then
+		task.delay(1, showDay, dayNow)
+	end
+
 	local hud = Remotes:WaitForChild("Hud") :: RemoteEvent
 	hud.OnClientEvent:Connect(function(data: any)
 		bagText.Text =
@@ -392,6 +402,9 @@ function Hud.start()
 		if data.phase == "warning" then
 			show("Le ciel rougit…", "danger")
 			tintTo(Color3.fromRGB(255, 196, 186), -0.15, data.seconds)
+		elseif data.phase == "blink" then
+			-- Il cligne : le ciel reste rouge, le Balayage continue.
+			return
 		elseif data.phase == "sweep" then
 			tintTo(Color3.fromRGB(255, 170, 160), -0.3, 1)
 		else
@@ -401,16 +414,32 @@ function Hud.start()
 
 	local function refreshStates()
 		local hidden = player:GetAttribute("Hidden") == true
-		-- Attache dans un cocon : le meme rappel discret, en bas.
+		-- Attache dans un cocon, ou dans le Ventre : le meme rappel discret, en
+		-- bas. Dans le Ventre, combien de temps encore, et quoi faire (Josh :
+		-- on ne savait pas quand on sortait).
 		local bound = player:GetAttribute("Bound") == true
-		dark.Visible = hidden or bound
-		hiddenText.Text = if bound
-			then "Attaché   ·   Tes amis doivent venir te détacher"
-			else "Caché   ·   Sortir : " .. buttonName(Config.controls.contexts.hidden.leave)
+		local inVentre = player:GetAttribute("Taken") == true
+		dark.Visible = hidden or bound or inVentre
+		if inVentre then
+			local left = workspace:GetAttribute(Config.world.sweepsLeftAttribute)
+			local when = if typeof(left) == "number" and left > 1
+				then string.format("Encore %d Balayages avant la nuit", left)
+				elseif left == 1 then "Encore 1 Balayage avant la nuit"
+				else "Il te recrachera à la nuit, bientôt"
+			hiddenText.Text = "Le Ventre de l'Œil   ·   "
+				.. when
+				.. "\nRegarde par l'Œil   ·   Frappe les piliers pendant un Balayage   ·   Cherche les souvenirs"
+		elseif bound then
+			hiddenText.Text = "Attaché   ·   Tes amis doivent venir te détacher"
+		else
+			hiddenText.Text = "Caché   ·   Sortir : "
+				.. buttonName(Config.controls.contexts.hidden.leave)
+		end
 		downed.Visible = player:GetAttribute("Downed") == true
 	end
 	player:GetAttributeChangedSignal("Downed"):Connect(refreshStates)
 	player:GetAttributeChangedSignal("Bound"):Connect(refreshStates)
+	workspace:GetAttributeChangedSignal(Config.world.sweepsLeftAttribute):Connect(refreshStates)
 	player:GetAttributeChangedSignal("Health"):Connect(function()
 		local health = player:GetAttribute("Health")
 		local ratio = if typeof(health) == "number" then health / Config.combat.playerHealth else 1
@@ -508,6 +537,16 @@ function Hud.start()
 		camera.FieldOfView = defaultFov
 		camera.CameraType = Enum.CameraType.Custom
 		camera.CameraSubject = character:WaitForChild("Humanoid") :: Humanoid
+		-- La camera restait la-haut, ou l'aspiration l'avait laissee, alors
+		-- que le personnage etait deja dans le Ventre (vu en jeu) : on la pose
+		-- sur sa tete, une fois qu'il est a sa place.
+		task.delay(0.3, function()
+			local head = character:FindFirstChild("Head")
+			if head and head:IsA("BasePart") and player.Character == character then
+				camera.CameraType = Enum.CameraType.Custom
+				camera.CFrame = head.CFrame
+			end
+		end)
 		if taken.BackgroundTransparency < 1 then
 			task.delay(1, function()
 				local out = TweenInfo.new(1.5)

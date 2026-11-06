@@ -47,6 +47,11 @@ local accumulated = 0
 local exposures: { [Player]: number } = {}
 -- Le dernier joueur que l'Oeil a vu pendant ce Balayage, et quand.
 local sighting: { player: Player, at: number }? = nil
+-- Le clignement : jusqu'a quand il ne voit plus rien, s'il a deja cligne
+-- pendant ce Balayage, et le numero du Balayage (pour compter les coups).
+local blindUntil = 0
+local flinchedThisSweep = false
+local sweepId = 0
 
 local rayParams = RaycastParams.new()
 rayParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -132,6 +137,7 @@ end
 local function seenFactor(player: Player): number
 	if
 		looking == nil
+		or os.clock() < blindUntil
 		or HidingService.isHidden(player)
 		or CrewService.isTaken(player)
 		or CrewService.isBound(player)
@@ -204,6 +210,9 @@ local function check(dt: number)
 	end
 end
 
+-- Le regard, a peine visible : un voile de lumiere, pas un mur.
+local BEAM_TRANSPARENCY = 0.82
+
 local function placeBeam()
 	local part = beam
 	if part == nil or looking == nil then
@@ -215,6 +224,8 @@ local function placeBeam()
 	-- Un cylindre prend sa longueur sur X.
 	part.CFrame = CFrame.lookAt((eyePosition + target) / 2, target)
 		* CFrame.Angles(0, math.rad(90), 0)
+	-- Il cligne : son regard s'eteint le temps que ses paupieres rouvrent.
+	part.Transparency = if os.clock() < blindUntil then 1 else BEAM_TRANSPARENCY
 end
 
 local function makeBeam(): BasePart
@@ -223,7 +234,7 @@ local function makeBeam(): BasePart
 	part.Shape = Enum.PartType.Cylinder
 	part.Material = Enum.Material.Neon
 	part.Color = Color3.fromRGB(255, 214, 196)
-	part.Transparency = 0.82
+	part.Transparency = BEAM_TRANSPARENCY
 	part.Anchored = true
 	part.CanCollide = false
 	part.CanQuery = false
@@ -246,7 +257,12 @@ end
 local function zoneCenter(bounds: Sweep.Bounds, dayNumber: number): (number, number, Player?)
 	local candidates: { Player } = {}
 	for _, player in Players:GetPlayers() do
-		if player.Character and not CrewService.isTaken(player) then
+		-- Ni l'aspire (il est dans le Ventre), ni l'attache dans son cocon.
+		if
+			player.Character
+			and not CrewService.isTaken(player)
+			and not CrewService.isBound(player)
+		then
 			table.insert(candidates, player)
 		end
 	end
@@ -343,6 +359,9 @@ function EyeService.runSweep(stillCurrent: () -> boolean, dayNumber: number)
 	eyeState:FireAllClients({ phase = "sweep", seconds = timeline.total })
 	beam = makeBeam()
 	sighting = nil
+	sweepId += 1
+	flinchedThisSweep = false
+	blindUntil = 0
 	local chaseSpeed = Growth.onDay(hunt.chaseSpeed, dayNumber)
 	local memory = Growth.onDay(hunt.memorySeconds, dayNumber)
 	local started = os.clock()
@@ -444,6 +463,25 @@ function EyeService.start()
 	Players.PlayerRemoving:Connect(function(player: Player)
 		exposures[player] = nil
 	end)
+end
+
+-- Le Balayage en cours (nil entre deux) : les coups portes dans le Ventre
+-- comptent pour lui seul.
+function EyeService.sweepId(): number?
+	return if looking then sweepId else nil
+end
+
+-- Le faire cligner de douleur : une fois par Balayage au plus. Son regard
+-- s'eteint, il perd la piste, et tout le monde voit ses paupieres battre.
+function EyeService.flinch(): boolean
+	if looking == nil or flinchedThisSweep then
+		return false
+	end
+	flinchedThisSweep = true
+	blindUntil = os.clock() + Config.eye.flinch.blindSeconds
+	sighting = nil
+	eyeState:FireAllClients({ phase = "blink", seconds = Config.eye.flinch.blindSeconds })
+	return true
 end
 
 return EyeService

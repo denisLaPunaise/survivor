@@ -134,6 +134,22 @@ return function(t: harness.Harness)
 		gap > Config.eye.beamRadius
 	)
 
+	t.section("Le faire cligner depuis son Ventre")
+
+	local flinch = Config.eye.flinch
+	t.check(
+		string.format(
+			"il ne reste aveugle que %.1f s : pas trop fort (2 s au plus)",
+			flinch.blindSeconds
+		),
+		flinch.blindSeconds <= 2
+	)
+	local alone = flinch.hitsNeeded * Config.combat.meleeSeconds
+	t.check(
+		string.format("seul, il faut %.1f s de coups : un effort, pas un clic", alone),
+		alone >= 2.5 and alone <= 8
+	)
+
 	t.section("La zone d'un Balayage")
 
 	local district = { minX = -400, maxX = 400, minZ = -320, maxZ = 320 }

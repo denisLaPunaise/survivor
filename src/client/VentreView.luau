@@ -25,6 +25,8 @@ local VentreView = {}
 -- La distance du centre de l'Oeil au-dela de sa pupille (globe de 120, pupille
 -- a ~132) : c'est d'ici qu'on regarde la ville.
 local EYE_REACH = 145
+-- La hauteur du volume rouge de la zone : plus que les collines de la ville.
+local ZONE_HEIGHT = 60
 
 -- Demarre a part : le Ventre peut mettre un moment a arriver chez le client,
 -- et rien d'autre ne doit l'attendre.
@@ -69,7 +71,9 @@ function VentreView.run()
 	local caption = Instance.new("TextLabel")
 	caption.AnchorPoint = Vector2.new(0.5, 1)
 	caption.Position = UDim2.new(0.5, 0, 1, -120)
-	caption.Size = UDim2.fromScale(0.8, 0.08)
+	-- La hauteur suit le texte : a hauteur fixe, la fin etait coupee.
+	caption.Size = UDim2.fromScale(0.8, 0)
+	caption.AutomaticSize = Enum.AutomaticSize.Y
 	caption.BackgroundTransparency = 1
 	caption.Font = Typography.STORY
 	caption.TextSize = 20
@@ -95,6 +99,10 @@ function VentreView.run()
 		end
 		watching = false
 		gui.Enabled = false
+		local hud = player.PlayerGui:FindFirstChild("SurvivorHud")
+		if hud and hud:IsA("ScreenGui") then
+			hud.Enabled = true
+		end
 		RunService:UnbindFromRenderStep("SurvivorOeilVue")
 		ContextActionService:UnbindAction("SurvivorQuitterOeil")
 		for _, mark in marks do
@@ -131,6 +139,12 @@ function VentreView.run()
 		end
 		watching = true
 		gui.Enabled = true
+		-- Le sac et la reserve encombraient la vue : on les cache le temps de
+		-- regarder (la radio et la legende restent).
+		local hud = player.PlayerGui:FindFirstChild("SurvivorHud")
+		if hud and hud:IsA("ScreenGui") then
+			hud.Enabled = false
+		end
 		-- Les amis, vus a travers tout.
 		for _, other in Players:GetPlayers() do
 			if other ~= player and other.Character then
@@ -190,9 +204,10 @@ function VentreView.run()
 					part.CastShadow = false
 					part.Material = Enum.Material.Neon
 					part.Color = Color3.fromRGB(220, 40, 30)
-					part.Transparency = 0.75
-					part.Size = Vector3.new(zone.size, 1, zone.size)
-					part.CFrame = CFrame.new(zone.x, 1, zone.z)
+					-- Un volume, pas un plan : a plat, les collines le percaient.
+					part.Transparency = 0.82
+					part.Size = Vector3.new(zone.size, ZONE_HEIGHT, zone.size)
+					part.CFrame = CFrame.new(zone.x, ZONE_HEIGHT / 2 - 10, zone.z)
 					part.Parent = workspace
 					square = part
 				elseif zone == nil and square then

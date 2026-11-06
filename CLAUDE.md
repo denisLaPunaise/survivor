@@ -189,7 +189,9 @@ passent par `HidingService.tryEnter`, `LootService.trySearch`,
 `QuestService.tryRelay` et `tryTune`, qui suivent le même chemin que les
 invites (et `VentreService.tryRead` / `tryWatch`, `CrewService.tryFree`). Le
 pont ne voit pas le `PlayerModule` du client : on ne peut pas y faire marcher
-ni grimper le personnage, seulement le téléporter.
+ni grimper le personnage, seulement le téléporter. Dans les parties lancées
+depuis le pont, il n'est pas chargé du tout : la caméra ne suit pas le
+personnage après une téléportation (ce n'est pas le cas quand Josh joue).
 
 Seul dans Studio, être aspiré ou attaché déclenche la défaite (plus personne
 debout) : pour voir le Ventre, marquer `Taken` et placer le personnage par

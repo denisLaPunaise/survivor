@@ -120,6 +120,11 @@ function CrewService.take(player: Player)
 				-- Le Ventre est a 6 000 studs : sans ca, la ville ne serait plus
 				-- chargee pour lui, et il ne verrait rien par l'Oeil (vu en jeu).
 				player.ReplicationFocus = WorldService.get().bounds
+				LootService.sendHud(
+					player,
+					"Le Ventre de l'Œil. Il te recrachera à la tombée de la nuit.",
+					"danger"
+				)
 			end
 		end)
 	end
@@ -207,13 +212,17 @@ function CrewService.tryFree(friend: Player, player: Player): boolean
 	return true
 end
 
--- Le cocon : une gangue sombre, des filaments brulants, une lueur rouge et un
--- trait de lumiere vers le ciel, qu'on voit de loin. Ses amis le detachent
--- en maintenant X.
+-- Le cocon : une chrysalide sombre, enlacee de veines qui brulent et battent
+-- doucement, posee sur des racines dans une tache de terre brulee, et un fil
+-- de lumiere qui monte au ciel, qu'on voit de loin. Ses amis le detachent en
+-- maintenant X. (La premiere version, un cylindre et des batons rouges,
+-- etait laide : vue en jeu le 6 novembre 2026.)
 local function wrap(player: Player, at: Vector3)
 	local e = Config.eye
 	local m = Instance.new("Model")
 	m.Name = "Cocon"
+	local flesh = Color3.fromRGB(58, 20, 22)
+	local burn = Color3.fromRGB(235, 70, 34)
 	local function piece(
 		name: string,
 		size: Vector3,
@@ -233,47 +242,117 @@ local function wrap(player: Player, at: Vector3)
 		p.Parent = m
 		return p
 	end
-	-- Un cylindre a sa longueur sur X : on le dresse.
-	local upright = CFrame.Angles(0, 0, math.rad(90))
-	local core = piece(
-		"Gangue",
-		Vector3.new(7, 4.6, 4.6),
-		CFrame.new(at + Vector3.new(0, 3, 0)) * upright,
-		Enum.Material.Slate,
-		Color3.fromRGB(46, 20, 20)
-	)
-	core.Shape = Enum.PartType.Cylinder
-	core.Transparency = 0.15
-	for k = 1, 7 do
-		local a = k / 7 * math.pi * 2
-		piece(
-			"Filament",
-			Vector3.new(0.3, 7.5, 0.3),
-			CFrame.new(at + Vector3.new(math.cos(a) * 2.3, 3, math.sin(a) * 2.3))
-				* CFrame.Angles(
-					math.rad(random:NextNumber(-12, 12)),
-					0,
-					math.rad(random:NextNumber(-12, 12))
-				),
-			Enum.Material.Neon,
-			Color3.fromRGB(210, 50, 30)
+	local function link(
+		name: string,
+		a: Vector3,
+		b: Vector3,
+		width: number,
+		material: Enum.Material,
+		color: Color3
+	): Part
+		return piece(
+			name,
+			Vector3.new(width, width, (b - a).Magnitude + width),
+			CFrame.lookAt((a + b) / 2, b),
+			material,
+			color
 		)
 	end
-	local beacon = piece(
+	-- Un cylindre a sa longueur sur X : on le dresse ou on le couche.
+	local upright = CFrame.Angles(0, 0, math.rad(90))
+
+	-- La terre brulee, et les racines qui s'y enfoncent.
+	piece(
+		"TerreBrulee",
+		Vector3.new(0.2, 12, 12),
+		CFrame.new(at + Vector3.new(0, 0.1, 0)) * upright,
+		Enum.Material.Slate,
+		Color3.fromRGB(22, 12, 12)
+	).Shape =
+		Enum.PartType.Cylinder
+	local veins: { Part } = {}
+	for k = 1, 7 do
+		local a = k / 7 * math.pi * 2 + random:NextNumber(-0.2, 0.2)
+		local dir = Vector3.new(math.cos(a), 0, math.sin(a))
+		local from = at + dir * 1.6 + Vector3.new(0, 1.2, 0)
+		local to = at + dir * random:NextNumber(4.5, 6.5) + Vector3.new(0, 0.15, 0)
+		link("Racine", from, to, 0.7, Enum.Material.Slate, flesh)
+		table.insert(
+			veins,
+			link(
+				"VeineRacine",
+				from + Vector3.new(0, 0.38, 0),
+				to + Vector3.new(0, 0.3, 0),
+				0.18,
+				Enum.Material.Neon,
+				burn
+			)
+		)
+	end
+
+	-- La chrysalide : un oeuf de quatre boules qui se chevauchent.
+	local profile = { { 1.9, 4.4 }, { 3.2, 5.4 }, { 4.6, 5 }, { 5.9, 3.6 } }
+	local core: Part? = nil
+	for i, layer in profile do
+		local ball = piece(
+			"Chrysalide",
+			Vector3.new(layer[2], layer[2], layer[2]),
+			CFrame.new(at + Vector3.new(0, layer[1], 0)),
+			Enum.Material.Slate,
+			flesh:Lerp(Color3.fromRGB(30, 10, 12), i / #profile)
+		)
+		ball.Shape = Enum.PartType.Ball
+		if i == 2 then
+			core = ball
+		end
+	end
+	-- Les veines qui l'enlacent : quatre spirales, posees sur la peau de l'oeuf.
+	local function radiusAt(h: number): number
+		local u = (h - 3.7) / 3.3
+		return 2.75 * math.sqrt(math.max(1 - u * u, 0.04)) + 0.06
+	end
+	for k = 1, 4 do
+		local previous: Vector3? = nil
+		for step = 0, 9 do
+			local h = 0.9 + step * 0.62
+			local angle = k * math.pi / 2 + h * 0.95
+			local r = radiusAt(h)
+			local point = at + Vector3.new(math.cos(angle) * r, h, math.sin(angle) * r)
+			if previous then
+				table.insert(veins, link("Veine", previous, point, 0.22, Enum.Material.Neon, burn))
+			end
+			previous = point
+		end
+	end
+	-- Elles battent doucement, comme un coeur.
+	for _, vein in veins do
+		TweenService:Create(
+			vein,
+			TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+			{ Transparency = 0.55 }
+		):Play()
+	end
+
+	-- Le fil de lumiere, du haut du cocon jusqu'au ciel.
+	local tether = piece(
 		"Signal",
-		Vector3.new(e.cocoonBeamHeight, 1.2, 1.2),
-		CFrame.new(at + Vector3.new(0, e.cocoonBeamHeight / 2, 0)) * upright,
+		Vector3.new(e.cocoonBeamHeight, 0.5, 0.5),
+		CFrame.new(at + Vector3.new(0, 7 + e.cocoonBeamHeight / 2, 0)) * upright,
 		Enum.Material.Neon,
-		Color3.fromRGB(255, 90, 60)
+		Color3.fromRGB(255, 110, 70)
 	)
-	beacon.Shape = Enum.PartType.Cylinder
-	beacon.Transparency = 0.55
-	beacon.CanQuery = false
+	tether.Shape = Enum.PartType.Cylinder
+	tether.Transparency = 0.45
+	tether.CanQuery = false
+
+	local holder = core :: Part
 	local light = Instance.new("PointLight")
-	light.Color = Color3.fromRGB(255, 70, 50)
-	light.Range = 22
-	light.Brightness = 2
-	light.Parent = core
+	light.Color = Color3.fromRGB(255, 80, 50)
+	-- Assez pour le reperer la nuit, pas au point de tout repeindre en rouge
+	-- (vu en jeu a 2).
+	light.Range = 16
+	light.Brightness = 0.8
+	light.Parent = holder
 	local onFoot = Config.controls.contexts.onFoot
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.ActionText = "Détacher"
@@ -283,7 +362,7 @@ local function wrap(player: Player, at: Vector3)
 	prompt.RequiresLineOfSight = false
 	prompt.GamepadKeyCode = (Enum.KeyCode :: any)[onFoot.interact.gamepad]
 	prompt.KeyboardKeyCode = (Enum.KeyCode :: any)[onFoot.interact.keyboard]
-	prompt.Parent = core
+	prompt.Parent = holder
 	prompt.Triggered:Connect(function(friend: Player)
 		CrewService.tryFree(friend, player)
 	end)
@@ -297,29 +376,14 @@ end
 function CrewService.releaseTaken()
 	local world = WorldService.get()
 	local e = Config.eye
-	local points: { Crew.Point } = {}
-	local spots: { Vector3 } = {}
-	for _, anchor in world.anchors:GetChildren() do
-		if anchor:IsA("BasePart") then
-			table.insert(points, { x = anchor.Position.X, z = anchor.Position.Z })
-			table.insert(spots, Vector3.new(anchor.Position.X, 0, anchor.Position.Z))
-		end
-	end
 	local planque = world.spawn.Position
-	local function nextInt(lo: number, hi: number): number
-		return random:NextInteger(lo, hi)
-	end
 	for _, player in Players:GetPlayers() do
 		if not CrewService.isTaken(player) then
 			continue
 		end
-		local index = Crew.pickLanding(
-			points,
-			{ x = planque.X, z = planque.Z },
-			e.releaseMinPlanqueDistance,
-			nextInt
-		)
-		local at = if index then spots[index] else Vector3.new(planque.X, 0, planque.Z)
+		-- Loin de la Planque, sur une place libre (comme les epaves).
+		local at = LootService.landingSpot(e.releaseMinPlanqueDistance)
+			or Vector3.new(planque.X, 0, planque.Z)
 		player:SetAttribute("Taken", false)
 		player:SetAttribute("Bound", true)
 		player.ReplicationFocus = nil

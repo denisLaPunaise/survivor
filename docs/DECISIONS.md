@@ -480,3 +480,50 @@ Décidé avec Josh (ses réponses, et « on le met en place »).
     était tombée dans un buisson, donc un rayon vérifie qu'elle touche le sol.
   - **Ce qu'elles donnent.** Elles se fouillent comme le reste, avec du
     butin rare (médicaments, piles, plomb, clés), et disparaissent à l'aube.
+
+## 6 novembre 2026 — après une partie d'essai de l'assistant
+
+Ce qu'il a corrigé après avoir joué seul :
+
+- **« Jour 1 » ne s'affichait pas** au lancement : le serveur l'annonçait avant
+  que l'écran du joueur soit prêt. Le titre du jour est gardé en attribut
+  (`Config.world.dayAttribute`), et l'écran le montre en arrivant. C'est aussi
+  utile à qui rejoint en cours de partie.
+- **Des textes coupés au milieu** (« Tu es attaché : », « venir te ») : le
+  message central, le rappel du bas et la légende de la vue par l'Œil ont
+  maintenant une hauteur qui suit le texte.
+- **Vue par l'Œil** :
+  - le sac et la réserve sont cachés pendant qu'on regarde ;
+  - la zone du prochain Balayage est un volume rouge (à plat, les collines la
+    perçaient) ;
+  - l'Œil ne vise plus un joueur attaché.
+- **La lumière du cocon** est baissée (2 → 0,8) : elle repeignait tout l'écran
+  en rouge.
+- **Le « ? » de l'objectif** reste collé au mot d'avant (espace insécable).
+- **Le cocon refait** : la première version (un cylindre sombre et des bâtons
+  rouges) était laide, vue en jeu. C'est maintenant une chrysalide sombre
+  enlacée de quatre spirales de veines brûlantes qui battent doucement, sur
+  des racines dans une tache de terre brûlée, avec un fil de lumière fin
+  qui monte du haut du cocon. Elle tombe sur une place libre, comme les
+  épaves (`LootService.landingSpot`) : la première était tombée contre une
+  palissade, à moitié dans une tôle. Photos dans `docs/images/`.
+- **Le Ventre dit quand on sort** (Josh : on ne savait pas) : à l'arrivée,
+  « Le Ventre de l'Œil. Il te recrachera à la tombée de la nuit. » ; puis en
+  permanence en bas, « Encore N Balayages avant la nuit » et ce qu'on peut
+  faire (regarder par l'Œil, chercher les souvenirs). Le nombre de Balayages
+  restants est un attribut de Workspace (`Config.world.sweepsLeftAttribute`),
+  posé dès l'aube.
+- **On garde le recrachage à la nuit** (Josh), avec 8 à 10 minutes d'attente
+  au plus pour qui est pris au premier Balayage.
+- **Le faire cligner depuis le Ventre** (décidé avec Josh, « pas trop fort,
+  pas en boucle ») :
+  - **Comment.** Pendant un Balayage, les aspirés frappent les piliers de
+    chair du Ventre (R2, le bouton des coups) ; chaque coup embrase une
+    veine. Au 6ᵉ coup (les coups de tous s'additionnent), l'Œil cligne de
+    douleur.
+  - **L'effet.** Ses paupières se ferment, son regard s'éteint 1,5 s et ne
+    voit plus personne, et il perd la piste de celui qu'il poursuivait. Une
+    seule fois par Balayage.
+  - **Le rythme.** Seul, il faut environ 4 s de coups.
+  - **Hors Balayage**, frapper ne fait rien et on le dit.
+- **Aucun son dans le jeu pour l'instant** : à ajouter (question de Josh).

@@ -328,8 +328,12 @@ local function dropWreck(at: Vector3)
 	end)
 end
 
--- Appele a la tombee de la nuit : autant d'epaves que ce qu'il a avale.
-function LootService.spawnWrecks(swallowed: number)
+-- OU TOMBE CE QU'IL RECRACHE (epaves, cocons) : a cote d'un emplacement de
+-- cachette, loin de la Planque, jamais dedans. Une epave tombait dans un
+-- buisson, un cocon contre une palissade et dans une tole (vu en jeu) : un pas
+-- de cote, un rayon qui doit trouver le sol ou une rue (pas un toit), et rien
+-- de solide ni de cachette tout autour. Rend nil si rien ne convient.
+function LootService.landingSpot(minPlanqueDistance: number): Vector3?
 	local world = WorldService.get()
 	local w = Config.loot.wrecks
 	local points: { Crew.Point } = {}
@@ -341,34 +345,54 @@ function LootService.spawnWrecks(swallowed: number)
 		end
 	end
 	local planque = { x = world.spawn.Position.X, z = world.spawn.Position.Z }
-	local count = Loot.wreckCount(w, swallowed)
-	-- A cote d'un emplacement, jamais dedans (une epave tombait dans un
-	-- buisson, vu en jeu) : un pas de cote, et un rayon qui doit trouver le sol
-	-- ou une rue, pas un toit ni une cachette.
-	local params = RaycastParams.new()
-	params.FilterType = Enum.RaycastFilterType.Include
-	params.FilterDescendantsInstances =
+	local ground = RaycastParams.new()
+	ground.FilterType = Enum.RaycastFilterType.Include
+	ground.FilterDescendantsInstances =
 		{ workspace.Terrain, world.root:FindFirstChild("Rues") :: Instance }
-	local function landing(): Vector3?
-		for _ = 1, 8 do
-			local index = Crew.pickLanding(points, planque, w.minPlanqueDistance, nextInt)
-			if index == nil then
-				return nil
+	local around = OverlapParams.new()
+	around.FilterType = Enum.RaycastFilterType.Exclude
+	around.FilterDescendantsInstances =
+		{ workspace.Terrain, world.root:FindFirstChild("Rues") :: Instance, world.anchors }
+	for _ = 1, 16 do
+		local index = Crew.pickLanding(points, planque, minPlanqueDistance, nextInt)
+		if index == nil then
+			return nil
+		end
+		local a = random:NextNumber(0, math.pi * 2)
+		local step = random:NextNumber(w.sideStep, w.sideStep * 1.6)
+		local at = spots[index] + Vector3.new(math.cos(a) * step, 0, math.sin(a) * step)
+		local down = workspace:Raycast(at + Vector3.new(0, 200, 0), Vector3.new(0, -260, 0))
+		local onGround = down
+			and workspace:Raycast(at + Vector3.new(0, 200, 0), Vector3.new(0, -260, 0), ground)
+		if down and onGround and down.Instance == onGround.Instance then
+			local spot = Vector3.new(at.X, down.Position.Y, at.Z)
+			local blocked = false
+			for _, part in
+				workspace:GetPartBoundsInBox(
+					CFrame.new(spot + Vector3.new(0, 4, 0)),
+					Vector3.new(w.clearance, 7, w.clearance),
+					around
+				)
+			do
+				if part.CanCollide or part:FindFirstAncestor("CachettesFragiles") then
+					blocked = true
+					break
+				end
 			end
-			local a = random:NextNumber(0, math.pi * 2)
-			local step = random:NextNumber(w.sideStep, w.sideStep * 1.6)
-			local at = spots[index] + Vector3.new(math.cos(a) * step, 0, math.sin(a) * step)
-			local down = workspace:Raycast(at + Vector3.new(0, 200, 0), Vector3.new(0, -260, 0))
-			local onGround = down
-				and workspace:Raycast(at + Vector3.new(0, 200, 0), Vector3.new(0, -260, 0), params)
-			if down and onGround and down.Instance == onGround.Instance then
-				return Vector3.new(at.X, down.Position.Y, at.Z)
+			if not blocked then
+				return spot
 			end
 		end
-		return nil
 	end
+	return nil
+end
+
+-- Appele a la tombee de la nuit : autant d'epaves que ce qu'il a avale.
+function LootService.spawnWrecks(swallowed: number)
+	local w = Config.loot.wrecks
+	local count = Loot.wreckCount(w, swallowed)
 	for _ = 1, count do
-		local at = landing()
+		local at = LootService.landingSpot(w.minPlanqueDistance)
 		if at then
 			dropWreck(at)
 		end

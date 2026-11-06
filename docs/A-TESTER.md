@@ -290,11 +290,12 @@ les a essayées), et le faire **à deux vrais joueurs**.
   détache pas seul ;
 - 6 épaves tombent sur le sol, fouillables.
 
-*Jamais vu* :
-- **la vue par l'Œil avec la ville nette**, en jeu (vue en mode édition
-  seulement ; en jeu, les captures sont restées brouillées) ;
-- **le cocon vu de l'extérieur** : seul, la défaite remet tout à zéro aussitôt ;
-- **la libération par un ami** : il faut deux joueurs.
+*Vu ensuite en jeu, seul (défaite coupée le temps de l'essai)* :
+- la vue par l'Œil nette, la zone rouge au signal ;
+- le cocon de l'extérieur, la nuit ;
+- l'enchaînement vrai « repéré → aspiré ».
+
+*Jamais vu* : **la libération par un ami** (il faut deux joueurs).
 
 1. **Les textes** : plus beaux ? La radio lettre par lettre se lit-elle assez
    vite ?
@@ -306,3 +307,12 @@ les a essayées), et le faire **à deux vrais joueurs**.
 6. **Recraché la nuit** : aller détacher un ami au milieu des Repris,
    est-ce tendu ? Le trait de lumière se voit-il de la Planque ?
 7. **Les épaves** : donnent-elles envie de sortir la nuit ?
+8. **Arrivée dans le Ventre** : après « Il t'a pris », la vue doit être DANS
+   le Ventre, avec en bas « Encore N Balayages avant la nuit ». (Dans les
+   parties lancées par l'assistant, la caméra de Roblox ne suit pas le
+   personnage : ce retour n'a jamais pu être vu.)
+9. **Faire cligner l'Œil** : dans le Ventre, pendant un Balayage, frapper un
+   pilier (R2) six fois. L'Œil doit fermer les paupières et son regard
+   s'éteindre 1,5 s. Est-ce utile pour sauver un ami poursuivi ? Trop facile ?
+   (Vérifié seul, par sonde : le regard s'éteint 1,5 s, une seule fois par
+   Balayage.)

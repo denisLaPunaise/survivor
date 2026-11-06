@@ -144,7 +144,14 @@ function SkyView.start()
 		+ random:NextNumber(s.blinkEverySeconds.min, s.blinkEverySeconds.max)
 	local remotes = Survivor:WaitForChild("Remotes")
 	local eyeState = remotes:WaitForChild("EyeState") :: RemoteEvent
+	-- Il cligne de douleur (frappe depuis son Ventre) : paupieres fermees le
+	-- temps qu'il ne voie plus rien.
+	local hurtUntil = 0
 	eyeState.OnClientEvent:Connect(function(data: any)
+		if data.phase == "blink" then
+			hurtUntil = os.clock() + (data.seconds :: number)
+			return
+		end
 		local open = data.phase == "warning" or data.phase == "sweep"
 		if open and not wantOpen then
 			openedAt = os.clock()
@@ -237,6 +244,10 @@ function SkyView.start()
 					shown = math.max(shown, 1 - math.abs(t * 2 - 1))
 				end
 			end
+		end
+		-- Il a mal : les paupieres se ferment d'un coup et restent closes.
+		if now < hurtUntil then
+			shown = 1
 		end
 		-- Fermee, la jointure respire comme une braise ; en mouvement, elle
 		-- brule.

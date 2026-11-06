@@ -23,7 +23,7 @@ local Story: { Step } = {
 	{
 		id = "poste",
 		event = "built:radio",
-		objective = "Réparer la radio de la Planque : il lui manque une lampe. L'atelier de la station-service, peut-être ?",
+		objective = "Réparer la radio de la Planque : il lui manque une lampe. L'atelier de la station-service, peut-être\u{A0}?",
 		report = {
 			"… crrr … Il y a quelqu'un ? … Si vous m'entendez, ne répondez pas tout de suite.",
 			"Je m'appelle Mara. Je ne peux pas dire d'où je parle. Il écoute peut-être.",

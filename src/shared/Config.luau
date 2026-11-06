@@ -99,6 +99,11 @@ Config.world = {
 	-- l'attribut d'un contenant qui cache un objet de quete (son id).
 	relay = "Relais",
 	questAttribute = "Quete",
+	-- Attribut de Workspace : le titre du jour en cours, pour qui arrive.
+	dayAttribute = "Jour",
+	-- Attribut de Workspace : les Balayages qui restent avant la nuit (celui
+	-- qui attend dans le Ventre sait quand il sera recrache).
+	sweepsLeftAttribute = "BalayagesRestants",
 	-- Le Ventre de l'Oeil, ou attendent les aspires (sous Ville) : son point
 	-- d'arrivee, l'Oculus ou l'on regarde par l'Oeil, et les souvenirs (une
 	-- part par souvenir, attribut = son id dans Memories).
@@ -318,6 +323,18 @@ Config.eye = {
 	releaseMinPlanqueDistance = 250,
 	freeHoldSeconds = 3,
 	cocoonBeamHeight = 220,
+	-- LE FAIRE CLIGNER (decide avec Josh) : dans le Ventre, les aspires
+	-- frappent les piliers de chair (R2). Assez de coups pendant un Balayage,
+	-- et l'Oeil cligne de douleur : son regard s'eteint et il perd la piste de
+	-- celui qu'il poursuivait. Pas trop fort (Josh : « une a deux secondes
+	-- grand max ») et pas en boucle : une seule fois par Balayage, pour toute
+	-- l'equipe. Six coups, au rythme du corps a corps : environ 4 s a un seul.
+	flinch = {
+		hitsNeeded = 6,
+		blindSeconds = 1.5,
+		-- La distance du pilier pour le frapper.
+		hitRange = 7,
+	},
 	-- Dans le Ventre : lire un souvenir, regarder par l'Oeil.
 	memoryHoldSeconds = 1,
 	oculusPromptDistance = 8,
@@ -622,8 +639,10 @@ Config.loot = {
 		fallSeconds = 2.5,
 		fallHeight = 300,
 		minPlanqueDistance = 120,
-		-- A cote d'un emplacement de cachette, pas dessus.
+		-- A cote d'un emplacement de cachette, pas dessus, et la place libre
+		-- tout autour (une epave ou un cocon).
 		sideStep = 8,
+		clearance = 7,
 	},
 	-- Chaque matin, un contenant deja fouille a cette chance de se remplir :
 	-- le butin revient un peu, le meilleur est toujours plus loin.
