@@ -3,6 +3,7 @@
 	La memoire du Veilleur et la ville qui change chaque matin.
 ]]
 
+local Config = require("../../src/shared/Config")
 local Crew = require("../../src/shared/Crew")
 local Hiding = require("../../src/shared/Hiding")
 
@@ -79,5 +80,24 @@ return function(t: harness.Harness)
 		"plus personne debout : la partie est perdue",
 		Crew.isWiped({ a = false, b = false }),
 		true
+	)
+
+	t.section("Recrache, loin de la Planque")
+
+	local points = { { x = 10, z = 0 }, { x = 400, z = 0 }, { x = 0, z = -500 } }
+	local planque = { x = 0, z = 0 }
+	local min = Config.eye.releaseMinPlanqueDistance
+	local always = true
+	for seed = 1, 20 do
+		local i = Crew.pickLanding(points, planque, min, seeded(seed))
+		if i == nil or i == 1 then
+			always = false
+		end
+	end
+	t.check("jamais a cote de la Planque : les amis doivent sortir", always)
+	t.equal(
+		"aucun point assez loin : on le dit",
+		Crew.pickLanding({ { x = 1, z = 1 } }, planque, min, seeded(1)),
+		nil
 	)
 end

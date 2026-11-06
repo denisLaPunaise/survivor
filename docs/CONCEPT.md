@@ -257,13 +257,27 @@ conserves et un pied-de-biche. Rien d'autre.
 - **survivants sauvés** : ils travaillent pour la Planque, mais mangent et font
   du bruit.
 
+## 9 bis. Aspiré, le Ventre, recraché
+
+**Décidé** avec Josh (6 novembre 2026) :
+
+- **Le Ventre de l'Œil.** L'aspiré attend dans une salle à part. Il y lit
+  des souvenirs d'autres aspirés (l'histoire), et il peut **regarder la
+  ville par l'Œil** : la prochaine zone balayée, ses amis. Il les prévient à
+  la voix.
+- **Recraché la nuit.** L'Œil aspire le jour et rend la nuit : l'aspiré
+  retombe avec les Repris, loin de la Planque, **attaché dans un cocon**.
+  Seuls ses amis peuvent le détacher.
+- **La nuit, il recrache aussi des épaves** de ce qu'il a avalé : du butin
+  rare, à fouiller de nuit, qui disparaît à l'aube.
+
 ## 10. Quand ça tourne mal
 
 **Proposé**, sauf la défaite (décidée, voir §3) :
 
 | Situation | Conséquence |
 | --- | --- |
-| Aspiré le jour | Perd ce qu'il portait ; revient la nuit suivante quelque part en ville, à aller chercher |
+| Aspiré le jour | Perd ce qu'il portait ; attend dans le Ventre de l'Œil ; recraché la nuit, attaché dans un cocon que ses amis doivent venir ouvrir (**décidé**) |
 | Tombé la nuit | Un ami peut le relever ; sinon il revient à l'aube, affaibli |
 | Plus personne debout | **Partie perdue**, tout recommence (revive possible une fois) |
 | Planque repérée | Grand Balayage : ce qui n'est pas protégé est aspiré |

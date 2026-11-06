@@ -276,7 +276,7 @@ function PlanqueService.obstacleNear(position: Vector3, range: number): ((number
 			if broken then
 				broken:Destroy()
 			end
-			LootService.broadcast("La barricade a cédé !")
+			LootService.broadcast("La barricade a cédé !", "danger")
 		end
 	end
 end
@@ -285,7 +285,11 @@ end
 -- Remplace le repas automatique du soir, que Josh ne trouvait pas clair : on
 -- mange ce qu'on porte (Y, le sac), ou ce qui est a la Planque, quand on veut.
 local function eatAtTable(player: Player)
-	if player:GetAttribute("Taken") or CombatService.isDowned(player) then
+	if
+		player:GetAttribute("Taken")
+		or player:GetAttribute("Bound")
+		or CombatService.isDowned(player)
+	then
 		return
 	end
 	local fed = Planque.serveMeal(LootService.stock(), Config.planque.menu, 1)

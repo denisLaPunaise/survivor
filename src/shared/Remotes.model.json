@@ -28,6 +28,10 @@
 		{
 			"name": "Radio",
 			"className": "RemoteEvent"
+		},
+		{
+			"name": "Ventre",
+			"className": "RemoteEvent"
 		}
 	]
 }

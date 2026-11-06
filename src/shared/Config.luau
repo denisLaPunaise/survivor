@@ -99,6 +99,13 @@ Config.world = {
 	-- l'attribut d'un contenant qui cache un objet de quete (son id).
 	relay = "Relais",
 	questAttribute = "Quete",
+	-- Le Ventre de l'Oeil, ou attendent les aspires (sous Ville) : son point
+	-- d'arrivee, l'Oculus ou l'on regarde par l'Oeil, et les souvenirs (une
+	-- part par souvenir, attribut = son id dans Memories).
+	ventre = "Ventre",
+	ventreSpawn = "VentreDepart",
+	oculus = "Oculus",
+	memoryAttribute = "Souvenir",
 }
 
 --------------------------------------------------------------------------------
@@ -128,6 +135,8 @@ Config.sky = {
 	pupilWide = 1.5,
 	pupilNarrow = 0.45,
 	pupilFocusSeconds = 2,
+	-- Quand il voit le joueur : une fente minuscule, braquee sur lui.
+	pupilSeen = 0.2,
 	-- La jointure des paupieres fermees : la paupiere du haut descend plus loin
 	-- (un quart de la demi-largeur de plus) : elles se rejoignent sur une
 	-- courbe, pas sur la droite jaune d'avant (Josh : « on peut faire
@@ -243,8 +252,16 @@ Config.eye = {
 	-- Le temps que l'Oeil s'attarde sur une cachette marquee : il l'arrache au
 	-- debut, celui qui est dedans a ce temps-la pour fuir le cercle.
 	inspectSeconds = 1.6,
-	-- La cachette arrachee monte vers le ciel et disparait.
-	ripLiftSeconds = 2,
+	-- Ce qu'il arrache (toit, cachette, objets) est AVALE : aspire en spirale
+	-- jusque sous sa pupille, en retrecissant (Josh : « des animations quand
+	-- l'Oeil aspire des toits, des objets »). Le point d'arrivee est sous le
+	-- centre du globe ; la spirale s'ouvre a mi-chemin puis se resserre.
+	swallowBelowCenter = 125,
+	swallowSpiralRadius = 45,
+	swallowTurns = 2,
+	swallowShrink = 0.85,
+	-- La cachette arrachee, avalee en entier.
+	ripLiftSeconds = 3.5,
 	ripLiftHeight = 120,
 	-- Les arrachages au hasard, en plus des cachettes marquees (decide avec
 	-- Josh) : a chaque Balayage, dans sa zone, autant de cachettes fragiles et
@@ -273,9 +290,8 @@ Config.eye = {
 	roofLiftHeight = 260,
 	-- Les morceaux ne partent pas tous ensemble : jusqu'a 0,8 s d'ecart.
 	roofStaggerSeconds = 0.8,
-	-- Ecart lateral et rotation pendant la montee : une tempete, pas un
+	-- Les morceaux tournent sur eux-memes en montant : une tempete, pas un
 	-- ascenseur.
-	roofDriftStuds = 24,
 	roofSpinTurns = 1.5,
 	exposure = {
 		-- Plein regard pendant 2 s = aspire. Traverser le cercle par le centre
@@ -285,9 +301,26 @@ Config.eye = {
 		-- Hors du regard, la jauge se vide en 3 s.
 		drainSeconds = 3,
 	},
-	-- Le joueur aspire monte, puis disparait jusqu'au matin.
+	-- Le joueur aspire monte en tournoyant dans une colonne de lumiere, vue de
+	-- tous (Josh : « une animation quand l'Oeil te capture »).
 	takenLiftSeconds = 3,
 	takenLiftHeight = 350,
+	takenSpinTurns = 3,
+	takenColumnWidth = 12,
+	-- RECRACHE (decide avec Josh) : a la tombee de la nuit, avec les Repris,
+	-- l'Oeil recrache ceux qu'il a pris. Ils tombent du ciel dans une colonne
+	-- de lumiere et atterrissent ATTACHES dans un cocon, loin de la Planque :
+	-- leurs amis doivent sortir, de nuit, les detacher (X maintenu). Ils ne
+	-- se liberent jamais seuls (choix de Josh) ; un cocon brille et se voit de
+	-- loin.
+	releaseFallSeconds = 3,
+	releaseFallHeight = 320,
+	releaseMinPlanqueDistance = 250,
+	freeHoldSeconds = 3,
+	cocoonBeamHeight = 220,
+	-- Dans le Ventre : lire un souvenir, regarder par l'Oeil.
+	memoryHoldSeconds = 1,
+	oculusPromptDistance = 8,
 	-- LA TRAQUE (Josh, 5 novembre 2026 : « des zigzags au debut, c'est un peu
 	-- nul »). Des qu'il apercoit quelqu'un, l'Oeil le poursuit ; il le perd
 	-- s'il ne le voit plus pendant `memorySeconds`, et reprend son rateau. Il
@@ -576,6 +609,22 @@ Config.loot = {
 	searchSeconds = 1.6,
 	promptDistance = 7,
 	hidePromptDistance = 6,
+	-- LA NUIT, IL RECRACHE (idee de Josh) : en plus des Repris et des
+	-- aspires, des epaves lumineuses tombent sur la ville, d'autant plus
+	-- nombreuses qu'il a avale de choses dans la journee (une pour deux
+	-- arrachages, 2 au moins, 10 au plus). On ne les fouille que la nuit, au
+	-- milieu des Repris : elles disparaissent a l'aube. Jamais tout pres de la
+	-- Planque : il faut sortir.
+	wrecks = {
+		base = 2,
+		perSwallowed = 0.5,
+		max = 10,
+		fallSeconds = 2.5,
+		fallHeight = 300,
+		minPlanqueDistance = 120,
+		-- A cote d'un emplacement de cachette, pas dessus.
+		sideStep = 8,
+	},
 	-- Chaque matin, un contenant deja fouille a cette chance de se remplir :
 	-- le butin revient un peu, le meilleur est toujours plus loin.
 	restockChance = 0.35,
@@ -614,6 +663,19 @@ Config.loot = {
 				{ item = "bandage", weight = 2 },
 				{ item = "piles", weight = 2 },
 				{ item = "medicaments", weight = 1 },
+			},
+		},
+		-- Les epaves que l'Oeil recrache la nuit : ce qu'il a avale, en mieux.
+		-- De quoi soigner, construire et reparer ; rarement de quoi manger.
+		epave = {
+			rolls = { min = 2, max = 3 },
+			entries = {
+				{ item = "medicaments", weight = 3 },
+				{ item = "piles", weight = 3 },
+				{ item = "plomb", weight = 2 },
+				{ item = "cle", weight = 2 },
+				{ item = "bandage", weight = 2 },
+				{ item = "conserve", weight = 1 },
 			},
 		},
 		-- La superette du centre : de quoi manger, mais tout le monde y pense.
@@ -707,6 +769,21 @@ Config.controls = {
 			holdBreath = { gamepad = "ButtonR2", keyboard = "MouseButton1" },
 			signalDanger = { gamepad = "DPadUp", keyboard = "Z" },
 			signalHere = { gamepad = "DPadDown", keyboard = "X" },
+		},
+		-- Le panneau du sac (Y) : deux onglets, le sac et le journal (Josh :
+		-- relire ce que Mara a dit). A choisit un objet (la navigation de
+		-- Roblox), le stick droit fait defiler le journal.
+		bag = {
+			toggle = { gamepad = "ButtonY", keyboard = "I" },
+			close = { gamepad = "ButtonB", keyboard = "Backspace" },
+			previousTab = { gamepad = "ButtonL1", keyboard = "Q" },
+			-- Pas E au clavier : pres de l'etabli ou d'un coffre, l'invite de
+			-- Roblox prend E avant le panneau (vu en jeu le 6 novembre 2026).
+			nextTab = { gamepad = "ButtonR1", keyboard = "R" },
+		},
+		-- Dans le Ventre, a regarder la ville par l'Oeil : B revient.
+		watch = {
+			leave = { gamepad = "ButtonB", keyboard = "Backspace" },
 		},
 		building = {
 			place = { gamepad = "ButtonR2", keyboard = "MouseButton1" },

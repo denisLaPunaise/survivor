@@ -44,6 +44,10 @@ local CONTRACT = {
 	cover = "Couvert",
 	relay = "Relais",
 	quest = "Quete",
+	ventre = "Ventre",
+	ventreSpawn = "VentreDepart",
+	oculus = "Oculus",
+	memory = "Souvenir",
 }
 
 -- La hauteur de l'Oeil au-dessus du sol : la Fissure s'ouvre juste au-dessus,
@@ -1828,6 +1832,219 @@ local function buildPlanque(root: Instance, terrain: Terrain, x0: number, z0: nu
 	slot("periscope", Vector3.new(1, 1, 1), CFrame.new(cx + 8.5, floorY, cz - 6.5))
 	slot("radio", Vector3.new(2, 1.4, 1), CFrame.new(cx + 0.5, floorY + 3.7, cz + 6.6))
 	return spawn.Position
+end
+
+--------------------------------------------------------------------------------
+-- Le Ventre de l'Oeil : la ou attendent ceux qu'il a aspires
+--------------------------------------------------------------------------------
+
+-- Tres loin de la ville, perdu dans la brume : invisible de la carte. Les
+-- aspires y attendent la nuit (decide avec Josh) : ils voient la ville par
+-- l'Oeil (l'Oculus, au centre) et cherchent des souvenirs.
+local VENTRE_AT = Vector3.new(0, 250, -6000)
+
+local function buildVentre(root: Instance)
+	local m = model(root, CONTRACT.ventre)
+	-- Toujours charge chez chaque client : il est si loin que le streaming ne
+	-- l'enverrait qu'a l'arrivee (vu en jeu : la vue du Ventre l'attendait).
+	m.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+	local flesh = Color3.fromRGB(52, 16, 18)
+	local dark = Color3.fromRGB(30, 9, 11)
+	local vein = Color3.fromRGB(200, 40, 28)
+	local c = VENTRE_AT
+	local inner, outer = 12, 46
+
+	-- Le sol : un anneau de roche autour de la pupille, en tranches.
+	local slices = 28
+	for i = 1, slices do
+		local a = (i / slices) * math.pi * 2
+		local mid = (inner + outer) / 2
+		P(
+			m,
+			"Sol",
+			Vector3.new(outer * 2 * math.pi / slices + 1.5, 4, outer - inner),
+			CFrame.new(c + Vector3.new(math.cos(a) * mid, -2, math.sin(a) * mid))
+				* CFrame.Angles(0, -a + math.pi / 2, 0),
+			Enum.Material.Basalt,
+			flesh:Lerp(dark, random:NextNumber(0, 0.6))
+		)
+	end
+	-- La pupille vue de l'interieur : un anneau qui brule, et sous lui, loin,
+	-- une lueur rouge.
+	for i = 1, 24 do
+		local a0 = (i / 24) * math.pi * 2
+		local a1 = ((i + 1) / 24) * math.pi * 2
+		local ring = slab(
+			m,
+			c + Vector3.new(math.cos(a0) * inner, 0.2, math.sin(a0) * inner),
+			c + Vector3.new(math.cos(a1) * inner, 0.2, math.sin(a1) * inner),
+			2.5,
+			0.6,
+			Enum.Material.Neon,
+			Color3.fromRGB(236, 110, 46),
+			"Iris"
+		)
+		ring.CanCollide = false
+	end
+	P(
+		m,
+		"Fond",
+		Vector3.new(1, inner * 8, inner * 8),
+		CFrame.new(c + Vector3.new(0, -70, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Enum.Material.Neon,
+		Color3.fromRGB(120, 14, 8),
+		{ shape = Enum.PartType.Cylinder, collide = false, query = false }
+	)
+	-- Des barrieres invisibles : on ne tombe ni dans la pupille ni dans le vide.
+	for _, radius in { inner - 0.5, outer + 0.5 } do
+		for i = 1, 32 do
+			local a = (i / 32) * math.pi * 2
+			P(
+				m,
+				"Barriere",
+				Vector3.new(radius * 2 * math.pi / 32 + 1, 14, 1),
+				CFrame.new(c + Vector3.new(math.cos(a) * radius, 7, math.sin(a) * radius))
+					* CFrame.Angles(0, -a + math.pi / 2, 0),
+				Enum.Material.SmoothPlastic,
+				dark,
+				{ transparency = 1, query = false, shadow = false }
+			)
+		end
+	end
+	-- Les parois : des piliers de chair qui penchent vers le centre, veines
+	-- brulantes, lueurs rouges.
+	for i = 1, 18 do
+		local a = (i / 18) * math.pi * 2 + random:NextNumber(-0.08, 0.08)
+		local r = random:NextNumber(50, 58)
+		local h = random:NextNumber(34, 64)
+		local lean = CFrame.Angles(0, -a + math.pi / 2, 0)
+			* CFrame.Angles(math.rad(random:NextNumber(8, 18)), 0, 0)
+		local base = CFrame.new(c + Vector3.new(math.cos(a) * r, h / 2 - 4, math.sin(a) * r)) * lean
+		local pillar = P(
+			m,
+			"Paroi",
+			Vector3.new(random:NextNumber(8, 14), h, random:NextNumber(6, 10)),
+			base,
+			Enum.Material.Basalt,
+			flesh:Lerp(dark, random:NextNumber(0.2, 0.8))
+		)
+		local v = P(
+			m,
+			"Veine",
+			Vector3.new(0.6, h * random:NextNumber(0.5, 0.9), 0.6),
+			base * CFrame.new(random:NextNumber(-3, 3), 0, -pillar.Size.Z / 2 - 0.1),
+			Enum.Material.Neon,
+			vein,
+			{ collide = false, query = false, shadow = false }
+		)
+		if i % 3 == 0 then
+			local light = Instance.new("PointLight")
+			light.Color = Color3.fromRGB(255, 70, 40)
+			light.Range = 28
+			light.Brightness = 1.5
+			light.Parent = v
+		end
+	end
+	-- L'enveloppe : une paroi tout autour et une voute, de haut en bas, pour
+	-- qu'on soit DEDANS (avec le ciel bleu au-dessus, ce n'etait qu'un plateau
+	-- dans le vide, vu en jeu). Veines brulantes sous la voute.
+	local shell = Color3.fromRGB(22, 6, 8)
+	for i = 1, 36 do
+		local a = (i / 36) * math.pi * 2
+		local r = 74
+		P(
+			m,
+			"Enveloppe",
+			Vector3.new(r * 2 * math.pi / 36 + 2, 170, 3),
+			CFrame.new(c + Vector3.new(math.cos(a) * r, -5, math.sin(a) * r))
+				* CFrame.Angles(0, -a + math.pi / 2, 0),
+			Enum.Material.Basalt,
+			shell,
+			{ query = false }
+		)
+	end
+	P(
+		m,
+		"Voute",
+		Vector3.new(3, 160, 160),
+		CFrame.new(c + Vector3.new(0, 80, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Enum.Material.Basalt,
+		shell,
+		{ shape = Enum.PartType.Cylinder, query = false }
+	)
+	for i = 1, 10 do
+		local a0 = random:NextNumber(0, math.pi * 2)
+		local from = c + Vector3.new(math.cos(a0) * 10, 78, math.sin(a0) * 10)
+		local to = c + Vector3.new(math.cos(a0) * 70, 78, math.sin(a0) * 70)
+		local v = slab(
+			m,
+			from,
+			to,
+			random:NextNumber(0.8, 1.8),
+			0.4,
+			Enum.Material.Neon,
+			vein,
+			"VeineVoute"
+		)
+		v.CanCollide = false
+		v.CanQuery = false
+	end
+	local ambient = Instance.new("PointLight")
+	ambient.Color = Color3.fromRGB(255, 80, 50)
+	ambient.Range = 60
+	ambient.Brightness = 0.8
+	ambient.Parent = m:FindFirstChild("Fond") :: Instance
+
+	-- Ce qu'il a avale : des morceaux de la ville qui flottent.
+	local kinds = {
+		{ Vector3.new(12, 8, 0.8), Enum.Material.WoodPlanks, C.sidingCream },
+		{ Vector3.new(10, 0.6, 8), Enum.Material.Slate, C.roofSlate },
+		{ Vector3.new(6, 0.4, 1), Enum.Material.WoodPlanks, C.wood },
+		{ Vector3.new(3, 3, 3), Enum.Material.WoodPlanks, C.wood },
+		{ Vector3.new(4, 0.3, 7), Enum.Material.Metal, C.metal },
+	}
+	for _ = 1, 26 do
+		local k = kinds[random:NextInteger(1, #kinds)]
+		local a = random:NextNumber(0, math.pi * 2)
+		local r = random:NextNumber(18, 62)
+		P(
+			m,
+			"Avale",
+			k[1],
+			CFrame.new(c + Vector3.new(math.cos(a) * r, random:NextNumber(10, 46), math.sin(a) * r))
+				* CFrame.Angles(
+					random:NextNumber(0, math.pi * 2),
+					random:NextNumber(0, math.pi * 2),
+					random:NextNumber(0, math.pi * 2)
+				),
+			k[2],
+			k[3],
+			{ collide = false, query = false }
+		)
+	end
+	-- Les souvenirs, poses au sol, chacun avec une petite lueur pour qu'on les
+	-- trouve dans la penombre.
+	for id = 1, 6 do
+		local a = (id / 6) * math.pi * 2 + random:NextNumber(-0.3, 0.3)
+		local r = random:NextNumber(20, 40)
+		local s = P(
+			m,
+			CONTRACT.memory,
+			Vector3.new(1.4, 0.3, 1.8),
+			CFrame.new(c + Vector3.new(math.cos(a) * r, 0.2, math.sin(a) * r))
+				* CFrame.Angles(0, random:NextNumber(0, math.pi * 2), 0),
+			Enum.Material.SmoothPlastic,
+			Color3.fromRGB(232, 222, 196)
+		)
+		s:SetAttribute(CONTRACT.memory, id)
+		local glow = Instance.new("PointLight")
+		glow.Color = Color3.fromRGB(255, 236, 200)
+		glow.Range = 7
+		glow.Brightness = 1.2
+		glow.Parent = s
+	end
+	marker(m, CONTRACT.oculus, CFrame.new(c + Vector3.new(0, 3, -(inner + 2))))
+	marker(m, CONTRACT.ventreSpawn, CFrame.new(c + Vector3.new(0, 4, 30)))
 end
 
 --------------------------------------------------------------------------------
@@ -4328,6 +4545,7 @@ local function build(): string
 	-- est au sud).
 	local spawnAt = buildPlanque(root, terrain, PLANQUE_AT.X, PLANQUE_AT.Z - HOUSE_D - 8)
 	buildSky(root, Vector3.zero)
+	buildVentre(root)
 	buildLighting()
 	task.wait()
 

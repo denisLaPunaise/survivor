@@ -115,7 +115,11 @@ end
 
 -- Un Repris frappe un joueur.
 function CombatService.damagePlayer(player: Player, damage: number)
-	if CombatService.isDowned(player) or player:GetAttribute("Taken") then
+	if
+		CombatService.isDowned(player)
+		or player:GetAttribute("Taken")
+		or player:GetAttribute("Bound")
+	then
 		return
 	end
 	local health = player:GetAttribute("Health")
@@ -140,6 +144,7 @@ local function swing(player: Player)
 		CombatService.isDowned(player)
 		or player:GetAttribute("Hidden")
 		or player:GetAttribute("Taken")
+		or player:GetAttribute("Bound")
 	then
 		return
 	end

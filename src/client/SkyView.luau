@@ -14,6 +14,7 @@
 	quand il cherche.
 ]]
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -249,6 +250,11 @@ function SkyView.start()
 		local scale = if wantOpen
 			then s.pupilWide + (s.pupilNarrow - s.pupilWide) * focus
 			else s.pupilWide
+		-- Il te voit : sa pupille se serre en une fente minuscule, sur toi.
+		local seen = Players.LocalPlayer:GetAttribute("Exposure")
+		if typeof(seen) == "number" and seen > 0.02 then
+			scale = math.min(scale, s.pupilSeen)
+		end
 		for _, slice in pupil do
 			-- La fente : sa largeur est sur X.
 			slice.part.Size = Vector3.new(slice.size.X * scale, slice.size.Y, slice.size.Z)

@@ -39,6 +39,10 @@ local lastReport: { string } = {}
 -- L'invite de la radio de la Planque : regler pendant le signal, reecouter
 -- sinon. Une seule invite, donc aucun bouton de plus.
 local radioPrompt: ProximityPrompt? = nil
+-- Le journal : tout ce que Mara a dit, nuit par nuit, a relire dans le
+-- panneau du sac (Y). Garde meme apres une defaite (CONCEPT 12).
+type Entry = { title: string, lines: { string } }
+local journal: { Entry } = {}
 
 local function promptFor(parent: Instance, action: string, hold: number, distance: number)
 	local onFoot = Config.controls.contexts.onFoot
@@ -80,7 +84,7 @@ local function send(player: Player?)
 	if radioPrompt then
 		radioPrompt.ActionText = if signalOpen() then "Régler la radio" else "Réécouter la radio"
 	end
-	local data = { objective = objective() or "" }
+	local data = { objective = objective() or "", journal = journal }
 	if player then
 		radio:FireClient(player, data)
 	else
@@ -91,7 +95,7 @@ end
 -- Un evenement du jeu : s'il reussit l'etape ouverte, tout le monde le sait.
 function QuestService.notify(event: string)
 	if Quest.complete(Story, state, event) then
-		LootService.broadcast("Objectif atteint. Mara rappellera cette nuit.")
+		LootService.broadcast("Objectif atteint. Mara rappellera cette nuit.", "quest")
 		send(nil)
 	end
 end
@@ -127,7 +131,8 @@ local function onRelay(player: Player)
 	trySignal()
 	if signalOpen() then
 		LootService.broadcast(
-			"L'antenne est en place. Vite : quelqu'un doit régler la radio à la Planque !"
+			"L'antenne est en place. Vite : quelqu'un doit régler la radio à la Planque !",
+			"quest"
 		)
 	end
 end
@@ -146,9 +151,22 @@ local function onTune(player: Player)
 	trySignal()
 	if signalOpen() then
 		LootService.broadcast(
-			"La radio est réglée. Il faut poser l'antenne en haut du château d'eau, maintenant."
+			"La radio est réglée. Il faut poser l'antenne en haut du château d'eau, maintenant.",
+			"quest"
 		)
 	end
+end
+
+-- Un souvenir trouve dans le Ventre : il s'ajoute au journal, une fois.
+local memoriesFound: { [number]: boolean } = {}
+function QuestService.addMemory(id: number, title: string, lines: { string }): boolean
+	if memoriesFound[id] then
+		return false
+	end
+	memoriesFound[id] = true
+	table.insert(journal, { title = "Souvenir : " .. title, lines = lines })
+	send(nil)
+	return true
 end
 
 -- Poser l'antenne et regler la radio par le meme chemin que les invites :
@@ -165,16 +183,21 @@ end
 -- Appele par DayService a chaque aube.
 function QuestService.dawn(dayNumber: number)
 	if Quest.dawn(Story, Config.story.opensOnDay, state, dayNumber) then
-		LootService.broadcast("Nouvel objectif.")
+		LootService.broadcast("Nouvel objectif.", "quest")
 	end
 	send(nil)
 end
 
 -- Appele par DayService a la tombee de la nuit : Mara parle, si elle a de quoi.
-function QuestService.night()
+function QuestService.night(dayNumber: number)
 	local lines = Quest.night(Story, state)
 	if #lines > 0 then
 		lastReport = lines
+		table.insert(
+			journal,
+			{ title = string.format("Mara, nuit du jour %d", dayNumber), lines = lines }
+		)
+		LootService.broadcast("Journal mis à jour : Y, puis R1.", "quest")
 		radio:FireAllClients({ lines = lines, lineSeconds = Config.story.lineSeconds })
 	end
 	send(nil)

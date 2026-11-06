@@ -282,6 +282,7 @@ local function huntable(player: Player): BasePart?
 	if
 		player:GetAttribute("Hidden")
 		or player:GetAttribute("Taken")
+		or player:GetAttribute("Bound")
 		or CombatService.isDowned(player)
 	then
 		return nil

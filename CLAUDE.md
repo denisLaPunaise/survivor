@@ -163,6 +163,11 @@ GitHub Actions relance formatage, analyse, tests et build à chaque push.
   sous-titres, une étape par jour au plus (`Config.story.opensOnDay`) ; le
   château d'eau se grimpe ; l'antenne se pose à deux. Suite : le survivant
   à escorter (jour 4), le fumigène (6), le repaire du boss (8).
+- **6 novembre 2026, l'Œil méchant** : textes en machine à écrire
+  (`Typography`), journal (onglet du sac), bords rouges et murmures quand il
+  te voit, aspiration filmée ; le Ventre de l'Œil (`VentreService`,
+  `VentreView`, `Memories`) avec souvenirs et vue par l'Œil ; recraché la
+  nuit dans un cocon à détacher ; toits avalés en spirale ; épaves la nuit.
 - **Ensuite** : la quête, étapes 3 à 5 ; ce que Josh dira après avoir joué ;
   un vrai modèle de créature pour les Repris ; puis la jauge de Visibilité de
   la Planque, la construction libre sur grille, les autres Repris (Rampant,
@@ -182,5 +187,13 @@ Les touches simulées (`user_keyboard_input`) n'atteignent pas les
 `ProximityPrompt`, et `InputHoldBegin` depuis le pont non plus : les sondes
 passent par `HidingService.tryEnter`, `LootService.trySearch`,
 `QuestService.tryRelay` et `tryTune`, qui suivent le même chemin que les
-invites. Le pont ne voit pas le `PlayerModule` du client : on ne peut pas y
-faire marcher ni grimper le personnage, seulement le téléporter.
+invites (et `VentreService.tryRead` / `tryWatch`, `CrewService.tryFree`). Le
+pont ne voit pas le `PlayerModule` du client : on ne peut pas y faire marcher
+ni grimper le personnage, seulement le téléporter.
+
+Seul dans Studio, être aspiré ou attaché déclenche la défaite (plus personne
+debout) : pour voir le Ventre, marquer `Taken` et placer le personnage par
+script, sans passer par `CrewService.take`. La place a des nuages (`Clouds`),
+une `Atmosphere` dense et un flou de profondeur : vu d'en haut, tout est
+noyé. Le Ventre est loin : sans `ReplicationFocus`, la ville n'est plus
+chargée pour celui qui y est.

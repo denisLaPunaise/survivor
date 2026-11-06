@@ -402,3 +402,81 @@ suite.
   plus, et l'objectif reste affiché en haut à gauche. Le dernier message est
   gardé même après une défaite : c'est le début du journal prévu par le
   concept.
+- **Le journal** (idée de Josh, on garde aussi la réécoute à la radio) : un
+  onglet dans le panneau du sac. Y l'ouvre, L1 / R1 passent du Sac au Journal
+  (Q / R au clavier). On y lit la quête en cours, puis tout ce que Mara a dit,
+  nuit par nuit, le plus récent en haut ; le stick droit fait défiler. Quand
+  Mara a parlé, un message dit « Journal mis à jour : Y, puis R1 ».
+  - Pas de bouton à part : à pied, tous les boutons de la manette sont pris, et
+    Select appartient à Roblox.
+  - Au clavier, l'onglet suivant est sur R et non E : près de l'établi,
+    l'invite de Roblox prenait E avant le panneau (vu en jeu).
+  - Les boutons du panneau sont dans `Config.controls.contexts.bag`, que le
+    test des collisions surveille.
+
+## 6 novembre 2026 — les textes, l'Œil qui te voit, le Ventre, le cocon
+
+Décidé avec Josh (ses réponses, et « on le met en place »).
+
+- **Les textes** :
+  - **Deux voix.** Une police de machine à écrire (Special Elite) pour ce
+    qui raconte : la radio, le journal, les jours, les murmures, les
+    souvenirs. Une police nette pour ce qu'on lit d'un coup d'œil.
+  - **Les animations.** Les lignes de Mara s'écrivent lettre par lettre, et
+    le « RADIO » grésille. Les messages glissent puis s'effacent, chacun dans
+    la couleur de sa sorte (info, danger, quête). « Jour N » s'écrit en grand
+    au centre, avec la suite en rouge quand l'Œil s'impatiente.
+  - **L'objectif** porte un petit titre doré, et sa hauteur suit le texte : il
+    était coupé.
+  - **Pas de bandeau sombre** derrière les textes, un léger contour à la
+    place : le bandeau faisait une boîte aux bords durs.
+- **Quand l'Œil te voit** :
+  - les bords de l'écran rougissent et battent comme un cœur, plus vite
+    quand la jauge monte ;
+  - un murmure tremble au centre : « Je te vois… », puis « Ne bouge pas… »,
+    puis « À moi. » ;
+  - la vue tremble un peu, et sa pupille se serre sur toi dans le ciel ;
+  - il reste une fine jauge en haut.
+- **Quand il t'aspire** :
+  - **pour toi**, un flash blanc qui vire au rouge, la caméra forcée vers
+    l'Œil pendant que tu montes en tournoyant, puis le noir et « Il t'a
+    pris. » ;
+  - **pour les autres**, tu montes en tournoyant dans une colonne de lumière.
+- **Le Ventre de l'Œil**, où l'on attend :
+  - **Le lieu.** Une salle fermée, à 6 000 studs de la ville, invisible : de
+    la roche sombre veinée de rouge autour d'une pupille qui brûle, des
+    morceaux de ville qui flottent. Elle est toujours chargée chez chaque
+    client (sinon la vue l'attendait).
+  - **Six souvenirs à lire** (`Memories`). Laissés par d'autres aspirés, ils
+    s'ajoutent au journal et racontent ce que deviennent les aspirés et ce
+    qu'il cherche.
+  - **L'Oculus : regarder par l'Œil.** La caméra passe juste sous sa pupille
+    et regarde la ville. On y voit la zone du prochain Balayage en rouge dès
+    le signal, puis le bout du faisceau, et les amis surlignés en vert. On
+    les prévient à la voix ; B revient.
+  - **Trois réglages pour que la ville se voie.** Pendant cette vue, la
+    brume, les nuages et le flou de profondeur sont coupés localement : de
+    si haut, on ne voyait que le dessus des nuages et un sol couleur ciel.
+    Et la ville reste chargée pour l'aspiré (`ReplicationFocus`), sinon il
+    regardait du vide.
+- **Recraché la nuit** (idée de Josh : l'Œil aspire le jour, rend la nuit) :
+  - **La chute.** À la tombée de la nuit, avec les Repris, il recrache ceux
+    qu'il a pris. Ils tombent du ciel en tournoyant, loin de la Planque
+    (250 studs au moins), et restent **attachés dans un cocon** : une gangue,
+    des filaments brûlants, une lueur et un trait de lumière vers le ciel.
+  - **Le cocon.** Seul un ami peut le détacher (X maintenu 3 s) ; on ne se
+    libère jamais seul (choix de Josh). Attaché, l'Œil ne te reprend pas
+    (sinon ça boucle), les Repris et les coups t'ignorent, et tu ne comptes
+    pas comme debout pour la défaite.
+  - **La fin du retour du matin.** Le retour « au matin, sur une cachette au
+    hasard » est supprimé.
+- **Il avale au lieu de juste arracher** : les morceaux de toit et les
+  cachettes montent en spirale jusque sous sa pupille, en rétrécissant.
+- **La nuit, il recrache des épaves** (idée de Josh) :
+  - **Combien.** 2 au moins, plus une pour deux choses avalées dans la
+    journée, 10 au plus.
+  - **Comment.** Des caisses aux fentes brûlantes tombent loin de la
+    Planque, à côté d'un emplacement de cachette, jamais dedans : une épave
+    était tombée dans un buisson, donc un rayon vérifie qu'elle touche le sol.
+  - **Ce qu'elles donnent.** Elles se fouillent comme le reste, avec du
+    butin rare (médicaments, piles, plomb, clés), et disparaissent à l'aube.

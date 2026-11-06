@@ -10,9 +10,11 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Survivor = ReplicatedStorage:WaitForChild("Survivor")
 local Config = require(Survivor:WaitForChild("Config"))
+local Crew = require(Survivor:WaitForChild("Crew"))
 local Loot = require(Survivor:WaitForChild("Loot"))
 local Remotes = Survivor:WaitForChild("Remotes")
 
@@ -67,7 +69,9 @@ local function anchorPart(instance: Instance): BasePart?
 	return nil
 end
 
-function LootService.sendHud(player: Player, message: string?)
+-- `kind` : la sorte de message, qui choisit son allure a l'ecran ("danger",
+-- "quest", "day" ; rien pour une simple information).
+function LootService.sendHud(player: Player, message: string?, kind: string?)
 	local bag = bags[player] or {}
 	local names: { string } = {}
 	for _, itemId in bag do
@@ -79,6 +83,7 @@ function LootService.sendHud(player: Player, message: string?)
 		slots = Config.bag.slots,
 		stock = stock,
 		message = message,
+		kind = kind,
 	})
 end
 
@@ -176,9 +181,9 @@ function LootService.stock(): { [string]: number }
 end
 
 -- Apres un changement de la reserve, tout le monde voit les nouveaux chiffres.
-function LootService.broadcast(message: string?)
+function LootService.broadcast(message: string?, kind: string?)
 	for _, player in Players:GetPlayers() do
-		LootService.sendHud(player, message)
+		LootService.sendHud(player, message, kind)
 	end
 end
 
@@ -189,6 +194,7 @@ local function useItem(player: Player, index: number)
 		bag == nil
 		or bag[index] == nil
 		or player:GetAttribute("Taken")
+		or player:GetAttribute("Bound")
 		or CombatService.isDowned(player)
 	then
 		return
@@ -242,8 +248,142 @@ function LootService.clearBag(player: Player)
 	end
 end
 
+-- LES EPAVES : la nuit, l'Oeil recrache ce qu'il a avale. Des caisses
+-- lumineuses tombent du ciel, loin de la Planque ; on les fouille comme le
+-- reste (table `epave`), et elles disparaissent a l'aube.
+local wrecks: { Model } = {}
+
+function LootService.clearWrecks()
+	for _, wreck in wrecks do
+		emptied[wreck] = nil
+		wreck:Destroy()
+	end
+	table.clear(wrecks)
+end
+
+local function dropWreck(at: Vector3)
+	local w = Config.loot.wrecks
+	local m = Instance.new("Model")
+	m.Name = "Epave"
+	m:SetAttribute("Table", "epave")
+	local box = Instance.new("Part")
+	box.Name = "Caisse"
+	box.Size = Vector3.new(4.5, 3, 3.5)
+	box.Material = Enum.Material.CorrodedMetal
+	box.Color = Color3.fromRGB(70, 64, 58)
+	box.Anchored = true
+	box.Parent = m
+	-- Des fentes qui brulent encore : on la voit de loin, la nuit.
+	for _, side in { -1, 1 } do
+		local seam = Instance.new("Part")
+		seam.Name = "Fente"
+		seam.Size = Vector3.new(4.6, 0.25, 0.2)
+		seam.Material = Enum.Material.Neon
+		seam.Color = Color3.fromRGB(255, 120, 50)
+		seam.Anchored = true
+		seam.CanCollide = false
+		seam.CFrame = CFrame.new(0, 0.4 * side, 1.76 * side)
+		seam.Parent = m
+	end
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 120, 60)
+	light.Range = 18
+	light.Brightness = 1.6
+	light.Parent = box
+	m.PrimaryPart = box
+	local spin =
+		CFrame.Angles(0, random:NextNumber(0, math.pi * 2), math.rad(random:NextNumber(-8, 8)))
+	m:PivotTo(CFrame.new(at + Vector3.new(0, w.fallHeight, 0)) * spin)
+	m.Parent = workspace
+	table.insert(wrecks, m)
+	-- La chute : de plus en plus vite, en tournant, puis un nuage de poussiere.
+	local start = os.clock()
+	local fall: RBXScriptConnection? = nil
+	fall = RunService.Heartbeat:Connect(function()
+		local t = math.clamp((os.clock() - start) / w.fallSeconds, 0, 1)
+		if m.Parent then
+			local height = w.fallHeight * (1 - t * t) + 1.5
+			m:PivotTo(
+				CFrame.new(at + Vector3.new(0, height, 0)) * CFrame.Angles(0, t * 6, 0) * spin
+			)
+		end
+		if t >= 1 and fall then
+			fall:Disconnect()
+			local dust = Instance.new("Smoke")
+			dust.Color = Color3.fromRGB(120, 110, 100)
+			dust.Size = 8
+			dust.Opacity = 0.4
+			dust.RiseVelocity = 4
+			dust.Parent = box
+			task.delay(1.5, function()
+				dust.Enabled = false
+			end)
+			local prompt =
+				promptFor(box, "Fouiller", Config.loot.searchSeconds, Config.loot.promptDistance)
+			prompt.ObjectText = "Épave"
+			prompt.Triggered:Connect(function(player: Player)
+				search(player, m, prompt)
+			end)
+		end
+	end)
+end
+
+-- Appele a la tombee de la nuit : autant d'epaves que ce qu'il a avale.
+function LootService.spawnWrecks(swallowed: number)
+	local world = WorldService.get()
+	local w = Config.loot.wrecks
+	local points: { Crew.Point } = {}
+	local spots: { Vector3 } = {}
+	for _, anchor in world.anchors:GetChildren() do
+		if anchor:IsA("BasePart") then
+			table.insert(points, { x = anchor.Position.X, z = anchor.Position.Z })
+			table.insert(spots, Vector3.new(anchor.Position.X, 0, anchor.Position.Z))
+		end
+	end
+	local planque = { x = world.spawn.Position.X, z = world.spawn.Position.Z }
+	local count = Loot.wreckCount(w, swallowed)
+	-- A cote d'un emplacement, jamais dedans (une epave tombait dans un
+	-- buisson, vu en jeu) : un pas de cote, et un rayon qui doit trouver le sol
+	-- ou une rue, pas un toit ni une cachette.
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances =
+		{ workspace.Terrain, world.root:FindFirstChild("Rues") :: Instance }
+	local function landing(): Vector3?
+		for _ = 1, 8 do
+			local index = Crew.pickLanding(points, planque, w.minPlanqueDistance, nextInt)
+			if index == nil then
+				return nil
+			end
+			local a = random:NextNumber(0, math.pi * 2)
+			local step = random:NextNumber(w.sideStep, w.sideStep * 1.6)
+			local at = spots[index] + Vector3.new(math.cos(a) * step, 0, math.sin(a) * step)
+			local down = workspace:Raycast(at + Vector3.new(0, 200, 0), Vector3.new(0, -260, 0))
+			local onGround = down
+				and workspace:Raycast(at + Vector3.new(0, 200, 0), Vector3.new(0, -260, 0), params)
+			if down and onGround and down.Instance == onGround.Instance then
+				return Vector3.new(at.X, down.Position.Y, at.Z)
+			end
+		end
+		return nil
+	end
+	for _ = 1, count do
+		local at = landing()
+		if at then
+			dropWreck(at)
+		end
+	end
+	if count > 0 then
+		LootService.broadcast(
+			"Il recrache ce qu'il a avalé : des épaves brûlantes tombent sur la ville.",
+			"quest"
+		)
+	end
+end
+
 -- Le matin, une partie des contenants se remplit de nouveau.
 function LootService.newDay()
+	LootService.clearWrecks()
 	for container in emptied do
 		if random:NextNumber() < Config.loot.restockChance then
 			emptied[container] = nil
@@ -258,6 +398,7 @@ end
 
 -- Une defaite remet tout a zero : la partie recommence depuis le debut.
 function LootService.reset()
+	LootService.clearWrecks()
 	table.clear(stock)
 	table.clear(questFound)
 	for container in emptied do

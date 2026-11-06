@@ -130,7 +130,12 @@ local function inCone(position: Vector3): boolean
 end
 
 local function seenFactor(player: Player): number
-	if looking == nil or HidingService.isHidden(player) or CrewService.isTaken(player) then
+	if
+		looking == nil
+		or HidingService.isHidden(player)
+		or CrewService.isTaken(player)
+		or CrewService.isBound(player)
+	then
 		return 0
 	end
 	local character = player.Character
@@ -163,7 +168,12 @@ end
 local function check(dt: number)
 	for _, player in Players:GetPlayers() do
 		-- Pendant un Balayage, s'abriter dans un batiment le marque.
-		if looking and not HidingService.isHidden(player) and not CrewService.isTaken(player) then
+		if
+			looking
+			and not HidingService.isHidden(player)
+			and not CrewService.isTaken(player)
+			and not CrewService.isBound(player)
+		then
 			local character = player.Character
 			if character then
 				HidingService.noteShelter(character:GetPivot().Position)
@@ -303,10 +313,17 @@ function EyeService.runSweep(stillCurrent: () -> boolean, dayNumber: number)
 	-- La zone se choisit AU SIGNAL : c'est la que l'Oeil cherchera, et la
 	-- radio de la Planque peut le dire a temps.
 	local cx, cz, aimed = zoneCenter(bounds, dayNumber)
-	eyeState:FireAllClients({ phase = "warning", seconds = eye.warningSeconds })
+	-- La zone part avec le signal : ceux qui regardent par l'Oeil, depuis
+	-- son Ventre, la voient et peuvent prevenir les autres.
+	eyeState:FireAllClients({
+		phase = "warning",
+		seconds = eye.warningSeconds,
+		zone = { x = cx, z = cz, size = eye.zoneSize },
+	})
 	if aimed and PlanqueService.has("radio") then
 		LootService.broadcast(
-			"La radio grésille : il va chercher du côté de " .. aimed.DisplayName
+			"La radio grésille : il va chercher du côté de " .. aimed.DisplayName,
+			"danger"
 		)
 	end
 	task.wait(eye.warningSeconds)

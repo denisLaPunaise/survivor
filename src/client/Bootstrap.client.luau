@@ -18,6 +18,7 @@ local Controls = require(script.Parent:WaitForChild("Controls"))
 local Hud = require(script.Parent:WaitForChild("Hud"))
 local RadioView = require(script.Parent:WaitForChild("RadioView"))
 local SkyView = require(script.Parent:WaitForChild("SkyView"))
+local VentreView = require(script.Parent:WaitForChild("VentreView"))
 
 print(
 	string.format(
@@ -33,3 +34,4 @@ SkyView.start()
 BuildPanel.start()
 BagPanel.start()
 RadioView.start()
+VentreView.start()

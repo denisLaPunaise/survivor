@@ -33,9 +33,9 @@ local random = Random.new()
 local eyeState = Survivor:WaitForChild("Remotes"):WaitForChild("EyeState") :: RemoteEvent
 local generation = 0
 
-local function announce(message: string)
+local function announce(message: string, kind: string?)
 	for _, player in Players:GetPlayers() do
-		LootService.sendHud(player, message)
+		LootService.sendHud(player, message, kind)
 	end
 end
 
@@ -54,7 +54,6 @@ local function runGame(myGeneration: number)
 		HidingService.newDay(dayNumber)
 		LootService.newDay()
 		ReprisService.newDay(dayNumber)
-		CrewService.returnTaken()
 		-- S'attarder dans le quartier : on le dit, chaque matin.
 		announce(
 			if dayNumber >= Config.district.pressureDay
@@ -62,7 +61,8 @@ local function runGame(myGeneration: number)
 					"Jour %d. L'Œil s'impatiente : la ville ne tiendra plus longtemps.",
 					dayNumber
 				)
-				else string.format("Jour %d", dayNumber)
+				else string.format("Jour %d", dayNumber),
+			"day"
 		)
 		QuestService.dawn(dayNumber)
 
@@ -89,17 +89,21 @@ local function runGame(myGeneration: number)
 			return
 		end
 
-		announce("Le jour tombe — rentrez à la Planque")
+		announce("Le jour tombe — rentrez à la Planque", "danger")
 		task.wait(d.duskSeconds)
 		if not current() then
 			return
 		end
 		-- La nuit : l'Oeil se ferme, les Repris tombent de la Fissure.
-		announce("La nuit tombe. Ils descendent.")
+		announce("La nuit tombe. Ils descendent.", "danger")
 		eyeState:FireAllClients({ phase = "night", seconds = d.nightSeconds })
 		CrewService.setLamps(true)
 		ReprisService.beginNight(dayNumber)
-		QuestService.night()
+		-- Avec les Repris, il recrache ceux qu'il a pris dans la journee, et
+		-- des epaves de ce qu'il a avale.
+		CrewService.releaseTaken()
+		LootService.spawnWrecks(HidingService.swallowedToday())
+		QuestService.night(dayNumber)
 		task.wait(d.nightSeconds)
 		CrewService.setLamps(false)
 	end
@@ -116,7 +120,7 @@ function DayService.start()
 		-- Arreter la partie en cours tout de suite : plus de regard.
 		generation += 1
 		EyeService.reset()
-		announce("Plus personne debout. La partie recommence depuis le début.")
+		announce("Plus personne debout. La partie recommence depuis le début.", "danger")
 		task.wait(Config.day.wipeMessageSeconds)
 		HidingService.reset()
 		LootService.reset()

@@ -75,4 +75,10 @@ function Loot.speedFactor(weight: number, settings: BagSettings): number
 	return 1 - (1 - settings.slowestFactor) * alpha
 end
 
+-- Combien d'epaves il recrache la nuit, selon ce qu'il a avale le jour.
+export type WreckSettings = { base: number, perSwallowed: number, max: number }
+function Loot.wreckCount(settings: WreckSettings, swallowed: number): number
+	return math.min(settings.base + math.floor(settings.perSwallowed * swallowed), settings.max)
+end
+
 return Loot

@@ -13,7 +13,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 
 local Survivor = ReplicatedStorage:WaitForChild("Survivor")
 local Config = require(Survivor:WaitForChild("Config"))
@@ -135,7 +134,7 @@ local function enter(player: Player, spot: Spot, through: BasePart?)
 	if hiddenIn[player] or spot.occupant then
 		return
 	end
-	if player:GetAttribute("Taken") then
+	if player:GetAttribute("Taken") or player:GetAttribute("Bound") then
 		return
 	end
 	local root = rootOf(player)
@@ -324,6 +323,44 @@ end
 -- solide : on est encore couvert, c'est le signal pour fuir), puis chaque
 -- morceau part a son tour, tire vers le ciel en tournoyant, avec ce qui
 -- trainait dans la maison, dans un nuage de poussiere.
+-- OU VA CE QU'IL ARRACHE : sous sa pupille. Sur le serveur, l'Oeil n'est
+-- pas tourne : son centre suffit.
+local function mawPosition(): Vector3?
+	local w = Config.world
+	local root = workspace:FindFirstChild(w.folder)
+	local sky = root and root:FindFirstChild(w.sky)
+	local eye = sky and sky:FindFirstChild(w.eye)
+	if eye and eye:IsA("Model") then
+		return eye:GetPivot().Position - Vector3.new(0, Config.eye.swallowBelowCenter, 0)
+	end
+	return nil
+end
+
+-- La trajectoire d'un morceau avale, a l'instant t (0 a 1) : lent puis
+-- aspire, en spirale autour de la ligne vers la pupille, de plus en plus
+-- petit. Sans Oeil (une place sans ciel), il monte tout droit.
+type Swallowed = {
+	part: BasePart,
+	origin: CFrame,
+	size: Vector3,
+	delay: number,
+	axis: Vector3,
+	phase: number,
+}
+local function swallowStep(item: Swallowed, maw: Vector3?, t: number, fallbackHeight: number)
+	local e = Config.eye
+	local from = item.origin.Position
+	local to = maw or (from + Vector3.new(0, fallbackHeight, 0))
+	local base = from:Lerp(to, t * t)
+	local radius = e.swallowSpiralRadius * 4 * t * (1 - t)
+	local angle = item.phase + t * e.swallowTurns * math.pi * 2
+	local swirl = Vector3.new(math.cos(angle), 0, math.sin(angle)) * radius
+	local spin = CFrame.fromAxisAngle(item.axis, t * e.roofSpinTurns * math.pi * 2)
+	item.part.CFrame = CFrame.new(base + swirl) * (item.origin - item.origin.Position) * spin
+	item.part.Size = item.size * (1 - e.swallowShrink * t)
+	item.part.Transparency = math.clamp((t - 0.8) * 5, 0, 1)
+end
+
 local function ripRoof(building: Building)
 	building.ripped = true
 	marks[building.id] = nil
@@ -338,7 +375,7 @@ local function ripRoof(building: Building)
 			local p = building.box:PointToObjectSpace(character:GetPivot().Position)
 			local half = building.size / 2
 			if math.abs(p.X) <= half.X and math.abs(p.Y) <= half.Y and math.abs(p.Z) <= half.Z then
-				LootService.sendHud(player, "Le toit tremble : sors vite !")
+				LootService.sendHud(player, "Le toit tremble : sors vite !", "danger")
 			end
 		end
 	end
@@ -385,8 +422,7 @@ local function ripRoof(building: Building)
 		dustAnchor:Destroy()
 	end)
 
-	type Flyer = { ghost: BasePart, origin: CFrame, delay: number, drift: Vector3, axis: Vector3 }
-	local flyers: { Flyer } = {}
+	local flyers: { Swallowed } = {}
 	local function launch(entry: RoofPart)
 		local ghost = entry.part:Clone()
 		ghost.CanCollide = false
@@ -394,16 +430,16 @@ local function ripRoof(building: Building)
 		ghost.Anchored = true
 		ghost.Parent = workspace
 		table.insert(flyers, {
-			ghost = ghost,
+			part = ghost,
 			origin = entry.part.CFrame,
+			size = ghost.Size,
 			delay = random:NextNumber(0, e.roofStaggerSeconds),
-			drift = Vector3.new(random:NextNumber(-1, 1), 0, random:NextNumber(-1, 1))
-				* e.roofDriftStuds,
 			axis = Vector3.new(
 				random:NextNumber(-1, 1),
 				random:NextNumber(-1, 1),
 				random:NextNumber(-1, 1)
 			).Unit,
+			phase = random:NextNumber(0, math.pi * 2),
 		})
 		entry.part.Transparency = 1
 		entry.part.CanCollide = false
@@ -418,16 +454,13 @@ local function ripRoof(building: Building)
 
 	local started = os.clock()
 	local total = e.roofLiftSeconds + e.roofStaggerSeconds
+	local maw = mawPosition()
 	local connection: RBXScriptConnection? = nil
 	connection = RunService.Heartbeat:Connect(function()
 		local elapsed = os.clock() - started
 		for _, f in flyers do
 			local t = math.clamp((elapsed - f.delay) / e.roofLiftSeconds, 0, 1)
-			-- Lent au depart, puis aspire : la montee accelere.
-			local rise = t * t * e.roofLiftHeight
-			local spin = CFrame.fromAxisAngle(f.axis, t * e.roofSpinTurns * math.pi * 2)
-			f.ghost.CFrame = (f.origin + Vector3.new(0, rise, 0) + f.drift * t) * spin
-			f.ghost.Transparency = math.max(t * 1.2 - 0.2, 0)
+			swallowStep(f, maw, t, e.roofLiftHeight)
 		end
 		if elapsed >= total then
 			if connection then
@@ -440,12 +473,20 @@ local function ripRoof(building: Building)
 	end)
 end
 
+-- Ce qu'il a avale aujourd'hui (toits et cachettes) : la nuit, il en
+-- recrache une partie en epaves (LootService).
+local swallowedToday = 0
+function HidingService.swallowedToday(): number
+	return swallowedToday
+end
+
 -- L'Oeil arrache une cachette marquee : elle monte vers le ciel et disparait.
 -- Celui qui etait dedans se retrouve a decouvert, la ou il etait.
 function HidingService.rip(spotId: string)
 	local building = buildings[spotId]
 	if building then
 		if not building.ripped then
+			swallowedToday += 1
 			ripRoof(building)
 		end
 		return
@@ -457,6 +498,7 @@ function HidingService.rip(spotId: string)
 	spots[spotId] = nil
 	marks[spotId] = nil
 	rippedToday[spotId] = true
+	swallowedToday += 1
 	local occupant = spot.occupant
 	if occupant then
 		-- Ejecte devant la cachette : l'Oeil le tient, mais le repit lui
@@ -466,32 +508,57 @@ function HidingService.rip(spotId: string)
 			Config.world.graceAttribute,
 			workspace:GetServerTimeNow() + Config.eye.ripGraceSeconds
 		)
-		LootService.sendHud(occupant, "L'Œil arrache ta cachette : cours !")
+		LootService.sendHud(occupant, "L'Œil arrache ta cachette : cours !", "danger")
 	end
 	for _, prompt in spot.prompts do
 		prompt:Destroy()
 	end
-	local lift = Config.eye.ripLiftHeight
-	local info =
-		TweenInfo.new(Config.eye.ripLiftSeconds, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	-- La cachette entiere est avalee, piece par piece, en spirale.
+	local e = Config.eye
+	local pieces: { Swallowed } = {}
 	for _, part in spot.model:GetDescendants() do
 		if part:IsA("BasePart") then
 			part.Anchored = true
 			part.CanCollide = false
-			TweenService:Create(part, info, {
-				CFrame = part.CFrame + Vector3.new(0, lift, 0),
-				Transparency = 1,
-			}):Play()
+			table.insert(pieces, {
+				part = part,
+				origin = part.CFrame,
+				size = part.Size,
+				delay = random:NextNumber(0, 0.4),
+				axis = Vector3.new(
+					random:NextNumber(-1, 1),
+					random:NextNumber(-1, 1),
+					random:NextNumber(-1, 1)
+				).Unit,
+				-- Une seule spirale pour toute la cachette : elle reste groupee.
+				phase = 0,
+			})
 		end
 	end
-	task.delay(Config.eye.ripLiftSeconds, function()
-		spot.model:Destroy()
+	local maw = mawPosition()
+	local started = os.clock()
+	local connection: RBXScriptConnection? = nil
+	connection = RunService.Heartbeat:Connect(function()
+		local elapsed = os.clock() - started
+		for _, piece in pieces do
+			local t = math.clamp((elapsed - piece.delay) / e.ripLiftSeconds, 0, 1)
+			if piece.part.Parent then
+				swallowStep(piece, maw, t, e.ripLiftHeight)
+			end
+		end
+		if elapsed >= e.ripLiftSeconds + 0.5 then
+			if connection then
+				connection:Disconnect()
+			end
+			spot.model:Destroy()
+		end
 	end)
 end
 
 -- Chaque matin : les cachettes fragiles changent de place (decide avec Josh).
 function HidingService.newDay(dayNumber: number)
 	day = dayNumber
+	swallowedToday = 0
 	local world = WorldService.get()
 	HidingService.releaseAll()
 

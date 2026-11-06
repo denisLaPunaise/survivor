@@ -271,3 +271,38 @@ les a essayées), et le faire **à deux vrais joueurs**.
    fenêtre suffisent-elles pour se synchroniser à la voix ?
 6. **Réécouter** : à la radio de la Planque, tenir X sur « Réécouter la radio »
    rejoue le dernier message de Mara (vérifié seul, par sonde).
+7. **Le journal** : Y, puis R1. On y relit la quête et les messages de Mara,
+   le plus récent en haut. Le stick droit fait-il bien défiler ? (Vu à
+   l'écran, seul ; le défilement à la manette n'a jamais été essayé.)
+
+## Les textes, le Ventre, le cocon, les épaves (6 novembre 2026)
+
+*Vu à l'écran par l'assistant, seul* :
+- le « Jour 9 » en grand ;
+- les bords rouges et « Ne bouge pas… » ;
+- l'aspiration, caméra tournée vers l'Œil ;
+- le Ventre fermé et sombre, un souvenir lu lettre par lettre ;
+- un toit avalé en spirale vers la Fissure.
+
+*Vérifié par sonde* :
+- on arrive dans le Ventre ;
+- le recrachage attache dans un cocon loin de la Planque, et on ne s'y
+  détache pas seul ;
+- 6 épaves tombent sur le sol, fouillables.
+
+*Jamais vu* :
+- **la vue par l'Œil avec la ville nette**, en jeu (vue en mode édition
+  seulement ; en jeu, les captures sont restées brouillées) ;
+- **le cocon vu de l'extérieur** : seul, la défaite remet tout à zéro aussitôt ;
+- **la libération par un ami** : il faut deux joueurs.
+
+1. **Les textes** : plus beaux ? La radio lettre par lettre se lit-elle assez
+   vite ?
+2. **Vu par l'Œil** : les bords rouges et le murmure font-ils peur ? Trop ?
+3. **Aspiré** : l'animation est-elle impressionnante ? Le noir dure-t-il trop ?
+4. **Le Ventre** : s'ennuie-t-on ? Trouve-t-on les six souvenirs ?
+5. **L'Oculus** (X au bord de la pupille) : voit-on bien la ville, la zone en
+   rouge, les amis en vert ? Est-ce utile pour les prévenir à la voix ?
+6. **Recraché la nuit** : aller détacher un ami au milieu des Repris,
+   est-ce tendu ? Le trait de lumière se voit-il de la Planque ?
+7. **Les épaves** : donnent-elles envie de sortir la nuit ?

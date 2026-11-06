@@ -78,4 +78,19 @@ return function(t: harness.Harness)
 		"un sac plein d'objets lourds ralentit vraiment",
 		Loot.speedFactor(heaviest * bag.slots, bag) < 1
 	)
+
+	t.section("Les epaves de la nuit")
+
+	local wrecks = Config.loot.wrecks
+	t.equal(
+		"une journee calme : quelques epaves quand meme",
+		Loot.wreckCount(wrecks, 0),
+		wrecks.base
+	)
+	t.check(
+		"plus il a avale, plus il recrache",
+		Loot.wreckCount(wrecks, 10) > Loot.wreckCount(wrecks, 2)
+	)
+	t.equal("jamais plus que le plafond", Loot.wreckCount(wrecks, 999), wrecks.max)
+	t.check("la table des epaves existe", Config.loot.tables.epave ~= nil)
 end

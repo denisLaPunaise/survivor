@@ -28,6 +28,10 @@ export type World = {
 	prefabs: Instance,
 	-- Ou l'on pose l'antenne : en haut du chateau d'eau.
 	relay: BasePart,
+	-- Le Ventre de l'Oeil, son arrivee et son Oculus.
+	ventre: Instance,
+	ventreSpawn: BasePart,
+	oculus: BasePart,
 }
 
 local world: World? = nil
@@ -95,6 +99,10 @@ function WorldService.load(): World?
 		table.insert(problems, string.format("Pas de part %s dans %s", w.relay, w.folder))
 	end
 	local relay = asPart(relayFound, problems, w.relay)
+	local ventre = child(root, w.ventre, problems, w.folder)
+	local ventreSpawn =
+		asPart(child(ventre, w.ventreSpawn, problems, w.ventre), problems, w.ventreSpawn)
+	local oculus = asPart(child(ventre, w.oculus, problems, w.ventre), problems, w.oculus)
 
 	if solidSpots then
 		for _, spot in solidSpots:GetChildren() do
@@ -163,6 +171,9 @@ function WorldService.load(): World?
 		containers = containers :: Instance,
 		prefabs = prefabs :: Instance,
 		relay = relay :: BasePart,
+		ventre = ventre :: Instance,
+		ventreSpawn = ventreSpawn :: BasePart,
+		oculus = oculus :: BasePart,
 	}
 	return world
 end
