@@ -21,6 +21,7 @@ local suites = {
 	{ name = "Fouille et sac", run = require("./specs/loot") },
 	{ name = "Les Repris", run = require("./specs/repris") },
 	{ name = "La faim et la Planque", run = require("./specs/planque") },
+	{ name = "La quete principale", run = require("./specs/quest") },
 	{ name = "Regles branchees", run = require("./specs/wiring") },
 }
 

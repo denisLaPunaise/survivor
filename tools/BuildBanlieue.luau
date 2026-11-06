@@ -42,6 +42,8 @@ local CONTRACT = {
 	loose = "Aspirable",
 	exit = "Sortie",
 	cover = "Couvert",
+	relay = "Relais",
+	quest = "Quete",
 }
 
 -- La hauteur de l'Oeil au-dessus du sol : la Fissure s'ouvre juste au-dessus,
@@ -3461,6 +3463,8 @@ local function build(): string
 			C.wood
 		)
 		sacristy:SetAttribute("Table", "salleDeBain")
+		-- La quete : l'antenne du clocher a ete rangee ici.
+		sacristy:SetAttribute(CONTRACT.quest, "antenne")
 		-- Le clocher, et sa fleche.
 		P(
 			m,
@@ -3627,6 +3631,8 @@ local function build(): string
 			C.metal
 		)
 		workshop:SetAttribute("Table", "garage")
+		-- La quete : la lampe qui manque a la radio de la Planque.
+		workshop:SetAttribute(CONTRACT.quest, "lampe")
 		tagBuilding(m, 0)
 		anchor("Voiture", cf * CFrame.new(0, 0, 26) * CFrame.Angles(0, math.rad(90), 0))
 	end
@@ -3665,14 +3671,37 @@ local function build(): string
 			Enum.Material.Metal,
 			C.metal
 		)
+		-- La quete y fait monter : une passerelle sous la cuve, deux echelles
+		-- (des TrussPart, qu'on grimpe), et le relais sur le rebord du haut de
+		-- la cuve, tout la-haut, a decouvert. Une TrussPart se mesure par
+		-- pas de 2 studs.
+		P(
+			m,
+			"Passerelle",
+			Vector3.new(34, 1, 34),
+			CFrame.new(TOWER + Vector3.new(0, legH - 0.5, 0)),
+			Enum.Material.DiamondPlate,
+			C.metal
+		)
 		P(
 			m,
 			"Echelle",
-			Vector3.new(1.4, legH, 0.3),
-			CFrame.new(TOWER + Vector3.new(0, legH / 2, -8)),
+			Vector3.new(2, legH, 2),
+			CFrame.new(TOWER + Vector3.new(0, legH / 2, -18)),
 			Enum.Material.Metal,
-			C.metal
+			C.metal,
+			{ class = "TrussPart" }
 		)
+		P(
+			m,
+			"EchelleCuve",
+			Vector3.new(2, 16, 2),
+			CFrame.new(TOWER + Vector3.new(0, legH + 8, -14)),
+			Enum.Material.Metal,
+			C.metal,
+			{ class = "TrussPart" }
+		)
+		marker(m, CONTRACT.relay, CFrame.new(TOWER + Vector3.new(0, legH + 17.5, -11.5)))
 	end
 	task.wait()
 

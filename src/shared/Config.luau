@@ -95,6 +95,10 @@ Config.world = {
 	debris = "Debris",
 	-- Sous Ciel : les bandes des paupieres (attributs X, Demi, Cote).
 	lids = "Paupieres",
+	-- La quete : ou l'on pose l'antenne (en haut du chateau d'eau), et
+	-- l'attribut d'un contenant qui cache un objet de quete (son id).
+	relay = "Relais",
+	questAttribute = "Quete",
 }
 
 --------------------------------------------------------------------------------
@@ -482,13 +486,40 @@ Config.planque = {
 		{
 			id = "radio",
 			name = "Radio réparée",
-			description = "Elle dit de quel côté l'Œil va chercher.",
-			cost = { piles = 2, cle = 1 },
+			description = "Une voix y parle la nuit. Elle dit aussi de quel côté l'Œil va chercher.",
+			-- La lampe ne se trouve qu'a la station-service : la premiere quete.
+			cost = { lampe = 1, piles = 1 },
 		},
 	},
 	-- Reparer la barricade abimee.
 	repairCost = { planche = 1 },
 	repairAmount = 120,
+}
+
+--------------------------------------------------------------------------------
+-- L'HISTOIRE : la voix dans la radio
+--------------------------------------------------------------------------------
+
+Config.story = {
+	-- Le jour ou chaque etape peut s'ouvrir, au plus tot. Mara ne parle que
+	-- la nuit : une etape reussie se raconte la nuit suivante, et la suivante
+	-- s'ouvre a l'aube, pas avant ce jour. L'histoire de la Banlieue dure
+	-- ainsi 8 a 10 jours, et on ne peut pas la finir beaucoup plus vite
+	-- (Josh). Les etapes 3 a 5 viendront avec leurs jours (4, 6 et 8).
+	opensOnDay = { poste = 1, signal = 2 },
+	-- Le temps de lire une ligne de la radio.
+	lineSeconds = 6,
+	-- Poser l'antenne : maintenir X la-haut, a decouvert.
+	relayHoldSeconds = 5,
+	relayPromptDistance = 8,
+	-- Regler la radio, a la Planque, pendant que l'antenne se pose : il faut
+	-- s'etre separes (le chateau d'eau est a 1 200 studs de la Planque). Les
+	-- deux doivent tomber dans cette fenetre.
+	tuneHoldSeconds = 2,
+	tuneWindowSeconds = 25,
+	-- Dans Studio, seul : poser l'antenne suffit (on ne peut pas etre a deux
+	-- endroits). Jamais dans le jeu publie.
+	soloInStudio = true,
 }
 
 --------------------------------------------------------------------------------
@@ -527,6 +558,16 @@ Config.items = {
 	tissu = { name = "Tissu", weight = 0.5 },
 	bandage = { name = "Bandage", weight = 0.5, heal = 25 },
 	medicaments = { name = "Médicaments", weight = 0.5, heal = 50 },
+	-- Les objets de la quete (`hint` : ce que le sac en dit). L'antenne reste
+	-- dans le sac quand on depose (`keep`) : on doit la porter la-haut, et la
+	-- reserve ne rend rien.
+	lampe = { name = "Lampe de radio", weight = 1, hint = "Pour réparer la radio : à déposer" },
+	antenne = {
+		name = "Antenne",
+		weight = 2,
+		keep = true,
+		hint = "À poser en haut du château d'eau",
+	},
 }
 
 Config.loot = {

@@ -26,6 +26,8 @@ export type World = {
 	anchors: Instance,
 	containers: Instance,
 	prefabs: Instance,
+	-- Ou l'on pose l'antenne : en haut du chateau d'eau.
+	relay: BasePart,
 }
 
 local world: World? = nil
@@ -88,6 +90,11 @@ function WorldService.load(): World?
 	local anchors = child(root, w.anchors, problems, w.folder)
 	local containers = child(root, w.containers, problems, w.folder)
 	local prefabs = child(ServerStorage, w.prefabs, problems, "ServerStorage")
+	local relayFound = root and root:FindFirstChild(w.relay, true)
+	if relayFound == nil then
+		table.insert(problems, string.format("Pas de part %s dans %s", w.relay, w.folder))
+	end
+	local relay = asPart(relayFound, problems, w.relay)
 
 	if solidSpots then
 		for _, spot in solidSpots:GetChildren() do
@@ -124,6 +131,16 @@ function WorldService.load(): World?
 					string.format("Fouille %s : attribut Table absent ou inconnu", container.Name)
 				)
 			end
+			local questItem = container:GetAttribute(w.questAttribute)
+			if
+				questItem ~= nil
+				and (typeof(questItem) ~= "string" or Config.items[questItem] == nil)
+			then
+				table.insert(
+					problems,
+					string.format("Fouille %s : objet de quête inconnu", container.Name)
+				)
+			end
 		end
 	end
 
@@ -145,6 +162,7 @@ function WorldService.load(): World?
 		anchors = anchors :: Instance,
 		containers = containers :: Instance,
 		prefabs = prefabs :: Instance,
+		relay = relay :: BasePart,
 	}
 	return world
 end

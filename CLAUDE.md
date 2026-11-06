@@ -158,10 +158,15 @@ GitHub Actions relance formatage, analyse, tests et build à chaque push.
 - **5 novembre 2026, le laser** : le regard (et la ligne de vue) part du bout
   de la pupille, mesurée sur le modèle (`Config.eye.height` supprimé) ;
   jointure des paupières en braise courbe ; éclairs animés.
-- **Ensuite** : ce que Josh dira après avoir joué ; un vrai modèle de
-  créature pour les Repris ; puis la jauge de
-  Visibilité de la Planque, la construction libre sur grille, les autres
-  Repris (Rampant, Hurleur, Guetteur, Brute), les quêtes.
+- **5 novembre 2026, la quête** : « La voix dans la radio », étapes 1 et 2
+  (`Story`, `Quest`, `QuestService`, `RadioView`) ; Mara parle la nuit en
+  sous-titres, une étape par jour au plus (`Config.story.opensOnDay`) ; le
+  château d'eau se grimpe ; l'antenne se pose à deux. Suite : le survivant
+  à escorter (jour 4), le fumigène (6), le repaire du boss (8).
+- **Ensuite** : la quête, étapes 3 à 5 ; ce que Josh dira après avoir joué ;
+  un vrai modèle de créature pour les Repris ; puis la jauge de Visibilité de
+  la Planque, la construction libre sur grille, les autres Repris (Rampant,
+  Hurleur, Guetteur, Brute).
 
 ## Construire la ville depuis le pont
 
@@ -175,5 +180,7 @@ copie** du dépôt. Elle ne doit jamais être commitée.
 
 Les touches simulées (`user_keyboard_input`) n'atteignent pas les
 `ProximityPrompt`, et `InputHoldBegin` depuis le pont non plus : les sondes
-passent par `HidingService.tryEnter` et `LootService.trySearch`, qui suivent le
-même chemin que les invites.
+passent par `HidingService.tryEnter`, `LootService.trySearch`,
+`QuestService.tryRelay` et `tryTune`, qui suivent le même chemin que les
+invites. Le pont ne voit pas le `PlayerModule` du client : on ne peut pas y
+faire marcher ni grimper le personnage, seulement le téléporter.

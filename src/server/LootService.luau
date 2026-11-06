@@ -30,6 +30,8 @@ local bags: { [Player]: { string } } = {}
 local stock: { [string]: number } = {}
 -- Contenant -> deja fouille aujourd'hui.
 local emptied: { [Instance]: boolean } = {}
+-- Les objets de quete deja trouves dans cette partie : un seul exemplaire.
+local questFound: { [string]: boolean } = {}
 
 local function nextInt(lo: number, hi: number): number
 	return random:NextInteger(lo, hi)
@@ -98,7 +100,15 @@ local function search(player: Player, container: Instance, prompt: ProximityProm
 		return
 	end
 	local tableId = container:GetAttribute("Table") :: string
-	local found = Loot.roll(Config.loot.tables[tableId], nextInt)
+	-- Un contenant de quete donne d'abord son objet, une fois par partie ;
+	-- ensuite c'est un contenant comme les autres.
+	local questItem = container:GetAttribute(Config.world.questAttribute)
+	local found = if typeof(questItem) == "string" and not questFound[questItem]
+		then { questItem }
+		else Loot.roll(Config.loot.tables[tableId], nextInt)
+	if typeof(questItem) == "string" then
+		questFound[questItem] = true
+	end
 	local taken: { string } = {}
 	for _, itemId in found do
 		if #bag >= Config.bag.slots then
@@ -124,10 +134,17 @@ local function deposit(player: Player)
 		LootService.sendHud(player, "Rien à déposer")
 		return
 	end
+	-- Ce qu'il faut porter soi-meme (l'antenne) reste dans le sac : la
+	-- reserve ne rend rien.
+	local kept: { string } = {}
 	for _, itemId in bag do
-		stock[itemId] = (stock[itemId] or 0) + 1
+		if (Config.items[itemId] :: any).keep then
+			table.insert(kept, itemId)
+		else
+			stock[itemId] = (stock[itemId] or 0) + 1
+		end
 	end
-	bags[player] = {}
+	bags[player] = kept
 	refreshSpeed(player)
 	for _, other in Players:GetPlayers() do
 		LootService.sendHud(other, if other == player then "Déposé dans la réserve" else nil)
@@ -200,6 +217,23 @@ local function useItem(player: Player, index: number)
 end
 
 -- Un joueur aspire perd ce qu'il portait (decide).
+-- Pour la quete : ce joueur porte-t-il cet objet ? Et le lui prendre.
+function LootService.hasItem(player: Player, itemId: string): boolean
+	return table.find(bags[player] or {}, itemId) ~= nil
+end
+
+function LootService.takeItem(player: Player, itemId: string): boolean
+	local bag = bags[player]
+	local index = bag and table.find(bag, itemId)
+	if bag == nil or index == nil then
+		return false
+	end
+	table.remove(bag, index)
+	refreshSpeed(player)
+	LootService.sendHud(player)
+	return true
+end
+
 function LootService.clearBag(player: Player)
 	if bags[player] then
 		bags[player] = {}
@@ -225,6 +259,7 @@ end
 -- Une defaite remet tout a zero : la partie recommence depuis le debut.
 function LootService.reset()
 	table.clear(stock)
+	table.clear(questFound)
 	for container in emptied do
 		local part = anchorPart(container)
 		local prompt = part and part:FindFirstChildWhichIsA("ProximityPrompt")

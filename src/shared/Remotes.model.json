@@ -24,6 +24,10 @@
 		{
 			"name": "Bag",
 			"className": "RemoteEvent"
+		},
+		{
+			"name": "Radio",
+			"className": "RemoteEvent"
 		}
 	]
 }

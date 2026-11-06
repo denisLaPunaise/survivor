@@ -65,6 +65,13 @@ function PlanqueService.isHome(player: Player): boolean
 	return (root.Position - WorldService.get().spawn.Position).Magnitude <= Config.planque.radius
 end
 
+-- Ceux qui veulent savoir qu'une chose vient d'etre construite (la quete :
+-- la radio reparee).
+local builtListeners: { (id: string, model: Instance) -> () } = {}
+function PlanqueService.whenBuilt(listener: (id: string, model: Instance) -> ())
+	table.insert(builtListeners, listener)
+end
+
 function PlanqueService.has(id: string): boolean
 	return built[id] ~= nil
 end
@@ -232,6 +239,9 @@ local function onRequest(player: Player, request: any)
 			if m then
 				built[b.id] = m
 				LootService.broadcast(b.name .. " : construit")
+				for _, listener in builtListeners do
+					task.spawn(listener, b.id, m)
+				end
 			end
 		end
 	elseif request.repair == true and built.barricade then

@@ -355,3 +355,50 @@ l'assistant régler la difficulté.
   chaque branche, du trou vers le dehors (toutes les 2,5 à 6 s), avec un léger
   crépitement. Ils restent à 35 % de leur éclat quand l'Œil est fermé et
   montent à 80 % quand il est ouvert.
+
+## 5 novembre 2026 — la quête principale, étapes 1 et 2
+
+Josh a validé « La voix dans la radio » (`CONCEPT.md` §12). Il a ajouté que
+l'histoire doit durer environ 8 à 10 jours, sans pouvoir aller beaucoup plus
+vite, et rester intéressante à 3 comme à 5. Il a laissé l'assistant régler la
+suite.
+
+- **Le rythme** : Mara ne parle que la nuit. Une étape réussie se raconte la
+  nuit suivante, et la suivante s'ouvre à l'aube, jamais avant son jour
+  (`Config.story.opensOnDay`). Il faut donc au moins un jour par étape.
+  - Jours prévus : le poste au jour 1, le signal au jour 2, le survivant au
+    jour 4, le fumigène au jour 6, le repaire au jour 8.
+  - Joué parfaitement, le boss ne s'ouvre donc pas avant le jour 8.
+  - Un test joue la partie la plus rapide possible et vérifie qu'aucune étape
+    ne s'ouvre avant son jour.
+- **À plusieurs, chaque étape demande de se séparer ou de se partager le
+  travail.**
+  - Le signal se fait à deux endroits à la fois : l'un pose l'antenne en haut
+    du château d'eau, un autre règle la radio à la Planque, à moins de 25 s
+    d'écart. Les deux lieux sont à 1 200 studs l'un de l'autre.
+  - Pour les étapes suivantes (proposé) :
+    - l'escorte : les autres éclairent le chemin et gardent les cachettes ;
+    - les ingrédients du fumigène : autant que de joueurs, un par personne ;
+    - le boss : il s'adapte au nombre de joueurs.
+- **Seul dans Studio**, poser l'antenne suffit (`soloInStudio`), comme la salle
+  d'attente qui lève son minimum dans Studio. Jamais dans le jeu publié.
+- **Il n'y a pas de gare dans la ville** : la proposition parlait de la gare,
+  mais le repère est une station-service. La lampe est à l'atelier de la
+  station-service. Le lieu du repaire du boss sera fixé avec lui.
+- **La radio coûte maintenant la lampe et une pile**, au lieu de deux piles et
+  une clé : la lampe ne se trouve qu'à la station-service. Elle continue de dire
+  de quel côté l'Œil va chercher.
+- **L'antenne reste dans le sac quand on dépose** : il faut la porter là-haut,
+  et la réserve ne rend rien. Un contenant de quête donne son objet une fois
+  par partie, puis redevient un contenant normal.
+- **Le château d'eau se grimpe** : une échelle jusqu'à une passerelle sous la
+  cuve, une seconde jusqu'au rebord du haut, où se pose l'antenne, à découvert.
+- **Ce qui s'affiche** : l'objectif en haut à gauche, discret ; les lignes de
+  Mara en bas de l'écran, une toutes les 6 s, chez tout le monde.
+- **Réécouter Mara** (Josh : « si la personne n'est pas attentive »). L'invite
+  de la radio de la Planque change de rôle : « Régler la radio » pendant
+  l'étape du signal, « Réécouter la radio » le reste du temps. Elle rejoue le
+  dernier message à celui qui la tient, à lui seul. Il n'y a pas de bouton en
+  plus, et l'objectif reste affiché en haut à gauche. Le dernier message est
+  gardé même après une défaite : c'est le début du journal prévu par le
+  concept.

@@ -314,13 +314,40 @@ Ancienne version à 5 quartiers, gardée pour mémoire :
 - les **quêtes des survivants**, chacun avec sa petite histoire ;
 - les **missions de la radio**, renouvelées chaque jour, avec récompense.
 
+**Décidé** avec Josh (5 novembre 2026) — la quête principale de la Banlieue,
+**« La voix dans la radio »** :
+
+1. **Le poste** : la radio de la Planque est cassée. Trouver la lampe (à
+   l'atelier de la station-service ; « la gare » de la proposition n'existe
+   pas dans la ville) et la réparer. Une voix de femme
+   répond : « Il y a quelqu'un ? »
+2. **Le signal** : prendre l'antenne de l'église et monter la poser en haut
+   du château d'eau, tout là-haut, à découvert, **pendant qu'un autre règle la
+   radio à la Planque**. La radio capte : un survivant est caché en
+   ville.
+3. **Le survivant** : le trouver (un endroit différent à chaque partie) et
+   **l'escorter** jusqu'à la Planque. Il nous suit, et il faut le cacher aussi
+   pendant les Balayages ; s'il est aspiré, on le retrouve plus tard ailleurs.
+4. **Le fumigène** : il sait le fabriquer, avec des ingrédients de la
+   supérette. C'est la première parade contre l'Œil.
+5. **Le repaire** : la sortie de la ville est barrée par le nid du boss (le lieu
+   est à fixer : la ville n'a pas de gare). Fabriquer de quoi ouvrir la grille et le vaincre : fin du
+   chapitre 1.
+
+- **Décidé** : l'histoire se raconte en **sous-titres radio** (la radio
+  grésille, le texte s'affiche chez tous les joueurs en même temps), et par des
+  objets trouvés (lettres, photos). Pas de voix enregistrées.
+- **Décidé** : quand la partie est perdue, **les quêtes recommencent** avec
+  elle ; les textes déjà lus restent dans un journal, et certains lieux changent
+  (le survivant est ailleurs).
+- **Ordre de construction** : les étapes 1 à 4, puis le boss à part.
+
 ## 13. Les actions et la manette
 
 - **Décidé** : **tout le jeu à la première personne.**
-- **Décidé** (idée de Josh) : **dans une cachette fragile, on ne voit pas
-  dehors.** Sortir se fait à ses risques. **Proposé** : on se fie au **son** (le
-  bourdonnement de l'Œil monte quand il approche) et à une lueur qui filtre par
-  les fentes, et aux amis restés dehors qui disent « c'est bon, sors ».
+- **Décidé** (Josh, 5 novembre 2026, revenu sur sa première idée après avoir
+  essayé) : **dans une cachette, on voit dehors normalement**, avec un rappel
+  discret pour sortir. L'écran noir gênait.
 - **Décidé** (idée de Josh) : **se repérer s'obtient en fabriquant.** Sans
   objet, on ne voit pas ses amis. **Proposé** : un **talkie-walkie** que chacun
   porte (il montre la direction des amis sur une boussole en haut de l'écran,

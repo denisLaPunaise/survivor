@@ -244,3 +244,30 @@ respire.
 2. **Fermé** : la jointure est-elle plus belle que la droite jaune ?
 3. **Les éclairs** : l'animation est-elle trop rapide, trop lente,
    ou fatigante à la longue ?
+
+## La quête : la radio et le château d'eau (5 novembre 2026)
+
+*En jeu, seul, par sonde* :
+- la lampe sort de l'atelier de la station-service et l'antenne de la sacristie
+  de l'église ;
+- une fois la lampe déposée, la radio se construit ;
+- l'objectif passe à « Attendre la nuit », et la nuit, Mara parle en
+  sous-titres ;
+- au jour 2, poser l'antenne seul attend, puis régler la radio 3 s après
+  valide l'étape.
+
+*Jamais fait* : **grimper le château d'eau** (le pont ne peut pas faire
+grimper le personnage ; ce sont de vraies échelles Roblox, mais personne ne
+les a essayées), et le faire **à deux vrais joueurs**.
+
+1. **L'objectif en haut à gauche** : se lit-il bien, sans gêner ?
+2. **La lampe** : la trouve-t-on avec l'indice « l'atelier de la
+   station-service » ?
+3. **La nuit, Mara** : les sous-titres vont-ils assez lentement pour lire en se
+   battant ?
+4. **Le château d'eau** : grimper les deux échelles à la manette, puis tenir X
+   5 s tout en haut, à découvert. Est-ce tendu ?
+5. **À deux** : l'un en haut, l'autre à la radio de la Planque. Les 25 s de
+   fenêtre suffisent-elles pour se synchroniser à la voix ?
+6. **Réécouter** : à la radio de la Planque, tenir X sur « Réécouter la radio »
+   rejoue le dernier message de Mara (vérifié seul, par sonde).

@@ -39,6 +39,9 @@ local function effectText(itemId: string): (string, boolean)
 	if item.heal then
 		return string.format("Utiliser : santé +%d", item.heal), true
 	end
+	if item.hint then
+		return item.hint, false
+	end
 	return "À déposer au coffre de la Planque", false
 end
 
