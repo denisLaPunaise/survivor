@@ -555,3 +555,66 @@ Josh : « il faudrait penser à en ajouter ».
   l'aspiration en spirale, les copies des toits avalés n'étaient jamais
   supprimées. Elles s'accumulaient, invisibles. C'est réparé : après un toit
   arraché, plus aucune ne reste.
+
+## Le survivant, étape 3 de « La voix dans la radio » (7 novembre 2026)
+
+Décidé avec Josh : on le trouve par les indices de Mara, il boite, on le
+cache soi-même, il mange à la Planque (`CONCEPT.md` §12). Le reste, pris
+sans lui :
+
+- **Il s'appelle Élie**. L'étape s'ouvre au **jour 4** ; Mara dit où il se
+  cache **la nuit d'avant** (un « briefing », que la quête sait maintenant
+  dire pour n'importe quelle étape).
+- **Quatre refuges** posés par la recette : la supérette, l'église, la
+  station-service, une ferme intacte d'un hameau. Un par partie, au hasard.
+  Avant d'être trouvé, il est terré au fond : l'Œil ne le voit pas.
+- **Une seule invite (X) sur lui**, dont le texte suit ce qu'il fait :
+  « Aider » (maintenir), « Cacher Élie », « Faire sortir Élie ». Celui qui le
+  trouve ou le fait sortir devient son guide. Son invite porte à 5 studs et il
+  s'arrête à 7 de son guide : quand il suit, elle ne prend pas celle des
+  cachettes.
+- **Il marche dans les pas de son guide** : le calcul de chemin de Roblox ne
+  trouve aucune sortie aux maisons (vu dans Studio). Trop loin (70 studs), il
+  s'arrête et le dit.
+- **« Cacher »** l'envoie à la cachette libre la plus proche (25 studs).
+  Sa cachette se marque comme celle d'un joueur ; arrachée, il est éjecté
+  avec le même répit.
+- **L'Œil le voit comme un joueur** (même ligne de vue, même jauge), et
+  s'abriter avec lui dans une maison la marque. L'Œil ne le **poursuit** pas
+  (la traque reste sur les joueurs).
+- **Aspiré** : Mara le redit la nuit, il attend dans un autre refuge au
+  matin. **Les Repris l'ignorent** la nuit.
+- **Il ne peut pas mourir** autrement que par l'Œil.
+- **À la Planque**, il mange un plat de la réserve chaque nuit. S'il n'y a
+  rien, on le dit, **sans autre conséquence pour l'instant** : à décider avec
+  l'étape 4 (il fabrique le fumigène).
+- Son allure : bonnet rouge, écharpe, sac à dos, jambe bandée, pour le
+  reconnaître de loin à sa silhouette.
+
+## Le fumigène, étape 4 (7 novembre 2026)
+
+Josh a décidé : Élie le fabrique, on le lance avec L2, l'Œil guette autour du
+nuage avant de perdre la piste, et sans repas Élie ne fabrique rien
+(`CONCEPT.md` §12). Pris sans lui :
+
+- **La recette** : un produit chimique et une ferraille par fumigène, **deux
+  au plus par nuit**. Les produits chimiques ne se trouvent que dans la
+  **réserve au fond de la supérette** (une petite pièce derrière les rayons,
+  deux étagères, table `arriere`) : Mara le dit la nuit du jour 5.
+- **L'étape s'ouvre au jour 6** et se réussit en **lançant le premier
+  fumigène** : ainsi la quête apprend à la fois à le fabriquer et à s'en
+  servir. Élie ne fabrique qu'à partir de l'étape 4 ; ensuite, toujours.
+- **On prend les fumigènes auprès d'Élie** (X sur lui à la Planque,
+  « Prendre un fumigène (2) ») : la réserve ne rend rien, et c'est lui qui
+  les a faits. Un fumigène **reste dans le sac** quand on dépose au coffre.
+- **L2 lance directement** le fumigène du sac, sans le choisir (L1 / R1 ne
+  servent pas encore) : c'est le seul objet qui se lance.
+- **Le nuage** : 14 studs de rayon (le regard en fait 16), 20 secondes, il
+  s'ouvre en 1,5 s et rétrécit les 4 dernières secondes. On le lance à ~40
+  studs à plat, ~75 vers le haut.
+- **L'Œil guette 7 secondes** en tournant autour du nuage, le bord de son
+  regard sur le bord du nuage : qui sort pendant ce temps et se fait voir est
+  repris. Sa ronde va à 70 % de sa vitesse de poursuite (plus vite, il ne
+  suit plus son cercle : vu le jour 1).
+- **Les Repris ignorent la fumée** pour l'instant.
+- **Pas de son** pour la boîte qui éclate : à ajouter.

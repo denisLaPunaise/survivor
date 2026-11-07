@@ -355,6 +355,26 @@ Ancienne version à 5 quartiers, gardée pour mémoire :
   elle ; les textes déjà lus restent dans un journal, et certains lieux changent
   (le survivant est ailleurs).
 - **Ordre de construction** : les étapes 1 à 4, puis le boss à part.
+- **Décidé** avec Josh (7 novembre 2026) — le survivant de l'étape 3 :
+  - on le **trouve par les indices de Mara** : la nuit, elle décrit l'endroit
+    à la radio, rien n'est marqué à l'écran ;
+  - il est **blessé et boite** : il suit le joueur qui l'a pris en charge,
+    plus lentement que la marche ;
+  - **on le cache nous-mêmes** : son guide l'emmène à une cachette libre et
+    l'y fait entrer ; resté dehors, l'Œil peut le voir et l'aspirer ;
+  - à la Planque, **il mange** dans la réserve comme un joueur, et c'est lui
+    qui apprend à fabriquer le fumigène.
+- **Décidé** avec Josh (7 novembre 2026) — le fumigène de l'étape 4 :
+  - **Élie le fabrique** : on rapporte ses ingrédients au coffre, et chaque
+    nuit il en fait avec ce qu'il y a dans la réserve ; sans Élie, pas de
+    fumigène ;
+  - **on le lance avec L2**, devant soi, en cloche ; le nuage s'ouvre où il
+    tombe ;
+  - le nuage **coupe la ligne de vue** ; l'Œil qui poursuivait quelqu'un
+    **guette autour du nuage** quelques secondes (5 à 10) avant de perdre sa
+    piste ;
+  - **si la réserve est vide le soir, Élie ne fabrique rien** cette nuit-là
+    (il ne meurt jamais).
 
 ## 13. Les actions et la manette
 

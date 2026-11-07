@@ -32,6 +32,8 @@ export type World = {
 	ventre: Instance,
 	ventreSpawn: BasePart,
 	oculus: BasePart,
+	-- Les refuges possibles du survivant (quete, etape 3).
+	refuges: { BasePart },
 }
 
 local world: World? = nil
@@ -103,6 +105,21 @@ function WorldService.load(): World?
 	local ventreSpawn =
 		asPart(child(ventre, w.ventreSpawn, problems, w.ventre), problems, w.ventreSpawn)
 	local oculus = asPart(child(ventre, w.oculus, problems, w.ventre), problems, w.oculus)
+	local refugeFolder = child(root, w.refuges, problems, w.folder)
+	local refuges: { BasePart } = {}
+	if refugeFolder then
+		for _, refuge in refugeFolder:GetChildren() do
+			if refuge:IsA("BasePart") and typeof(refuge:GetAttribute(w.refugeClue)) == "string" then
+				table.insert(refuges, refuge)
+			else
+				table.insert(problems, "Refuge sans indice : " .. refuge:GetFullName())
+			end
+		end
+		-- Au moins deux : aspire, il doit reapparaitre ailleurs.
+		if #refuges < 2 then
+			table.insert(problems, "Moins de deux refuges pour le survivant")
+		end
+	end
 
 	if solidSpots then
 		for _, spot in solidSpots:GetChildren() do
@@ -174,6 +191,7 @@ function WorldService.load(): World?
 		ventre = ventre :: Instance,
 		ventreSpawn = ventreSpawn :: BasePart,
 		oculus = oculus :: BasePart,
+		refuges = refuges,
 	}
 	return world
 end

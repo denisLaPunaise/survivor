@@ -32,6 +32,10 @@
 		{
 			"name": "Ventre",
 			"className": "RemoteEvent"
+		},
+		{
+			"name": "Throw",
+			"className": "RemoteEvent"
 		}
 	]
 }

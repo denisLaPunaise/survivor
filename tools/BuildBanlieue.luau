@@ -48,6 +48,8 @@ local CONTRACT = {
 	ventreSpawn = "VentreDepart",
 	oculus = "Oculus",
 	memory = "Souvenir",
+	refuges = "Refuges",
+	refugeClue = "Indice",
 }
 
 -- La hauteur de l'Oeil au-dessus du sol : la Fissure s'ouvre juste au-dessus,
@@ -2688,6 +2690,29 @@ local function build(): string
 	local solid = folder(root, CONTRACT.solidSpots)
 	local anchors = folder(root, CONTRACT.anchors)
 	local containers = folder(root, CONTRACT.containers)
+	-- La quete, etape 3 : les cachettes possibles du survivant, une par
+	-- partie, chacune avec ce que Mara en dit a la radio (CONCEPT 12 : on le
+	-- trouve par ses indices, rien n'est marque a l'ecran).
+	local refuges = folder(root, CONTRACT.refuges)
+	local function refuge(cf: CFrame, clue: string)
+		local r = marker(refuges, "Refuge", cf)
+		r:SetAttribute(CONTRACT.refugeClue, clue)
+	end
+	-- Ou est un point, vu du centre de la ville (X vers l'est, Z vers le nord).
+	local function direction(at: Vector3): string
+		local names = {
+			"au nord",
+			"au nord-est",
+			"à l'est",
+			"au sud-est",
+			"au sud",
+			"au sud-ouest",
+			"à l'ouest",
+			"au nord-ouest",
+		}
+		local angle = math.deg(math.atan2(at.X, at.Z)) % 360
+		return names[math.floor((angle + 22.5) / 45) % 8 + 1]
+	end
 	local streets = folder(root, "Rues")
 	local houses = folder(root, "Maisons")
 	local nature = folder(root, "Nature")
@@ -3458,6 +3483,10 @@ local function build(): string
 		wall(m, cf * CFrame.new(0, 0.6, d - 0.4), w, h, THICK, {
 			{ x = 20, w = 4, b = 0, t = 7.5, kind = "door" },
 		}, Enum.Material.Concrete, C.sidingGray)
+		refuge(
+			cf * CFrame.new(17, 3.5, d - 4),
+			"dans la supérette, tout au fond, près de la petite porte de derrière"
+		)
 		for _, sideX in { -1, 1 } do
 			wall(
 				m,
@@ -3508,19 +3537,174 @@ local function build(): string
 			)
 			rayon:SetAttribute("Table", "superette")
 		end
-		for _ = 1, 30 do
+		-- La reserve du fond, derriere les rayons : une cloison, un mur et sa
+		-- porte (tournee vers le fond du magasin : les rayons collent a la
+		-- cloison), deux etageres de produits d'entretien. Les produits
+		-- chimiques des fumigenes ne se trouvent que la (table `arriere`), et
+		-- Mara le dit.
+		wall(
+			m,
+			cf * CFrame.new(-11, 0.6, d - 5.5),
+			33,
+			h,
+			THICK,
+			{},
+			Enum.Material.Concrete,
+			C.sidingGray
+		)
+		wall(
+			m,
+			cf * CFrame.new(5.5, 0.6, d - 2.9) * CFrame.Angles(0, math.rad(90), 0),
+			5,
+			h,
+			THICK,
+			{ { x = 0, w = 3.6, b = 0, t = 7.5, kind = "door" } },
+			Enum.Material.Concrete,
+			C.sidingGray
+		)
+		-- Des rayonnages de reserve, comme le reste de la ville : du metal
+		-- rouille, des planches usees, des produits aux couleurs passees, des
+		-- cartons, et ce qui est tombe par terre quand on a fui. Le fond est
+		-- le contenant qu'on fouille.
+		local rustyMetal = C.metal:Lerp(C.rust, 0.35)
+		local cardboard = Color3.fromRGB(146, 116, 82)
+		local PRODUCTS = {
+			-- Bidons de plastique, decolores : moutarde, bleu delave, ecru.
+			{
+				size = Vector3.new(0.9, 1.4, 0.7),
+				material = Enum.Material.Plastic,
+				color = Color3.fromRGB(150, 130, 70),
+			},
+			{
+				size = Vector3.new(0.9, 1.4, 0.7),
+				material = Enum.Material.Plastic,
+				color = Color3.fromRGB(88, 104, 116),
+			},
+			{
+				size = Vector3.new(0.6, 1, 0.6),
+				material = Enum.Material.Plastic,
+				color = Color3.fromRGB(170, 164, 150),
+			},
+			-- Pots de metal, et un rouge sale.
+			{ size = Vector3.new(0.7, 0.8, 0.7), material = Enum.Material.Metal, color = C.metal },
+			{
+				size = Vector3.new(0.6, 1, 0.6),
+				material = Enum.Material.Plastic,
+				color = Color3.fromRGB(118, 66, 54),
+			},
+			-- Un carton.
+			{
+				size = Vector3.new(1.3, 0.9, 1),
+				material = Enum.Material.Cardboard,
+				color = cardboard,
+			},
+		}
+		local function product(at: CFrame, kind: number, fallen: boolean)
+			local spec = PRODUCTS[kind]
+			local lie = if fallen
+				then CFrame.Angles(math.rad(90), random:NextNumber(0, 6), 0)
+				else CFrame.Angles(0, random:NextNumber(-0.4, 0.4), 0)
+			-- Couche, il repose sur son flanc.
+			local lift = if fallen then spec.size.Z / 2 else spec.size.Y / 2
 			P(
 				m,
 				"Produit",
-				Vector3.new(0.8, 1, 0.8),
-				cf
-					* CFrame.new(random:NextNumber(-20, 8), 0.9, random:NextNumber(6, 30))
-					* CFrame.Angles(random:NextNumber(0, 3), random:NextNumber(0, 3), 0),
-				Enum.Material.SmoothPlastic,
-				CAR_COLORS[random:NextInteger(1, #CAR_COLORS)],
-				{ collide = false }
+				spec.size,
+				at * CFrame.new(0, lift, 0) * lie,
+				spec.material,
+				spec.color,
+				{
+					collide = false,
+				}
 			)
 		end
+		for shelfIndex, shelfX in { -22, -13 } do
+			local back = d - 1.1
+			local shelf = P(
+				containers,
+				"Superette_Reserve" .. shelfIndex,
+				Vector3.new(6.6, 7, 0.2),
+				cf * CFrame.new(shelfX, 4.1, back),
+				Enum.Material.DiamondPlate,
+				C.metal:Lerp(C.black, 0.25)
+			)
+			shelf:SetAttribute("Table", "arriere")
+			for _, side in { -1, 1 } do
+				for _, depth in { -0.15, -1.45 } do
+					P(
+						m,
+						"Montant",
+						Vector3.new(0.25, 7.2, 0.25),
+						cf * CFrame.new(shelfX + side * 3.25, 4.2, back + depth),
+						Enum.Material.Metal,
+						rustyMetal
+					)
+				end
+			end
+			for level = 0, 2 do
+				local y = 1.2 + level * 2.5
+				-- Une planche sur trois a cede d'un cote.
+				local sag = if random:NextNumber() < 0.33
+					then math.rad(random:NextNumber(3, 6))
+					else 0
+				P(
+					m,
+					"Planche",
+					Vector3.new(6.4, 0.18, 1.5),
+					cf * CFrame.new(shelfX, y, back - 0.8) * CFrame.Angles(0, 0, sag),
+					Enum.Material.WoodPlanks,
+					C.wood:Lerp(C.woodGray, 0.4)
+				)
+				local x = shelfX - 2.9
+				while x < shelfX + 2.6 do
+					local kind = random:NextInteger(1, #PRODUCTS)
+					local width = PRODUCTS[kind].size.X
+					-- Des trous : on s'est deja servi.
+					if random:NextNumber() < 0.7 then
+						product(
+							cf
+								* CFrame.new(
+									x + width / 2,
+									y + 0.09,
+									back - 0.8 + random:NextNumber(-0.2, 0.2)
+								),
+							kind,
+							random:NextNumber() < 0.12
+						)
+					end
+					x += width + random:NextNumber(0.1, 0.5)
+				end
+			end
+			-- Par terre, devant : ce qui est tombe.
+			for _ = 1, 3 do
+				product(
+					cf
+						* CFrame.new(
+							shelfX + random:NextNumber(-3, 3),
+							0.6,
+							back - random:NextNumber(2, 3.6)
+						),
+					random:NextInteger(1, #PRODUCTS),
+					random:NextNumber() < 0.6
+				)
+			end
+		end
+		-- Une rampe au plafond, presque morte : on y voit sans y voir clair.
+		local tube = P(
+			m,
+			"Neon",
+			Vector3.new(4, 0.25, 0.5),
+			cf * CFrame.new(-17, h - 0.2, d - 3),
+			Enum.Material.Neon,
+			Color3.fromRGB(196, 186, 150),
+			{ collide = false }
+		)
+		local glow = Instance.new("PointLight")
+		glow.Range = 14
+		glow.Brightness = 0.7
+		glow.Color = Color3.fromRGB(230, 214, 170)
+		glow.Shadows = true
+		glow.Parent = tube
 		-- Le parking devant, a l'ouest.
 		P(
 			streets,
@@ -3682,6 +3866,10 @@ local function build(): string
 		sacristy:SetAttribute("Table", "salleDeBain")
 		-- La quete : l'antenne du clocher a ete rangee ici.
 		sacristy:SetAttribute(CONTRACT.quest, "antenne")
+		refuge(
+			cf * CFrame.new(-6, 3.5, d - 5),
+			"dans l'église, au fond, à côté de la sacristie. Il entend le clocher grincer"
+		)
 		-- Le clocher, et sa fleche.
 		P(
 			m,
@@ -3850,6 +4038,10 @@ local function build(): string
 		workshop:SetAttribute("Table", "garage")
 		-- La quete : la lampe qui manque a la radio de la Planque.
 		workshop:SetAttribute(CONTRACT.quest, "lampe")
+		refuge(
+			shop * CFrame.new(-7, 3.5, 11.5),
+			"dans la boutique de la station-service, accroupi derrière le comptoir"
+		)
 		tagBuilding(m, 0)
 		anchor("Voiture", cf * CFrame.new(0, 0, 26) * CFrame.Angles(0, math.rad(90), 0))
 	end
@@ -4191,7 +4383,8 @@ local function build(): string
 		end
 		return true
 	end
-	local function farm(at: Vector3, yaw: number)
+	local refugeKinds: { [string]: boolean } = {}
+	local function farm(at: Vector3, yaw: number, kind: string)
 		local cf = CFrame.new(at) * CFrame.Angles(0, yaw, 0)
 		farmCount += 1
 		local roll = random:NextNumber()
@@ -4214,6 +4407,25 @@ local function build(): string
 				elseif random:NextNumber() < 0.2 then "barricadee"
 				else nil,
 		}, containers)
+		-- Une ferme intacte de chaque sorte cache peut-etre le survivant.
+		if damage == "intact" and not refugeKinds[kind] then
+			refugeKinds[kind] = true
+			local what = if wood then "une ferme en bois" else "une ferme en briques"
+			refuge(
+				CFrame.new(r.inside + Vector3.new(0, 3, 0)),
+				if kind == "hameau"
+					then string.format(
+						"dans un hameau de la campagne, %s de la ville : %s, encore entière",
+						direction(at),
+						what
+					)
+					else string.format(
+						"dans une maison seule de la campagne, %s de la ville : %s, encore entière",
+						direction(at),
+						what
+					)
+			)
+		end
 		table.insert(insides, {
 			name = "Ferme" .. farmCount,
 			at = r.inside,
@@ -4287,7 +4499,7 @@ local function build(): string
 				if inCountry(at.X, at.Z, 30) and farFromFarms(at, 36) and not nearTrack(at, 16) then
 					-- Les maisons d'un hameau se tournent vers son centre.
 					local toCenter = center - at
-					farm(at, math.atan2(toCenter.X, toCenter.Z) + math.pi)
+					farm(at, math.atan2(toCenter.X, toCenter.Z) + math.pi, "hameau")
 				end
 			end
 			task.wait()
@@ -4308,7 +4520,7 @@ local function build(): string
 			and (at - PLANQUE_AT).Magnitude > 160
 		then
 			alone += 1
-			farm(at, random:NextNumber(0, math.pi * 2))
+			farm(at, random:NextNumber(0, math.pi * 2), "seule")
 		end
 	end
 
@@ -4701,6 +4913,12 @@ local function build(): string
 		string.format("%d emplacements, %d bloqués", #anchors:GetChildren(), blocked)
 	)
 	table.insert(report, string.format("%d contenants à fouiller", #containers:GetChildren()))
+	-- Le survivant doit pouvoir changer de cachette quand l'Oeil le prend.
+	table.insert(report, string.format("%d refuges du survivant", #refuges:GetChildren()))
+	if #refuges:GetChildren() < 4 then
+		problems += 1
+		table.insert(report, "Trop peu de refuges pour le survivant")
+	end
 	table.insert(
 		report,
 		string.format("%d voitures générées (%d modèles)", generatedCars, #carTemplates)

@@ -4,7 +4,11 @@
 
 	L'avancement est la logique pure de Quest (Story pour le texte, les jours
 	dans Config.story). Ce service :
-	- l'ouvre a l'aube et fait parler Mara la nuit (appele par DayService) ;
+	- l'ouvre a l'aube et fait parler Mara la nuit (appele par DayService) :
+	  le recit de l'etape reussie, le briefing de la suivante, et ce qu'elle
+	  doit redire (le survivant aspire, retrouve ailleurs) ;
+	- remplit les trous du texte (`{indice}` : ou se cache le survivant) avec
+	  ce que les services lui donnent (`setValue`) ;
 	- ecoute le jeu : la radio reparee (PlanqueService), l'antenne posee en
 	  haut du chateau d'eau pendant qu'un autre regle la radio a la Planque ;
 	- envoie aux clients l'objectif du moment et les lignes de la radio
@@ -43,6 +47,9 @@ local radioPrompt: ProximityPrompt? = nil
 -- panneau du sac (Y). Garde meme apres une defaite (CONCEPT 12).
 type Entry = { title: string, lines: { string } }
 local journal: { Entry } = {}
+-- Les trous du texte (Quest.fill), et ce que Mara doit redire cette nuit.
+local values: { [string]: string } = { nom = Config.survivor.name }
+local againTonight: { string }? = nil
 
 local function promptFor(parent: Instance, action: string, hold: number, distance: number)
 	local onFoot = Config.controls.contexts.onFoot
@@ -61,13 +68,13 @@ end
 local function objective(): string?
 	local step = Quest.current(Story, state)
 	if step then
-		return step.objective
+		return Quest.fill({ step.objective }, values)[1]
 	end
 	if state.status == "solved" then
 		return "Attendre la nuit : Mara rappellera."
 	end
 	if state.status == "finished" then
-		return "Mara cherche le survivant. (La suite de l'histoire n'est pas encore construite.)"
+		return "Survivre. (La suite de l'histoire n'est pas encore construite.)"
 	end
 	if state.index > 1 then
 		return "Survivre : Mara rappellera quand elle aura du nouveau."
@@ -89,6 +96,31 @@ local function send(player: Player?)
 		radio:FireClient(player, data)
 	else
 		radio:FireAllClients(data)
+	end
+end
+
+-- L'etape `id` est-elle ouverte, a faire maintenant ?
+function QuestService.isOpen(id: string): boolean
+	local step = Quest.current(Story, state)
+	return step ~= nil and step.id == id
+end
+
+-- L'etape `id` est-elle ouverte, ou deja derriere nous ?
+function QuestService.hasReached(id: string): boolean
+	return Quest.reached(Story, state, id)
+end
+
+-- Ce qui remplit un trou du texte de Mara (`{key}`).
+function QuestService.setValue(key: string, value: string)
+	values[key] = value
+end
+
+-- Mara redira cette nuit le texte `again` de l'etape en cours (le
+-- survivant aspire : ou il se cache maintenant).
+function QuestService.sayAgainTonight()
+	local step = Story[state.index]
+	if step and step.again then
+		againTonight = step.again
 	end
 end
 
@@ -190,7 +222,17 @@ end
 
 -- Appele par DayService a la tombee de la nuit : Mara parle, si elle a de quoi.
 function QuestService.night(dayNumber: number)
-	local lines = Quest.night(Story, state)
+	local lines = table.clone(Quest.night(Story, state))
+	if againTonight then
+		for _, line in againTonight do
+			table.insert(lines, line)
+		end
+		againTonight = nil
+	end
+	for _, line in Quest.briefing(Story, Config.story.opensOnDay, state, dayNumber) do
+		table.insert(lines, line)
+	end
+	lines = Quest.fill(lines, values)
 	if #lines > 0 then
 		lastReport = lines
 		table.insert(
@@ -207,6 +249,7 @@ end
 function QuestService.reset()
 	state = Quest.new()
 	relayAt, relayBy, tunedAt = nil, nil, nil
+	againTonight = nil
 	send(nil)
 end
 

@@ -47,6 +47,9 @@ type Spot = {
 	-- La sortie par ou l'occupant est entre : il ressort du meme cote.
 	exitUsed: BasePart?,
 	occupant: Player?,
+	-- Le survivant de la quete y est cache (SurvivorService) : il l'occupe
+	-- comme un joueur, sans en etre un.
+	guest: boolean,
 	-- Un Repris s'y cache deja : il en sort quand on ouvre.
 	lurker: boolean,
 }
@@ -131,8 +134,23 @@ local function release(player: Player, toExit: boolean)
 	player:SetAttribute("Hidden", false)
 end
 
+-- Une cachette fragile occupee se marque, et la marque se voit de tous : une
+-- lueur pale (decide).
+local function markSpot(spot: Spot)
+	if not spot.fragile then
+		return
+	end
+	Hiding.mark(marks, spot.id, day, sweepNumber)
+	local glow = Instance.new("Highlight")
+	glow.Name = "Marque"
+	glow.FillTransparency = 1
+	glow.OutlineColor = Color3.fromRGB(235, 225, 200)
+	glow.OutlineTransparency = 0.35
+	glow.Parent = spot.model
+end
+
 local function enter(player: Player, spot: Spot, through: BasePart?)
-	if hiddenIn[player] or spot.occupant then
+	if hiddenIn[player] or spot.occupant or spot.guest then
 		return
 	end
 	if player:GetAttribute("Taken") or player:GetAttribute("Bound") then
@@ -157,16 +175,7 @@ local function enter(player: Player, spot: Spot, through: BasePart?)
 	root.CFrame = spot.inside.CFrame
 	root.Anchored = true
 	player:SetAttribute("Hidden", true)
-	if spot.fragile then
-		Hiding.mark(marks, spot.id, day, sweepNumber)
-		-- La marque se voit, de tous : une lueur pale (decide).
-		local glow = Instance.new("Highlight")
-		glow.Name = "Marque"
-		glow.FillTransparency = 1
-		glow.OutlineColor = Color3.fromRGB(235, 225, 200)
-		glow.OutlineTransparency = 0.35
-		glow.Parent = spot.model
-	end
+	markSpot(spot)
 end
 
 local function register(id: string, model: Instance, fragile: boolean)
@@ -188,6 +197,7 @@ local function register(id: string, model: Instance, fragile: boolean)
 		prompts = {},
 		exitUsed = nil,
 		occupant = nil,
+		guest = false,
 		lurker = false,
 	}
 	for _, exit in exits do
@@ -222,6 +232,93 @@ end
 
 function HidingService.isHidden(player: Player): boolean
 	return hiddenIn[player] ~= nil
+end
+
+-- LE SURVIVANT. Son guide le fait entrer dans une cachette libre ; s'il en
+-- est chasse (l'Oeil l'arrache, ou elle disparait au matin), SurvivorService
+-- le sait par `onGuestEjected`, avec l'endroit ou il ressort.
+local guestEjected: ((exit: CFrame) -> ())? = nil
+function HidingService.onGuestEjected(listener: (exit: CFrame) -> ())
+	guestEjected = listener
+end
+
+local function ejectGuest(spot: Spot)
+	if not spot.guest then
+		return
+	end
+	spot.guest = false
+	local exit = spot.exitUsed or spot.exit
+	spot.exitUsed = nil
+	for _, prompt in spot.prompts do
+		if prompt.Parent then
+			prompt.Enabled = true
+		end
+	end
+	if guestEjected then
+		guestEjected(exit.CFrame)
+	end
+end
+
+-- La cachette libre la plus proche de `position`, et sa sortie la plus
+-- proche (la ou il faut aller pour y entrer).
+function HidingService.freeSpotNear(position: Vector3, radius: number): (string?, BasePart?)
+	local bestId: string? = nil
+	local bestExit: BasePart? = nil
+	local bestDistance = radius
+	for id, spot in spots do
+		if spot.occupant == nil and not spot.guest then
+			for _, prompt in spot.prompts do
+				local exit = prompt.Parent
+				if exit and exit:IsA("BasePart") then
+					local distance = (exit.Position - position).Magnitude
+					if distance <= bestDistance then
+						bestId, bestExit, bestDistance = id, exit, distance
+					end
+				end
+			end
+		end
+	end
+	return bestId, bestExit
+end
+
+-- Le survivant entre par `through`. Rend ou le poser, ou nil si la place est
+-- prise entre-temps, ou si un Repris s'y cachait (il en sort sur le guide).
+function HidingService.hostGuest(spotId: string, through: BasePart, guide: Player?): CFrame?
+	local spot = spots[spotId]
+	if spot == nil or spot.occupant or spot.guest then
+		return nil
+	end
+	if spot.lurker then
+		spot.lurker = false
+		if guide then
+			ReprisService.ambush(through.CFrame, guide)
+		end
+		return nil
+	end
+	spot.guest = true
+	spot.exitUsed = through
+	for _, prompt in spot.prompts do
+		prompt.Enabled = false
+	end
+	markSpot(spot)
+	return spot.inside.CFrame
+end
+
+-- On le fait sortir : rend la sortie par ou il etait entre.
+function HidingService.releaseGuest(spotId: string): CFrame?
+	local spot = spots[spotId]
+	if spot == nil or not spot.guest then
+		return nil
+	end
+	spot.guest = false
+	local exit = spot.exitUsed or spot.exit
+	spot.exitUsed = nil
+	for _, prompt in spot.prompts do
+		if prompt.Parent then
+			prompt.Enabled = true
+		end
+	end
+	return exit.CFrame
 end
 
 -- Sortir tout le monde, sans les deplacer : pour un joueur aspire, une
@@ -516,6 +613,7 @@ function HidingService.rip(spotId: string)
 		)
 		LootService.sendHud(occupant, "L'Œil arrache ta cachette : cours !", "danger")
 	end
+	ejectGuest(spot)
 	for _, prompt in spot.prompts do
 		prompt:Destroy()
 	end
@@ -571,6 +669,7 @@ function HidingService.newDay(dayNumber: number)
 
 	for id, spot in spots do
 		if spot.fragile then
+			ejectGuest(spot)
 			spots[id] = nil
 		end
 	end

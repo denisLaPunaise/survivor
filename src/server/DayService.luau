@@ -26,6 +26,8 @@ local LootService = require(script.Parent:WaitForChild("LootService"))
 local PlanqueService = require(script.Parent:WaitForChild("PlanqueService"))
 local QuestService = require(script.Parent:WaitForChild("QuestService"))
 local ReprisService = require(script.Parent:WaitForChild("ReprisService"))
+local SmokeService = require(script.Parent:WaitForChild("SmokeService"))
+local SurvivorService = require(script.Parent:WaitForChild("SurvivorService"))
 
 local DayService = {}
 
@@ -66,6 +68,7 @@ local function runGame(myGeneration: number)
 		workspace:SetAttribute(Config.world.dayAttribute, title)
 		announce(title, "day")
 		QuestService.dawn(dayNumber)
+		SurvivorService.dawn()
 		-- Des l'aube : celui qui est dans le Ventre sait combien il en reste.
 		workspace:SetAttribute(Config.world.sweepsLeftAttribute, d.sweepsPerDay)
 
@@ -109,6 +112,7 @@ local function runGame(myGeneration: number)
 		CrewService.releaseTaken()
 		LootService.spawnWrecks(HidingService.swallowedToday())
 		QuestService.night(dayNumber)
+		SurvivorService.night()
 		task.wait(d.nightSeconds)
 		CrewService.setLamps(false)
 	end
@@ -132,6 +136,8 @@ function DayService.start()
 		ReprisService.clear()
 		PlanqueService.reset()
 		QuestService.reset()
+		SurvivorService.reset()
+		SmokeService.reset()
 		CrewService.setLamps(false)
 		CrewService.gatherAtPlanque()
 		DayService.restart()

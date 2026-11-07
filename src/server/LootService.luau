@@ -204,7 +204,13 @@ local function useItem(player: Player, index: number)
 	local food = (item :: any).food
 	local heal = (item :: any).heal
 	if food == nil and heal == nil then
-		LootService.sendHud(player, item.name .. " : à déposer au coffre")
+		local hint = (item :: any).hint
+		LootService.sendHud(
+			player,
+			item.name
+				.. " : "
+				.. (if typeof(hint) == "string" then hint else "à déposer au coffre")
+		)
 		return
 	end
 	table.remove(bag, index)
@@ -238,6 +244,22 @@ function LootService.takeItem(player: Player, itemId: string): boolean
 	table.remove(bag, index)
 	refreshSpeed(player)
 	LootService.sendHud(player)
+	return true
+end
+
+-- Donner un objet (le fumigene d'Elie) : faux si le sac est plein.
+function LootService.giveItem(player: Player, itemId: string): boolean
+	local bag = bags[player]
+	if bag == nil then
+		return false
+	end
+	if #bag >= Config.bag.slots then
+		LootService.sendHud(player, "Sac plein — dépose au coffre de la Planque")
+		return false
+	end
+	table.insert(bag, itemId)
+	refreshSpeed(player)
+	LootService.sendHud(player, "Pris : " .. Config.items[itemId].name)
 	return true
 end
 

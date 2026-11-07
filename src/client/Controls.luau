@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Controls — courir, s'accroupir, glisser, sortir de cachette.
+	Controls — courir, s'accroupir, glisser, frapper, lancer, sortir de cachette.
 
 	Les boutons viennent de `Config.controls` et de nulle part ailleurs. La
 	manette decide : chaque action se branche sur son bouton ET sa touche par
@@ -27,6 +27,7 @@ local Controls = {}
 local player = Players.LocalPlayer
 local leaveHiding = Remotes:WaitForChild("LeaveHiding") :: RemoteEvent
 local attack = Remotes:WaitForChild("Attack") :: RemoteEvent
+local throw = Remotes:WaitForChild("Throw") :: RemoteEvent
 
 local sprinting = false
 local crouching = false
@@ -150,6 +151,13 @@ local function bindOnFoot()
 			attack:FireServer()
 		end
 	end)
+	-- Lancer un fumigene la ou l'on regarde : le serveur verifie qu'on en a
+	-- un et trace la cloche.
+	bind("SurvivorThrow", onFoot.aimOrThrow, function(state)
+		if state == Enum.UserInputState.Begin and not player:GetAttribute("Downed") then
+			throw:FireServer(workspace.CurrentCamera.CFrame.LookVector)
+		end
+	end)
 	bind("SurvivorCrouch", onFoot.crouchOrSlide, function(state)
 		if state ~= Enum.UserInputState.Begin then
 			return
@@ -168,6 +176,7 @@ local function unbindOnFoot()
 	ContextActionService:UnbindAction("SurvivorSprint")
 	ContextActionService:UnbindAction("SurvivorCrouch")
 	ContextActionService:UnbindAction("SurvivorHit")
+	ContextActionService:UnbindAction("SurvivorThrow")
 end
 
 local function onHiddenChanged()

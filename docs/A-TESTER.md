@@ -335,3 +335,63 @@ les a essayées), et le faire **à deux vrais joueurs**.
 3. **Le cri de l'Œil** quand on le fait cligner : assez douloureux ?
 4. **L'ambiance** : le vent du jour et le drone de la nuit fatiguent-ils à la
    longue ?
+
+## Le survivant, étape 3 de la quête (7 novembre 2026)
+
+*Vérifié en jeu, seul, par sondes* :
+- à l'aube du jour 4, Élie attend dans son refuge ; la nuit d'avant, Mara dit
+  où il se cache (texte vu à l'écran) ;
+- maintenir X sur lui : il suit, en boitant ; il a contourné une maison dans
+  les pas de son guide et s'est arrêté à 7 studs de lui ;
+- X sur lui : il va à la cachette libre la plus proche et y entre (en 4 s) ;
+  X sur lui caché : il ressort et suit celui qui l'a fait sortir ;
+- laissé dehors pendant un Balayage, l'Œil l'a pris en 12 s ; la nuit, Mara
+  dit qu'il a été recraché et où il se cache maintenant (un autre refuge) ;
+  au matin, il y attend ;
+- à la Planque, la quête avance (« Survivre ») ; la nuit, il mange un plat de
+  la réserve.
+
+*Jamais vu* : un vrai guide qui marche (le pont ne peut que téléporter) ;
+la sortie d'un refuge, porte comprise ; l'escorte entière d'un bout à
+l'autre de la carte.
+
+1. **Le trouver** : l'indice de Mara suffit-il ? Trop facile, trop dur ?
+   (Refuges possibles : supérette, église, station-service, une ferme d'un
+   hameau à l'est.)
+2. **Sortir du refuge** : il doit suivre son guide par la porte. Reste-t-il
+   coincé contre un mur ? (Il marche dans tes pas : passe par la porte, pas
+   par une fenêtre.)
+3. **L'escorte** : sa lenteur rend-elle le trajet tendu, ou pénible ? Combien
+   de temps pour le ramener ?
+4. **Le cacher** (X sur lui) : est-ce clair ? L'invite de la cachette passe-t-
+   elle avant la sienne quand tu veux te cacher toi-même ?
+5. **À 3 ou 5** : qui le guide ? Un autre peut-il le faire sortir d'une
+   cachette et le reprendre ?
+6. **Sa silhouette** (photo : `docs/images/elie.jpg`) : le reconnaît-on de
+   loin ?
+
+## Le fumigène, étape 4 (7 novembre 2026)
+
+*Vérifié seul dans Studio, par sondes* :
+
+- les étagères du fond de la supérette donnent des produits chimiques ;
+- l'étape s'ouvre à l'aube du jour 6 ; cette nuit-là, Élie a mangé puis fait
+  2 fumigènes (2 produits et 2 ferrailles pris dans la réserve) ; X sur lui
+  les donne, un par appui ; sans repas, il n'a rien fabriqué ;
+- un fumigène lancé à plat tombe à 39 studs ; le nuage coupe la vue de l'Œil
+  vers son centre, pas à côté ;
+- poursuivi pendant un Balayage, jeté à ses pieds : la jauge tombe à zéro ;
+  l'Œil sort au bord du nuage, en fait le tour 7 s, puis repart à son râteau.
+
+*Jamais vu* : lancer à la manette (L2), la boîte qui vole vue par un ami, sortir
+du nuage sous ses yeux pendant qu'il guette.
+
+1. **L2** : le fumigène part-il là où tu regardes, à la bonne distance ?
+2. **Le nuage** (photo : `docs/images/fumee.jpg`) : assez épais pour qu'on *croie*
+   qu'il cache ? Trop gros, trop petit ?
+3. **La ronde de l'Œil** : 7 secondes, est-ce assez tendu ? Arrive-t-on à
+   s'échapper quand il repart ?
+4. **Sortir trop tôt** : se fait-on reprendre ? Est-ce juste ?
+5. **L'économie** : deux fumigènes par nuit au plus, est-ce trop, pas assez ?
+   Trouve-t-on assez de produits chimiques ?
+6. **La réserve de la supérette** : la trouve-t-on avec l'indice de Mara ?

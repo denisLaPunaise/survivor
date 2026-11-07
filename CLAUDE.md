@@ -168,7 +168,15 @@ GitHub Actions relance formatage, analyse, tests et build à chaque push.
   te voit, aspiration filmée ; le Ventre de l'Œil (`VentreService`,
   `VentreView`, `Memories`) avec souvenirs et vue par l'Œil ; recraché la
   nuit dans un cocon à détacher ; toits avalés en spirale ; épaves la nuit.
-- **Ensuite** : la quête, étapes 3 à 5 ; ce que Josh dira après avoir joué ;
+- **7 novembre 2026, le survivant** : étape 3 de la quête (`SurvivorService`) ;
+  Élie attend dans un des refuges de la recette (`Ville.Refuges`), Mara le
+  décrit la nuit d'avant (briefing de `Quest`), il suit son guide dans ses
+  pas, on le cache (X), l'Œil le voit, il mange à la Planque.
+- **7 novembre 2026, le fumigène** : étape 4 de la quête (`Smoke`,
+  `SmokeService`) ; Élie fabrique la nuit s'il a mangé (produits chimiques de
+  la réserve de la supérette + ferraille), on les lui prend (X), L2 lance ;
+  le nuage coupe la ligne de vue, l'Œil guette autour 7 s puis perd la piste.
+- **Ensuite** : la quête, étape 5 ; ce que Josh dira après avoir joué ;
   un vrai modèle de créature pour les Repris ; puis la jauge de Visibilité de
   la Planque, la construction libre sur grille, les autres Repris (Rampant,
   Hurleur, Guetteur, Brute).
@@ -185,7 +193,7 @@ copie** du dépôt. Elle ne doit jamais être commitée.
 
 Les touches simulées (`user_keyboard_input`) n'atteignent pas les
 `ProximityPrompt`, et `InputHoldBegin` depuis le pont non plus : les sondes
-passent par `HidingService.tryEnter`, `LootService.trySearch`,
+passent par `HidingService.tryEnter`, `SurvivorService.tryPrompt`, `SmokeService.tryThrow`, `LootService.trySearch`,
 `QuestService.tryRelay` et `tryTune`, qui suivent le même chemin que les
 invites (et `VentreService.tryRead` / `tryWatch`, `CrewService.tryFree`). Le
 pont ne voit pas le `PlayerModule` du client : on ne peut pas y faire marcher

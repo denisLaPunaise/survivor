@@ -8,6 +8,10 @@
 	presque invisibles) et ce qui ne couvre qu'a moitie (attribut `Couvert`),
 	et s'arrete sur le reste : un toit, un mur, une voiture.
 
+	La fumee d'un fumigene coupe la ligne de vue comme un mur (SmokeService).
+	Celui qu'il poursuivait et qui y disparait, il le guette : il tourne
+	autour du nuage un moment, puis il perd sa piste.
+
 	Un joueur cache dans une cachette intacte n'est jamais vu : il n'y a rien a
 	mesurer, la cachette le couvre par construction.
 
@@ -24,6 +28,7 @@ local Survivor = ReplicatedStorage:WaitForChild("Survivor")
 local Config = require(Survivor:WaitForChild("Config"))
 local Exposure = require(Survivor:WaitForChild("Exposure"))
 local Growth = require(Survivor:WaitForChild("Growth"))
+local Smoke = require(Survivor:WaitForChild("Smoke"))
 local Sweep = require(Survivor:WaitForChild("Sweep"))
 local Remotes = Survivor:WaitForChild("Remotes")
 
@@ -31,6 +36,8 @@ local CrewService = require(script.Parent:WaitForChild("CrewService"))
 local HidingService = require(script.Parent:WaitForChild("HidingService"))
 local LootService = require(script.Parent:WaitForChild("LootService"))
 local PlanqueService = require(script.Parent:WaitForChild("PlanqueService"))
+local SmokeService = require(script.Parent:WaitForChild("SmokeService"))
+local SurvivorService = require(script.Parent:WaitForChild("SurvivorService"))
 local WorldService = require(script.Parent:WaitForChild("WorldService"))
 
 local EyeService = {}
@@ -45,6 +52,8 @@ local groundY = 0
 local beam: BasePart? = nil
 local accumulated = 0
 local exposures: { [Player]: number } = {}
+-- La jauge du survivant de la quete : il est vu comme un joueur.
+local survivorExposure = 0
 -- Le dernier joueur que l'Oeil a vu pendant ce Balayage, et quand.
 local sighting: { player: Player, at: number }? = nil
 -- Le clignement : jusqu'a quand il ne voit plus rien, s'il a deja cligne
@@ -91,6 +100,10 @@ end
 -- deux derriere un buisson.
 local function visibility(target: Vector3, ignore: { Instance }): number
 	local eye = Config.eye
+	-- Dans la fumee, ou derriere : rien a voir.
+	if SmokeService.blocking(eyePosition, target) then
+		return 0
+	end
 	local seen = 1
 	local origin = eyePosition
 	local filter = table.clone(ignore)
@@ -162,6 +175,10 @@ local function seenFactor(player: Player): number
 			table.insert(ignore, other.Character)
 		end
 	end
+	local survivor = SurvivorService.model()
+	if survivor then
+		table.insert(ignore, survivor)
+	end
 	if beam then
 		table.insert(ignore, beam)
 	end
@@ -207,6 +224,38 @@ local function check(dt: number)
 			exposures[player] = 0
 			CrewService.take(player)
 		end
+	end
+
+	-- Le survivant, dehors : la meme ligne de vue, la meme jauge, et s'abriter
+	-- avec lui dans une maison la marque aussi.
+	local head, body = SurvivorService.target()
+	local seen = 0
+	if head and body then
+		if looking then
+			HidingService.noteShelter(body.Position)
+		end
+		if
+			looking
+			and os.clock() >= blindUntil
+			and (inCone(head.Position) or inCone(body.Position))
+		then
+			local ignore: { Instance } = {}
+			for _, other in Players:GetPlayers() do
+				if other.Character then
+					table.insert(ignore, other.Character)
+				end
+			end
+			table.insert(ignore, SurvivorService.model() :: Model)
+			if beam then
+				table.insert(ignore, beam)
+			end
+			seen = math.max(visibility(head.Position, ignore), visibility(body.Position, ignore))
+		end
+	end
+	survivorExposure = Exposure.step(survivorExposure, seen, dt, Config.eye.exposure)
+	if Exposure.isTaken(survivorExposure) then
+		survivorExposure = 0
+		SurvivorService.take()
 	end
 end
 
@@ -372,6 +421,9 @@ function EyeService.runSweep(stillCurrent: () -> boolean, dayNumber: number)
 	local ripped = 0
 	local bx, bz = Sweep.sample(timeline, 0)
 	local mode = "pattern" -- "pattern" | "chase" | "return"
+	-- Sa proie a disparu dans la fumee : il guette autour du nuage (son
+	-- centre et son bord au moment ou elle y est entree), depuis `since`.
+	local watch: { x: number, z: number, ring: number, angle: number, since: number }? = nil
 	while stillCurrent() do
 		local now = os.clock()
 		local dt = now - last
@@ -385,7 +437,46 @@ function EyeService.runSweep(stillCurrent: () -> boolean, dayNumber: number)
 			and targetRoot ~= nil
 			and not HidingService.isHidden(target.player)
 			and not CrewService.isTaken(target.player)
-		if tracking and targetRoot and targetRoot:IsA("BasePart") then
+		-- Il la poursuivait et elle passe dans la fumee (ou derriere) : il ne
+		-- la suit pas a travers. Il tourne autour du nuage, le bord de son
+		-- regard sur le bord du nuage, et ne la reprend que s'il la revoit ;
+		-- au bout de `lingerSeconds`, il perd sa piste (Josh).
+		if watch == nil and tracking and targetRoot and targetRoot:IsA("BasePart") then
+			local cloudAt, cloudRadius = SmokeService.blocking(eyePosition, targetRoot.Position)
+			if cloudAt and cloudRadius then
+				watch = {
+					x = cloudAt.X,
+					z = cloudAt.Z,
+					ring = Config.smoke.radius + eye.beamRadius - Config.smoke.watchMargin,
+					angle = math.atan2(bz - cloudAt.Z, bx - cloudAt.X),
+					since = now,
+				}
+			end
+		end
+		local w = watch
+		if w and target and target.at > w.since then
+			-- Il l'a revue en sortant : la traque reprend.
+			watch = nil
+			w = nil
+		end
+		if w then
+			if now - w.since >= Config.smoke.lingerSeconds then
+				-- Il a perdu la piste.
+				sighting = nil
+				watch = nil
+			else
+				mode = "chase"
+				local wx, wz = Smoke.watchPoint(
+					w.x,
+					w.z,
+					w.ring,
+					w.angle,
+					chaseSpeed * Config.smoke.watchPace / w.ring,
+					now - w.since
+				)
+				bx, bz = Sweep.chaseStep(bx, bz, wx, wz, chaseSpeed, dt)
+			end
+		elseif tracking and targetRoot and targetRoot:IsA("BasePart") then
 			-- La traque : il fonce sur celui qu'il a vu.
 			mode = "chase"
 			bx, bz = Sweep.chaseStep(
@@ -447,6 +538,7 @@ function EyeService.reset()
 		beam = nil
 	end
 	table.clear(exposures)
+	survivorExposure = 0
 	eyeState:FireAllClients({ phase = "idle" })
 end
 

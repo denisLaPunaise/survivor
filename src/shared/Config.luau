@@ -111,6 +111,10 @@ Config.world = {
 	ventreSpawn = "VentreDepart",
 	oculus = "Oculus",
 	memoryAttribute = "Souvenir",
+	-- Les cachettes possibles du survivant (quete, etape 3) : une part par
+	-- refuge, attribut = ce que Mara en dit.
+	refuges = "Refuges",
+	refugeClue = "Indice",
 }
 
 --------------------------------------------------------------------------------
@@ -555,8 +559,9 @@ Config.story = {
 	-- la nuit : une etape reussie se raconte la nuit suivante, et la suivante
 	-- s'ouvre a l'aube, pas avant ce jour. L'histoire de la Banlieue dure
 	-- ainsi 8 a 10 jours, et on ne peut pas la finir beaucoup plus vite
-	-- (Josh). Les etapes 3 a 5 viendront avec leurs jours (4, 6 et 8).
-	opensOnDay = { poste = 1, signal = 2 },
+	-- (Josh). L'etape 5 viendra avec son jour (8). Mara
+	-- donne le premier indice du survivant la nuit d'avant (jour 3).
+	opensOnDay = { poste = 1, signal = 2, survivant = 4, fumigene = 6 },
 	-- Le temps de lire une ligne de la radio.
 	lineSeconds = 6,
 	-- Poser l'antenne : maintenir X la-haut, a decouvert.
@@ -570,6 +575,126 @@ Config.story = {
 	-- Dans Studio, seul : poser l'antenne suffit (on ne peut pas etre a deux
 	-- endroits). Jamais dans le jeu publie.
 	soloInStudio = true,
+}
+
+--------------------------------------------------------------------------------
+-- LE SURVIVANT (quete, etape 3)
+--------------------------------------------------------------------------------
+
+-- Decide avec Josh (7 novembre 2026) : on le trouve par les indices de Mara,
+-- il boite et suit celui qui l'a pris en charge, on le cache soi-meme, et a
+-- la Planque il mange comme un joueur (CONCEPT 12).
+Config.survivor = {
+	name = "Élie",
+	-- Il boite : plus lent que la marche (Config.movement.walkSpeed = 14),
+	-- pour qu'on ne puisse pas traverser la ville d'un trait entre deux
+	-- Balayages. De la ferme la plus lointaine, ~3 min de marche.
+	limpSpeed = 9,
+	-- Il s'arrete a cette distance de son guide, pour ne pas le bousculer, et
+	-- pour que son invite ne prenne pas celle des cachettes (une seule invite
+	-- par bouton : la plus proche).
+	followDistance = 7,
+	promptDistance = 5,
+	-- Trop loin de son guide, il s'arrete et attend qu'on revienne.
+	lostDistance = 70,
+	-- Il marche dans les pas de son guide : un pas tous les `trailStep`
+	-- studs, et pas plus de `trailMax` (au-dela de lostDistance, il s'arrete
+	-- de toute facon).
+	trailStep = 2.5,
+	trailMax = 200,
+	-- Bloque (moins d'un stud en ce temps), il saute.
+	stuckSeconds = 2,
+	-- « Cacher » : il va a la cachette libre la plus proche, dans ce rayon.
+	hideRadius = 25,
+	-- Le trouver : maintenir X, le temps de le rassurer.
+	findHoldSeconds = 1,
+	-- Aspire : il monte vers l'Oeil en ce temps.
+	liftSeconds = 3,
+	liftHeight = 350,
+	-- Sa marche : l'animation de marche R15 de Roblox, jouee ralentie (il
+	-- boite). Un PNJ n'a pas de script Animate qui tourne : le serveur la joue.
+	walkAnimation = 507777826,
+	walkAnimationSpeed = 0.6,
+	-- A l'arret : l'animation de repos R15 (sans elle, il reste raide, les
+	-- bras tendus).
+	idleAnimation = 507766388,
+	-- Son allure, en RGB (Config se charge sans Roblox) : un homme qui vit
+	-- dehors depuis des semaines. Bonnet, echarpe, sac a dos et bandage sont
+	-- des parts soudees au corps : il doit se reconnaitre de loin, a sa
+	-- silhouette, parmi les joueurs.
+	look = {
+		skin = { 196, 150, 120 },
+		jacket = { 78, 88, 70 },
+		trousers = { 70, 60, 52 },
+		bandage = { 214, 206, 188 },
+		cap = { 128, 52, 40 },
+		scarf = { 190, 150, 70 },
+		pack = { 92, 84, 60 },
+	},
+	-- Ce qu'il mange, chaque nuit a la Planque : un plat du menu.
+	meals = 1,
+}
+
+--------------------------------------------------------------------------------
+-- LE FUMIGENE (quete, etape 4)
+--------------------------------------------------------------------------------
+
+-- Decide avec Josh (7 novembre 2026) : Elie le fabrique la nuit, s'il a mange,
+-- avec ce qu'il y a dans la reserve ; on le lance avec L2 ; le nuage coupe la
+-- ligne de vue, et l'Oeil qui poursuivait quelqu'un guette autour du nuage
+-- avant de perdre sa piste (CONCEPT 12).
+Config.smoke = {
+	-- Une fumee = un produit de la reserve de la superette (introuvable
+	-- ailleurs) et une boite de ferraille.
+	recipe = { chimie = 1, ferraille = 1 },
+	-- Au plus deux par nuit : une parade, pas une reponse a tout. A 5 joueurs,
+	-- un fumigene pour deux ou trois chaque jour.
+	perNight = 2,
+	-- Le nuage : son rayon plein (la zone balayee par le regard fait 16 : un
+	-- nuage le cache presque), sa duree, le temps de s'ouvrir et de se
+	-- dissiper (il retrecit : on le voit partir, on sait qu'il faut bouger).
+	radius = 14,
+	seconds = 20,
+	growSeconds = 1.5,
+	fadeSeconds = 4,
+	-- Le lancer, en cloche : vitesse dans la direction du regard, plus un
+	-- coup vers le haut, avec une gravite a nous (celle de Roblox, 196, en
+	-- ferait un caillou). A plat, il tombe a ~40 studs ; vise haut, ~75.
+	throwSpeed = 60,
+	throwLift = 25,
+	gravity = 80,
+	maxFlightSeconds = 4,
+	-- Le pas de la trajectoire (un rayon par pas, pour trouver ou il tombe).
+	flightStep = 1 / 30,
+	-- Il ne part pas de la tete : devant elle, pour ne pas toucher son propre
+	-- corps.
+	handOffset = 2,
+	-- Entre deux lancers (un doigt qui tremble sur L2 ne vide pas le sac).
+	throwCooldown = 1,
+	-- L'OEIL PERD LA PISTE (Josh : « au bout de 5 ou 10 secondes, en
+	-- attendant il guette autour du nuage ») : il tourne autour du nuage, le
+	-- bord de son regard sur le bord du nuage, puis il abandonne. Sa ronde va
+	-- a cette part de sa vitesse de poursuite : plus vite, il ne suit plus son
+	-- propre cercle et tourne en rond dans le nuage (vu en jeu le 7 novembre
+	-- 2026, jour 1 : 9 studs/s contre 21 pour un tour en 8 s).
+	lingerSeconds = 7,
+	watchPace = 0.7,
+	watchMargin = 4,
+	-- Le centre du nuage, au-dessus de la ou la boite tombe (en part du
+	-- rayon) : un joueur debout dedans y a la tete bien enfouie.
+	centerLift = 0.4,
+	-- Son allure, en RGB : une fumee grise, pas blanche (la blanche brille au
+	-- soleil et se voit comme un phare) ; la boite, vert armee.
+	look = {
+		smoke = { 168, 168, 160 },
+		smokeDark = { 112, 112, 106 },
+		can = { 86, 96, 70 },
+		-- Des bouffees par seconde a plein rayon : assez pour qu'on ne voie
+		-- pas au travers.
+		puffsPerSecond = 110,
+		puffSeconds = { min = 3, max = 5 },
+		puffSize = { from = 9, to = 16 },
+	},
 }
 
 --------------------------------------------------------------------------------
@@ -659,6 +784,13 @@ Config.items = {
 	-- dans le sac quand on depose (`keep`) : on doit la porter la-haut, et la
 	-- reserve ne rend rien.
 	lampe = { name = "Lampe de radio", weight = 1, hint = "Pour réparer la radio : à déposer" },
+	-- Le fumigene : il reste dans le sac au coffre (la reserve ne rend rien).
+	chimie = {
+		name = "Produits chimiques",
+		weight = 1,
+		hint = "Pour les fumigènes : à déposer au coffre",
+	},
+	fumigene = { name = "Fumigène", weight = 0.5, keep = true, hint = "L2 pour le lancer" },
 	antenne = {
 		name = "Antenne",
 		weight = 2,
@@ -752,6 +884,16 @@ Config.loot = {
 				{ item = "eau", weight = 5 },
 				{ item = "piles", weight = 2 },
 				{ item = "bandage", weight = 1 },
+			},
+		},
+		-- La reserve au fond de la superette : les produits chimiques des
+		-- fumigenes ne se trouvent que la.
+		arriere = {
+			rolls = { min = 1, max = 2 },
+			entries = {
+				{ item = "chimie", weight = 4 },
+				{ item = "piles", weight = 1 },
+				{ item = "tissu", weight = 1 },
 			},
 		},
 		voiture = {
