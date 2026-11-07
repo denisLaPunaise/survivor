@@ -22,6 +22,7 @@ local Remotes = Survivor:WaitForChild("Remotes")
 
 local LootService = require(script.Parent:WaitForChild("LootService"))
 local RemoteGuard = require(script.Parent:WaitForChild("RemoteGuard"))
+local Sfx = require(script.Parent:WaitForChild("Sfx"))
 local ReprisService = require(script.Parent:WaitForChild("ReprisService"))
 local WorldService = require(script.Parent:WaitForChild("WorldService"))
 
@@ -367,6 +368,8 @@ local function ripRoof(building: Building)
 	local e = Config.eye
 
 	local shakeEnd = os.clock() + e.roofShakeSeconds
+	-- Le toit craque pendant qu'il tremble : ceux qui sont dessous l'entendent.
+	Sfx.at("toit", building.box.Position + Vector3.new(0, building.size.Y / 2, 0))
 	-- Ceux qui sont dessous l'apprennent aussi par un message : le
 	-- tremblement seul peut passer inapercu, tete baissee sur une fouille.
 	for _, player in Players:GetPlayers() do
@@ -409,6 +412,7 @@ local function ripRoof(building: Building)
 	dustAnchor.Size = Vector3.new(1, 1, 1)
 	dustAnchor.CFrame = CFrame.new(center)
 	dustAnchor.Parent = workspace
+	Sfx.at("aspiration", dustAnchor)
 	local dust = Instance.new("Smoke")
 	dust.Color = Color3.fromRGB(150, 140, 128)
 	dust.Opacity = 0.45
@@ -466,8 +470,10 @@ local function ripRoof(building: Building)
 			if connection then
 				connection:Disconnect()
 			end
+			-- Les copies avalees : sans ce menage, elles s'accumulaient,
+			-- invisibles (vu dans la console le 7 novembre 2026).
 			for _, f in flyers do
-				f.ghost:Destroy()
+				f.part:Destroy()
 			end
 		end
 	end)
@@ -513,6 +519,7 @@ function HidingService.rip(spotId: string)
 	for _, prompt in spot.prompts do
 		prompt:Destroy()
 	end
+	Sfx.at("aspiration", spot.model:GetPivot().Position)
 	-- La cachette entiere est avalee, piece par piece, en spirale.
 	local e = Config.eye
 	local pieces: { Swallowed } = {}

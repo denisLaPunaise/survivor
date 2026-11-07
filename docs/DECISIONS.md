@@ -527,3 +527,31 @@ Ce qu'il a corrigé après avoir joué seul :
   - **Le rythme.** Seul, il faut environ 4 s de coups.
   - **Hors Balayage**, frapper ne fait rien et on le dit.
 - **Aucun son dans le jeu pour l'instant** : à ajouter (question de Josh).
+
+## 6 novembre 2026 — les sons
+
+Josh : « il faudrait penser à en ajouter ».
+
+- **Treize sons**, tous de Pro Sound Effects ou d'APM Music (les bibliothèques
+  de Roblox : un son d'utilisateur peut être retiré, et un son qui ne charge
+  pas échoue en silence). La liste est dans `docs/ASSETS.md`.
+- **Choisis sur le nom et la durée**, sans les écouter : à Josh de dire
+  lesquels changer.
+- **Ce qu'on entend de son propre point de vue** (`SoundView`, côté client) :
+  - l'ambiance en fondu : vent le jour, drone la nuit, cœur dans le Ventre ;
+  - l'Œil : un coup sourd et un grondement au signal, ses paupières, son
+    regard qui bourdonne de plus en plus fort quand le bout du faisceau
+    approche, un murmure quand il te voit, son cri quand on le fait cligner ;
+  - le souffle de l'aspiration, et la radio qui grésille à chaque ligne de
+    Mara.
+- **Ce qui se passe dans le monde, que tout le monde entend d'où il est**
+  (`Sfx`, côté serveur) : un toit qui craque puis est aspiré, une cachette
+  avalée, quelqu'un qu'on aspire, une épave qui s'écrase.
+- Les sons sont préchargés au démarrage ; un son qui ne charge pas est nommé
+  dans la console. Un test vérifie que chaque son de la liste est joué
+  quelque part.
+- **Pas encore de sons** pour les Repris, la fouille, les coups et les pas.
+- **Bug corrigé** (vu dans la console en essayant les sons) : depuis
+  l'aspiration en spirale, les copies des toits avalés n'étaient jamais
+  supprimées. Elles s'accumulaient, invisibles. C'est réparé : après un toit
+  arraché, plus aucune ne reste.

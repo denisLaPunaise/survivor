@@ -316,3 +316,22 @@ les a essayées), et le faire **à deux vrais joueurs**.
    s'éteindre 1,5 s. Est-ce utile pour sauver un ami poursuivi ? Trop facile ?
    (Vérifié seul, par sonde : le regard s'éteint 1,5 s, une seule fois par
    Balayage.)
+
+## Les sons (6 novembre 2026)
+
+*Vérifié en jeu, seul* :
+- les 13 sons se chargent chez le joueur, et le vent joue le jour ;
+- au signal, le coup sourd, le grondement et les paupières démarrent
+  ensemble, puis le Balayage fait taire le grondement et monter le
+  bourdonnement du regard (volume plein quand il passe près) ;
+- le murmure part quand il te voit, le cri quand il cligne, le craquement
+  dès qu'un toit tremble, puis le souffle de l'aspiration.
+
+*Jamais entendu* : l'assistant ne peut pas écouter.
+
+1. **Chaque son** : lequel est raté, trop fort, trop faible, pas dans
+   l'ambiance ? (Leur liste et leur nom sont dans `docs/ASSETS.md`.)
+2. **Le regard qui approche** : entend-on venir le faisceau avant de le voir ?
+3. **Le cri de l'Œil** quand on le fait cligner : assez douloureux ?
+4. **L'ambiance** : le vent du jour et le drone de la nuit fatiguent-ils à la
+   longue ?

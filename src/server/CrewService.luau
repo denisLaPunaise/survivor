@@ -22,6 +22,7 @@ local Crew = require(Survivor:WaitForChild("Crew"))
 local CombatService = require(script.Parent:WaitForChild("CombatService"))
 local HidingService = require(script.Parent:WaitForChild("HidingService"))
 local LootService = require(script.Parent:WaitForChild("LootService"))
+local Sfx = require(script.Parent:WaitForChild("Sfx"))
 local WorldService = require(script.Parent:WaitForChild("WorldService"))
 
 local CrewService = {}
@@ -95,6 +96,7 @@ function CrewService.take(player: Player)
 		column.CFrame = CFrame.new(base + Vector3.new(0, e.takenLiftHeight / 2, 0))
 			* CFrame.Angles(0, 0, math.rad(90))
 		column.Parent = workspace
+		Sfx.at("aspiration", base)
 		TweenService:Create(column, TweenInfo.new(e.takenLiftSeconds + 0.6), { Transparency = 1 })
 			:Play()
 		task.delay(e.takenLiftSeconds + 0.7, function()

@@ -16,6 +16,7 @@ local Remotes = Survivor:WaitForChild("Remotes")
 
 local RadioView = {}
 
+local SoundView = require(script.Parent:WaitForChild("SoundView"))
 local Typography = require(script.Parent:WaitForChild("Typography"))
 
 function RadioView.start()
@@ -104,6 +105,8 @@ function RadioView.start()
 		while #queue > 0 do
 			local line = table.remove(queue, 1) :: string
 			subtitle.TextTransparency = 0
+			-- La radio gresille a chaque ligne.
+			SoundView.play("radio")
 			local writing = Typography.typewrite(subtitle, line, Typography.STORY_SPEED)
 			-- Le temps d'ecrire, puis le temps de lire.
 			local started = os.clock()

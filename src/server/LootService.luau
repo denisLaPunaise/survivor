@@ -20,6 +20,7 @@ local Remotes = Survivor:WaitForChild("Remotes")
 
 local CombatService = require(script.Parent:WaitForChild("CombatService"))
 local RemoteGuard = require(script.Parent:WaitForChild("RemoteGuard"))
+local Sfx = require(script.Parent:WaitForChild("Sfx"))
 local ReprisService = require(script.Parent:WaitForChild("ReprisService"))
 local WorldService = require(script.Parent:WaitForChild("WorldService"))
 
@@ -309,6 +310,7 @@ local function dropWreck(at: Vector3)
 		end
 		if t >= 1 and fall then
 			fall:Disconnect()
+			Sfx.at("chute", box)
 			local dust = Instance.new("Smoke")
 			dust.Color = Color3.fromRGB(120, 110, 100)
 			dust.Size = 8

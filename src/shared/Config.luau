@@ -573,6 +573,53 @@ Config.story = {
 }
 
 --------------------------------------------------------------------------------
+-- LES SONS
+--------------------------------------------------------------------------------
+
+-- Tous de Pro Sound Effects ou d'APM Music, les bibliotheques que Roblox met a
+-- disposition : publiques et durables (un son d'utilisateur peut etre retire
+-- ou modere, et un son qui ne se charge pas echoue sans rien dire). Choisis
+-- sur leur nom et leur duree : l'assistant ne peut pas ecouter, Josh juge.
+-- Tous verifies charges dans Studio le 6 novembre 2026.
+Config.sounds = {
+	library = {
+		-- Le ciel rougit : un grand coup sourd, puis un grondement pendant les
+		-- signes.
+		signal = { id = 9125484367, volume = 0.7 },
+		menace = { id = 9125485274, volume = 0.35 },
+		-- Son regard : un bourdonnement grave qui enfle quand il approche.
+		regard = { id = 9114353261, volume = 0.8, looped = true },
+		-- Ses paupieres qui s'ouvrent (et, plus lentement, se ferment).
+		ouverture = { id = 9043343895, volume = 0.6 },
+		-- Il t'aspire ; il avale un toit.
+		aspiration = { id = 9118840222, volume = 0.9 },
+		toit = { id = 9126240449, volume = 0.9 },
+		-- Le gresillement de la radio, a chaque ligne de Mara.
+		radio = { id = 9118027586, volume = 0.5 },
+		-- L'ambiance : le vent le jour, un drone sourd la nuit, un coeur lent
+		-- dans le Ventre.
+		vent = { id = 9114625552, volume = 0.25, looped = true },
+		nuit = { id = 9114353377, volume = 0.3, looped = true },
+		coeur = { id = 9043365842, volume = 0.5, looped = true },
+		-- Il te voit : un murmure.
+		murmure = { id = 9114228525, volume = 0.6 },
+		-- Il a mal (frappe depuis son Ventre) : un cri, un peu aigu.
+		cri = { id = 9113980319, volume = 0.9, speed = 1.25 },
+		-- Une epave qui s'ecrase.
+		chute = { id = 9125484700, volume = 0.8 },
+	},
+	-- Au-dela de cette distance du bout de son regard, on ne l'entend plus ;
+	-- dessous, il enfle jusqu'au volume plein.
+	gazeHeardStuds = 450,
+	-- Les sons poses dans le monde (un toit, une epave) : pleins a 25 studs,
+	-- eteints a 500.
+	rollOffMin = 25,
+	rollOffMax = 500,
+	-- Le temps de passer d'une ambiance a l'autre.
+	fadeSeconds = 2,
+}
+
+--------------------------------------------------------------------------------
 -- LES DEPLACEMENTS
 --------------------------------------------------------------------------------
 

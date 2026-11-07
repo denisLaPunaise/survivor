@@ -22,6 +22,7 @@ local suites = {
 	{ name = "Les Repris", run = require("./specs/repris") },
 	{ name = "La faim et la Planque", run = require("./specs/planque") },
 	{ name = "La quete principale", run = require("./specs/quest") },
+	{ name = "Les sons", run = require("./specs/sounds") },
 	{ name = "Regles branchees", run = require("./specs/wiring") },
 }
 
