@@ -176,7 +176,11 @@ GitHub Actions relance formatage, analyse, tests et build à chaque push.
   `SmokeService`) ; Élie fabrique la nuit s'il a mangé (produits chimiques de
   la réserve de la supérette + ferraille), on les lui prend (X), L2 lance ;
   le nuage coupe la ligne de vue, l'Œil guette autour 7 s puis perd la piste.
-- **Ensuite** : la quête, étape 5 ; ce que Josh dira après avoir joué ;
+- **9 novembre 2026, le Gardien** : étape 5 et fin du chapitre 1
+  (`GardienService`, `ChapterView`) ; tunnel sous la voie rapide à l'est
+  (recette), grille à couper (coupe-boulon de l'établi), Repris géant qu'on
+  livre à l'Œil, écran de fin, puis la partie continue.
+- **Ensuite** : la quête est finie pour la Banlieue ; ce que Josh dira après avoir joué ;
   un vrai modèle de créature pour les Repris ; puis la jauge de Visibilité de
   la Planque, la construction libre sur grille, les autres Repris (Rampant,
   Hurleur, Guetteur, Brute).
@@ -193,7 +197,7 @@ copie** du dépôt. Elle ne doit jamais être commitée.
 
 Les touches simulées (`user_keyboard_input`) n'atteignent pas les
 `ProximityPrompt`, et `InputHoldBegin` depuis le pont non plus : les sondes
-passent par `HidingService.tryEnter`, `SurvivorService.tryPrompt`, `SmokeService.tryThrow`, `LootService.trySearch`,
+passent par `HidingService.tryEnter`, `SurvivorService.tryPrompt`, `SmokeService.tryThrow`, `GardienService.tryCut`, `LootService.trySearch`,
 `QuestService.tryRelay` et `tryTune`, qui suivent le même chemin que les
 invites (et `VentreService.tryRead` / `tryWatch`, `CrewService.tryFree`). Le
 pont ne voit pas le `PlayerModule` du client : on ne peut pas y faire marcher

@@ -36,6 +36,10 @@
 		{
 			"name": "Throw",
 			"className": "RemoteEvent"
+		},
+		{
+			"name": "Chapter",
+			"className": "RemoteEvent"
 		}
 	]
 }

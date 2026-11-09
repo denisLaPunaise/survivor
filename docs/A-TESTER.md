@@ -395,3 +395,31 @@ du nuage sous ses yeux pendant qu'il guette.
 5. **L'économie** : deux fumigènes par nuit au plus, est-ce trop, pas assez ?
    Trouve-t-on assez de produits chimiques ?
 6. **La réserve de la supérette** : la trouve-t-on avec l'indice de Mara ?
+
+## Le Gardien, étape 5 (9 novembre 2026)
+
+*Vérifié seul dans Studio, par sondes* :
+
+- le tunnel est construit et mesuré par la recette (nid, antre, grille,
+  porte, chaîne) ; la bouche est ouverte, l'Œil n'y voit pas ;
+- au jour 8, le Gardien dort au fond (12 studs de haut) ; sans coupe-boulon,
+  la chaîne ne cède pas ; avec, la grille s'ouvre et il se réveille ;
+- il sort à 17 studs/s, frappe toutes les 2 s ; perdu de vue, il s'arrête là
+  où il m'a vu, puis rentre ;
+- tenu sous le regard pendant un Balayage, il rougeoie de plus en plus et
+  l'Œil l'aspire (en ~18 s dans l'essai, en le replaçant sous le regard à
+  chaque instant) ; l'étape est réussie ;
+- l'écran de fin s'affiche (photo : `docs/images/fin-chapitre-1.jpg`).
+
+*Jamais vu* : un vrai Balayage où l'on attire le Gardien à la manette ; à
+plusieurs ; sa marche à travers les rues (il va tout droit : les maisons
+peuvent le bloquer) ; la porte qui pivote à l'écran.
+
+1. **Trouver le tunnel** (photo : `docs/images/repaire.jpg`) : la route de
+   l'est et la voie rapide suffisent-elles à s'y retrouver ?
+2. **Le réveil** : fait-il assez peur ? Sa taille, sa vitesse ?
+3. **L'attirer sous le regard** : faut-il la radio pour savoir où l'Œil
+   cherche ? Est-ce trop dur, trop long (6 s de plein regard) ?
+4. **S'échapper** pendant qu'il est tenu : les fumigènes servent-ils ?
+5. **Les rues** : reste-t-il coincé contre les maisons ?
+6. **L'écran de fin** : est-il à la hauteur du moment ?

@@ -50,6 +50,13 @@ local CONTRACT = {
 	memory = "Souvenir",
 	refuges = "Refuges",
 	refugeClue = "Indice",
+	-- Le repaire du Gardien (etape 5) : le tunnel sous la voie rapide.
+	lair = "Repaire",
+	lairNest = "Nid",
+	lairGate = "Grille",
+	lairDoor = "Porte",
+	lairChain = "Chaine",
+	lairInside = "Antre",
 }
 
 -- La hauteur de l'Oeil au-dessus du sol : la Fissure s'ouvre juste au-dessus,
@@ -2554,6 +2561,18 @@ local BASKET_X = 125
 local CHURCH_X = -201
 local STATION_X = -301
 local TOWER = Vector3.new(200, 0, 392)
+-- LE REPAIRE (etape 5, decide avec Josh) : la route qui sort de la ville par
+-- l'est (la rue est-ouest du nord) passe sous la voie rapide, juste au-dela
+-- du bord de la zone ; le tunnel est ferme par une grille, le Gardien dort au
+-- fond. Le tunnel va de la bouche (au bord) jusqu'a l'eboulement du fond.
+local LAIR_Z = 162
+local LAIR_MOUTH_X = 712
+local LAIR_DEPTH = 88
+-- Haut de 16 : le Gardien (Config.gardien.scale) y tient debout ; a 10, il
+-- y restait coince (vu dans Studio le 9 novembre 2026).
+local LAIR_W, LAIR_H = 18, 16
+-- La voie rapide passe sur un remblai de cette hauteur.
+local EMBANKMENT_H = 28
 -- Les morceaux de rue entre deux carrefours, ou l'on pose les parcelles :
 -- deduits des rues nord-sud (18 studs de rue et de trottoir de chaque cote).
 local function segmentsBetween(from: number, to: number): { { number } }
@@ -4373,7 +4392,8 @@ local function build(): string
 	-- Les fermes : quelques hameaux de deux a quatre maisons, et des maisons
 	-- seules, eparpillees au hasard (plus de boucle reguliere : « un cercle de
 	-- maisons », Josh). Jamais tout pres de la Planque.
-	local farmSpots: { Vector3 } = { PLANQUE_AT }
+	-- Ni pres de la Planque, ni sur la route du repaire.
+	local farmSpots: { Vector3 } = { PLANQUE_AT, Vector3.new(LAIR_MOUTH_X - 90, 0, LAIR_Z) }
 	local farmCount = 0
 	local function farFromFarms(at: Vector3, distance: number): boolean
 		for _, spot in farmSpots do
@@ -4689,11 +4709,395 @@ local function build(): string
 	end
 	task.wait()
 
+	-- LE REPAIRE : la route de sortie, le remblai de la voie rapide, le
+	-- tunnel, sa grille et le nid du Gardien au fond.
+	do
+		local lair = folder(root, CONTRACT.lair)
+		local mouth = LAIR_MOUTH_X
+		local inner = LAIR_W / 2
+		local back = mouth + LAIR_DEPTH
+		-- La route : on degage d'abord ce que la campagne a pose dessus.
+		local roadFrom = HALF_X + 20
+		local function onRoad(position: Vector3): boolean
+			return position.X > roadFrom - 10
+				and position.X < mouth + 2
+				and math.abs(position.Z - LAIR_Z) < 30
+		end
+		for _, holder in { country, anchors } do
+			for _, child in holder:GetChildren() do
+				local at = if child:IsA("BasePart")
+					then child.Position
+					elseif child:IsA("Model") then child:GetPivot().Position
+					else nil
+				if at and onRoad(at) then
+					child:Destroy()
+				end
+			end
+		end
+		terrain:FillBlock(
+			CFrame.new((roadFrom + mouth) / 2, 25, LAIR_Z),
+			Vector3.new(mouth - roadFrom + 20, 50, 60),
+			Enum.Material.Air
+		)
+		-- Le sol sous la route, au niveau de celui des rues (l'herbe ne doit
+		-- pas la recouvrir).
+		terrain:FillBlock(
+			CFrame.new((roadFrom + mouth) / 2, -4, LAIR_Z),
+			Vector3.new(mouth - roadFrom + 20, 4, 60),
+			Enum.Material.Grass
+		)
+		-- Sous la route elle-meme, du bitume : l'herbe du terrain pousse au
+		-- travers d'une part mince (vu en jeu).
+		terrain:FillBlock(
+			CFrame.new((roadFrom + mouth + LAIR_DEPTH) / 2, -4, LAIR_Z),
+			Vector3.new(mouth - roadFrom + LAIR_DEPTH + 8, 4, 20),
+			Enum.Material.Asphalt
+		)
+		P(
+			lair,
+			"Route",
+			Vector3.new(mouth - roadFrom + LAIR_DEPTH, 0.3, 16),
+			CFrame.new((roadFrom + mouth + LAIR_DEPTH) / 2, 0.15, LAIR_Z),
+			Enum.Material.Asphalt,
+			C.asphaltPatch
+		)
+		-- La ligne du milieu, effacee par endroits.
+		local x = roadFrom
+		while x < mouth - 8 do
+			if random:NextNumber() < 0.75 then
+				P(
+					lair,
+					"Ligne",
+					Vector3.new(6, 0.05, 0.4),
+					CFrame.new(x + 3, 0.32, LAIR_Z),
+					Enum.Material.SmoothPlastic,
+					C.line
+				)
+			end
+			x += 12
+		end
+		-- Un panneau rouille : on sait ou l'on va.
+		local sign = model(lair, "Panneau")
+		P(
+			sign,
+			"Poteau",
+			Vector3.new(0.4, 7, 0.4),
+			CFrame.new(mouth - 60, 3.5, LAIR_Z - 11),
+			Enum.Material.Metal,
+			C.metal
+		)
+		P(
+			sign,
+			"Plaque",
+			Vector3.new(0.2, 2.6, 6),
+			CFrame.new(mouth - 60, 6.6, LAIR_Z - 11)
+				* CFrame.Angles(math.rad(random:NextNumber(-8, 8)), 0, 0),
+			Enum.Material.Metal,
+			Color3.fromRGB(44, 82, 120):Lerp(C.rust, 0.25)
+		)
+		-- Des voitures abandonnees sur la route, de plus en plus serrees vers
+		-- le tunnel : on fuyait par la.
+		for i = 1, 4 do
+			anchor(
+				"Voiture",
+				CFrame.new(mouth - 150 + i * 28, 0, LAIR_Z + (if i % 2 == 0 then 4 else -4))
+					* CFrame.Angles(0, math.rad(90 + random:NextNumber(-25, 25)), 0)
+			)
+		end
+
+		-- Le remblai de la voie rapide, nord-sud, juste au-dela du bord : on
+		-- le voit barrer l'horizon. Son talus descend dans la zone.
+		terrain:FillBlock(
+			CFrame.new(mouth + 50, EMBANKMENT_H / 2, 0),
+			Vector3.new(100, EMBANKMENT_H, 2000),
+			Enum.Material.Grass
+		)
+		terrain:FillWedge(
+			CFrame.new(mouth - 12, EMBANKMENT_H / 2, 0) * CFrame.Angles(0, math.rad(-90), 0),
+			Vector3.new(2000, EMBANKMENT_H, 24),
+			Enum.Material.Grass
+		)
+		P(
+			lair,
+			"VoieRapide",
+			Vector3.new(36, 0.6, 2000),
+			CFrame.new(mouth + 50, EMBANKMENT_H + 0.3, 0),
+			Enum.Material.Asphalt,
+			C.asphaltPatch
+		)
+		for _, side in { -1, 1 } do
+			P(
+				lair,
+				"Glissiere",
+				Vector3.new(0.3, 1, 2000),
+				CFrame.new(mouth + 50 + side * 17, EMBANKMENT_H + 1.1, 0),
+				Enum.Material.Metal,
+				C.metal
+			)
+		end
+
+		-- La tranchee qui mene a la bouche, et le tunnel lui-meme : on creuse.
+		terrain:FillBlock(
+			CFrame.new(mouth - 12, EMBANKMENT_H / 2 + 0.5, LAIR_Z),
+			Vector3.new(26, EMBANKMENT_H + 1, LAIR_W + 8),
+			Enum.Material.Air
+		)
+		terrain:FillBlock(
+			CFrame.new(mouth + LAIR_DEPTH / 2, LAIR_H / 2 + 0.5, LAIR_Z),
+			Vector3.new(LAIR_DEPTH + 2, LAIR_H + 1, LAIR_W + 2),
+			Enum.Material.Air
+		)
+		local concrete = C.concrete:Lerp(C.concreteDark, 0.55)
+		-- Les murs de soutenement de la tranchee.
+		for _, side in { -1, 1 } do
+			P(
+				lair,
+				"Soutenement",
+				Vector3.new(26, EMBANKMENT_H, 1.6),
+				CFrame.new(mouth - 12, EMBANKMENT_H / 2, LAIR_Z + side * (inner + 4.8)),
+				Enum.Material.Concrete,
+				concrete
+			)
+		end
+		-- La tete du tunnel : un mur de beton perce d'une bouche.
+		local face = mouth - 0.8
+		P(
+			lair,
+			"Tete",
+			Vector3.new(1.6, EMBANKMENT_H - LAIR_H, LAIR_W + 12),
+			CFrame.new(face, LAIR_H + (EMBANKMENT_H - LAIR_H) / 2, LAIR_Z),
+			Enum.Material.Concrete,
+			concrete
+		)
+		for _, side in { -1, 1 } do
+			P(
+				lair,
+				"Tete",
+				Vector3.new(1.6, LAIR_H, 3),
+				CFrame.new(face, LAIR_H / 2, LAIR_Z + side * (inner + 1.5)),
+				Enum.Material.Concrete,
+				concrete
+			)
+		end
+		-- La crasse des coulures, du haut du mur vers la bouche : de l'eau et
+		-- de la suie, a demi transparentes pour se fondre dans le beton.
+		for _ = 1, 9 do
+			local length = random:NextNumber(3, 9)
+			local drip = P(
+				lair,
+				"Coulure",
+				Vector3.new(0.05, length, random:NextNumber(0.8, 2.4)),
+				CFrame.new(
+					face - 0.82,
+					EMBANKMENT_H - length / 2,
+					LAIR_Z + random:NextNumber(-LAIR_W / 2 - 4, LAIR_W / 2 + 4)
+				),
+				Enum.Material.Slate,
+				C.concreteDark:Lerp(C.black, 0.5),
+				{ collide = false }
+			)
+			drip.Transparency = 0.45
+		end
+		-- L'interieur : murs et voute.
+		for _, side in { -1, 1 } do
+			P(
+				lair,
+				"Paroi",
+				Vector3.new(LAIR_DEPTH, LAIR_H, 1.2),
+				CFrame.new(mouth + LAIR_DEPTH / 2, LAIR_H / 2, LAIR_Z + side * (inner + 0.6)),
+				Enum.Material.Concrete,
+				concrete:Lerp(C.black, 0.25)
+			)
+		end
+		P(
+			lair,
+			"Voute",
+			Vector3.new(LAIR_DEPTH, 1.2, LAIR_W + 2.4),
+			CFrame.new(mouth + LAIR_DEPTH / 2, LAIR_H + 0.6, LAIR_Z),
+			Enum.Material.Concrete,
+			concrete:Lerp(C.black, 0.35)
+		)
+		-- Des lampes de tunnel eteintes, une qui pend.
+		for i = 1, 6 do
+			P(
+				lair,
+				"Lampe",
+				Vector3.new(1.4, 0.3, 0.6),
+				CFrame.new(mouth + i * 13, LAIR_H - 0.2, LAIR_Z + inner - 0.4)
+					* CFrame.Angles(if i == 4 then math.rad(40) else 0, 0, 0),
+				Enum.Material.Glass,
+				C.glass:Lerp(C.black, 0.4)
+			)
+		end
+		-- Le fond s'est effondre : des gravats jusqu'au plafond.
+		P(
+			lair,
+			"Eboulement",
+			Vector3.new(4, LAIR_H, LAIR_W),
+			CFrame.new(back - 2, LAIR_H / 2, LAIR_Z),
+			Enum.Material.Concrete,
+			C.concreteDark
+		)
+		rubble(lair, Vector3.new(back - 8, 0, LAIR_Z), inner - 1, 26)
+		rubble(lair, Vector3.new(mouth + 30, 0, LAIR_Z), inner - 2, 8)
+
+		-- LE NID : de la cendre durcie en tas, des cocons pendus a la voute,
+		-- et des braises qui rougeoient au fond. On le voit depuis la grille.
+		local nest = model(lair, "NidDecor")
+		local nestAt = Vector3.new(back - 24, 0, LAIR_Z)
+		for _ = 1, 22 do
+			local angle = random:NextNumber(0, math.pi * 2)
+			local dist = random:NextNumber(0, inner - 1)
+			local size = random:NextNumber(1.5, 4)
+			P(
+				nest,
+				"Cendre",
+				Vector3.new(size, size * 0.5, size * 1.3),
+				CFrame.new(
+					nestAt
+						+ Vector3.new(
+							math.cos(angle) * dist * 0.8,
+							size * 0.2,
+							math.sin(angle) * dist
+						)
+				)
+					* CFrame.Angles(
+						random:NextNumber(-0.4, 0.4),
+						random:NextNumber(0, 3),
+						random:NextNumber(-0.4, 0.4)
+					),
+				Enum.Material.Basalt,
+				Color3.fromRGB(46, 44, 42),
+				-- Il dort dessus : rien ne doit l'y coincer.
+				{ collide = false }
+			)
+		end
+		for _ = 1, 5 do
+			local at = nestAt
+				+ Vector3.new(
+					random:NextNumber(-10, 8),
+					0,
+					random:NextNumber(-inner + 2, inner - 2)
+				)
+			local length = random:NextNumber(3, 5)
+			P(
+				nest,
+				"Cocon",
+				Vector3.new(1.6, length, 1.6),
+				CFrame.new(at.X, LAIR_H - length / 2, at.Z),
+				Enum.Material.Fabric,
+				Color3.fromRGB(70, 64, 58),
+				{ collide = false }
+			)
+		end
+		for _ = 1, 4 do
+			local ember = P(
+				nest,
+				"Braise",
+				Vector3.new(0.8, 0.4, 0.8),
+				CFrame.new(
+					nestAt + Vector3.new(random:NextNumber(-6, 6), 0.3, random:NextNumber(-6, 6))
+				),
+				Enum.Material.Neon,
+				Color3.fromRGB(170, 52, 30),
+				{ collide = false }
+			)
+			local glow = Instance.new("PointLight")
+			glow.Range = 16
+			glow.Brightness = 0.8
+			glow.Color = Color3.fromRGB(255, 90, 50)
+			glow.Parent = ember
+		end
+		marker(
+			lair,
+			CONTRACT.lairNest,
+			CFrame.lookAt(nestAt + Vector3.new(0, 4, 0), nestAt + Vector3.new(-10, 4, 0))
+		)
+		-- Ce qui compte comme « dans l'antre » : tout le tunnel.
+		local den = marker(
+			lair,
+			CONTRACT.lairInside,
+			CFrame.new(mouth + LAIR_DEPTH / 2, LAIR_H / 2, LAIR_Z)
+		)
+		den.Size = Vector3.new(LAIR_DEPTH, LAIR_H, LAIR_W)
+
+		-- LA GRILLE, a l'entree : des barreaux rouilles, une porte au milieu
+		-- fermee par une chaine et un cadenas (on la coupe : etape 5).
+		local gate = model(lair, CONTRACT.lairGate)
+		local rust = C.metal:Lerp(C.rust, 0.5)
+		local gateX = mouth + 1
+		local doorHalf = 3
+		local door = model(gate, CONTRACT.lairDoor)
+		local z = LAIR_Z - inner + 0.6
+		while z < LAIR_Z + inner do
+			local inDoor = math.abs(z - LAIR_Z) < doorHalf
+			P(
+				if inDoor then door else gate,
+				"Barreau",
+				Vector3.new(0.25, LAIR_H, 0.25),
+				CFrame.new(gateX, LAIR_H / 2, z),
+				Enum.Material.Metal,
+				rust
+			)
+			z += 1.1
+		end
+		for _, y in { 1.2, LAIR_H / 2, LAIR_H - 0.6 } do
+			for _, side in { -1, 1 } do
+				P(
+					gate,
+					"Traverse",
+					Vector3.new(0.3, 0.3, inner - doorHalf),
+					CFrame.new(gateX, y, LAIR_Z + side * (doorHalf + (inner - doorHalf) / 2)),
+					Enum.Material.Metal,
+					rust
+				)
+			end
+			P(
+				door,
+				"Traverse",
+				Vector3.new(0.3, 0.3, doorHalf * 2),
+				CFrame.new(gateX, y, LAIR_Z),
+				Enum.Material.Metal,
+				rust
+			)
+		end
+		local chain = P(
+			gate,
+			CONTRACT.lairChain,
+			Vector3.new(0.6, 1.4, 1.2),
+			CFrame.new(gateX - 0.4, 4, LAIR_Z),
+			Enum.Material.Metal,
+			C.metal:Lerp(C.black, 0.3)
+		)
+		P(
+			gate,
+			"Cadenas",
+			Vector3.new(0.5, 0.7, 0.6),
+			chain.CFrame * CFrame.new(-0.2, -1, 0),
+			Enum.Material.Metal,
+			Color3.fromRGB(150, 128, 70)
+		)
+	end
+	task.wait()
+
 	-- Murs invisibles : au bord de la campagne, au pied des collines.
 	for _, w in
 		{
 			{ Vector3.new(4, 60, FIELD * 2 + 40), Vector3.new(-FIELD - 12, 30, 0) },
-			{ Vector3.new(4, 60, FIELD * 2 + 40), Vector3.new(FIELD + 12, 30, 0) },
+			-- A l'est, le mur s'ouvre sur la bouche du tunnel du repaire (le
+			-- tunnel lui-meme tient les joueurs) et reprend au-dessus.
+			{
+				Vector3.new(4, 60, LAIR_Z - LAIR_W / 2 + FIELD + 20),
+				Vector3.new(FIELD + 12, 30, (LAIR_Z - LAIR_W / 2 - FIELD - 20) / 2),
+			},
+			{
+				Vector3.new(4, 60, FIELD + 20 - LAIR_Z - LAIR_W / 2),
+				Vector3.new(FIELD + 12, 30, (LAIR_Z + LAIR_W / 2 + FIELD + 20) / 2),
+			},
+			{
+				Vector3.new(4, 60 - LAIR_H, LAIR_W),
+				Vector3.new(FIELD + 12, LAIR_H + (60 - LAIR_H) / 2, LAIR_Z),
+			},
 			{ Vector3.new(FIELD * 2 + 40, 60, 4), Vector3.new(0, 30, -FIELD - 12) },
 			{ Vector3.new(FIELD * 2 + 40, 60, 4), Vector3.new(0, 30, FIELD + 12) },
 		}
@@ -4918,6 +5322,19 @@ local function build(): string
 	if #refuges:GetChildren() < 4 then
 		problems += 1
 		table.insert(report, "Trop peu de refuges pour le survivant")
+	end
+	-- Le repaire : le nid, l'antre, la grille, sa porte et sa chaine.
+	local lairFolder = root:FindFirstChild(CONTRACT.lair)
+	local gateModel = lairFolder and lairFolder:FindFirstChild(CONTRACT.lairGate)
+	local lairOk = lairFolder ~= nil
+		and lairFolder:FindFirstChild(CONTRACT.lairNest) ~= nil
+		and lairFolder:FindFirstChild(CONTRACT.lairInside) ~= nil
+		and gateModel ~= nil
+		and gateModel:FindFirstChild(CONTRACT.lairDoor) ~= nil
+		and gateModel:FindFirstChild(CONTRACT.lairChain) ~= nil
+	table.insert(report, "Repaire du Gardien complet : " .. tostring(lairOk))
+	if not lairOk then
+		problems += 1
 	end
 	table.insert(
 		report,

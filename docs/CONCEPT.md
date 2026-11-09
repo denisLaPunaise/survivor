@@ -344,8 +344,8 @@ Ancienne version à 5 quartiers, gardée pour mémoire :
    pendant les Balayages ; s'il est aspiré, on le retrouve plus tard ailleurs.
 4. **Le fumigène** : il sait le fabriquer, avec des ingrédients de la
    supérette. C'est la première parade contre l'Œil.
-5. **Le repaire** : la sortie de la ville est barrée par le nid du boss (le lieu
-   est à fixer : la ville n'a pas de gare). Fabriquer de quoi ouvrir la grille et le vaincre : fin du
+5. **Le repaire** : la sortie de la ville est barrée par le nid du boss, dans
+   le tunnel sous la voie rapide. Fabriquer de quoi ouvrir la grille et le vaincre : fin du
    chapitre 1.
 
 - **Décidé** : l'histoire se raconte en **sous-titres radio** (la radio
@@ -375,6 +375,16 @@ Ancienne version à 5 quartiers, gardée pour mémoire :
     piste ;
   - **si la réserve est vide le soir, Élie ne fabrique rien** cette nuit-là
     (il ne meurt jamais).
+- **Décidé** avec Josh (9 novembre 2026) — le repaire de l'étape 5 :
+  - le repaire est **le tunnel sous la voie rapide**, sur la route qui sort de
+    la ville : sombre, fermé par une grille, le nid au fond ;
+  - le boss est **le Gardien, un Repris géant** : lent, il dort le jour au fond
+    du nid et cogne très fort ;
+  - **on le livre à l'Œil** : trop fort pour être tué à coups, on le réveille,
+    il nous poursuit dehors, et on le garde sous le regard pendant un
+    Balayage jusqu'à ce que l'Œil l'aspire ; les fumigènes nous protègent ;
+  - après la victoire, **un écran « Fin du chapitre 1 »** (avec le nombre de
+    jours), puis la partie continue.
 
 ## 13. Les actions et la manette
 

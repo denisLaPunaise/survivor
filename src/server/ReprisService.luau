@@ -580,6 +580,13 @@ function ReprisService.count(): number
 	return #agents
 end
 
+-- Un corps de Repris neuf, pour qui en fait autre chose (le Gardien : le
+-- meme, en geant). Nil avant le demarrage.
+function ReprisService.body(): Model?
+	local base = template
+	return if base then base:Clone() else nil
+end
+
 function ReprisService.clear()
 	for i = #agents, 1, -1 do
 		remove(agents[i], false)

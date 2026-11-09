@@ -37,6 +37,8 @@ type Build = {
 	health: number?,
 	heal: number?,
 	earlySeconds: number?,
+	-- Un outil : il va dans le sac de qui le fabrique, et se refait.
+	item: string?,
 }
 
 local remote = Remotes:WaitForChild("Planque") :: RemoteEvent
@@ -234,7 +236,14 @@ local function onRequest(player: Player, request: any)
 	local stock = LootService.stock()
 	if typeof(request.build) == "string" then
 		local b = buildsById[request.build]
-		if b and built[b.id] == nil and Planque.pay(stock, b.cost) then
+		local item = b and b.item
+		if b and item then
+			-- Un outil : il faut la place dans le sac AVANT de payer.
+			if Planque.canAfford(stock, b.cost) and LootService.giveItem(player, item) then
+				Planque.pay(stock, b.cost)
+				LootService.broadcast(b.name .. " : fabriqué")
+			end
+		elseif b and built[b.id] == nil and Planque.pay(stock, b.cost) then
 			local m = place(b.id)
 			if m then
 				built[b.id] = m

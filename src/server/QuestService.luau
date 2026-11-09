@@ -74,7 +74,7 @@ local function objective(): string?
 		return "Attendre la nuit : Mara rappellera."
 	end
 	if state.status == "finished" then
-		return "Survivre. (La suite de l'histoire n'est pas encore construite.)"
+		return "Chapitre 1 terminé. Survivre : la suite viendra avec le quartier suivant."
 	end
 	if state.index > 1 then
 		return "Survivre : Mara rappellera quand elle aura du nouveau."

@@ -618,3 +618,34 @@ nuage avant de perdre la piste, et sans repas Élie ne fabrique rien
   suit plus son cercle : vu le jour 1).
 - **Les Repris ignorent la fumée** pour l'instant.
 - **Pas de son** pour la boîte qui éclate : à ajouter.
+
+## Le Gardien, étape 5 (9 novembre 2026)
+
+Josh a décidé : le tunnel sous la voie rapide, un Repris géant, on le livre à
+l'Œil, un écran de fin puis on continue (`CONCEPT.md` §12). Pris sans lui :
+
+- **Où** : la rue est-ouest du nord sort de la ville par l'est et file jusqu'au
+  bord de la zone, où elle passe sous une **voie rapide sur un remblai** (de
+  28 de haut, qui barre tout l'horizon est). Le tunnel (88 studs, 18 de large,
+  16 de haut) est fermé par une grille ; le fond s'est effondré.
+- **La grille** s'ouvre avec un **coupe-boulon** fabriqué à l'établi
+  (2 ferrailles, 1 clé à molette). C'est un outil : il va dans le sac de qui
+  le fabrique, reste au coffre, et se refait s'il est perdu. Couper la chaîne :
+  maintenir X 6 s. **Le bruit réveille le Gardien.**
+- **L'étape s'ouvre au jour 8** ; Mara en parle la nuit du jour 7.
+- **Le Gardien** : environ 12 studs de haut (2,2 fois un Repris), 17 studs/s (on le
+  distance en courant, il rattrape qui marche), deux coups mettent à terre. Il
+  ne meurt pas sous les coups (ils le réveillent). Entrer dans le tunnel le
+  réveille aussi.
+- **Il ne triche pas** : s'il te perd de vue, il va là où il t'a vu en dernier
+  et y cherche 12 s, puis rentre au nid, plus lentement, et se rendort. La
+  nuit, il est dans son nid.
+- **L'Œil le voit comme un joueur**, mais il faut **6 s de plein regard** (un
+  joueur : 2 s) et la jauge redescend lentement (12 s). Le Gardien **rougeoit**
+  d'autant plus que l'Œil le tient : tout le monde voit où on en est.
+- **Aspiré** : il monte en se débattant, l'Œil crie, et l'écran « Fin du
+  chapitre 1 — La Banlieue, vous avez tenu N jours » s'affiche 9 s chez tous.
+  Mara raconte la nuit suivante ; ensuite l'objectif dit « Chapitre 1
+  terminé ».
+- **Après une défaite**, tout recommence : grille refermée, Gardien absent
+  jusqu'au jour 8.

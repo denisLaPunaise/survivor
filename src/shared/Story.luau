@@ -6,8 +6,7 @@
 	suivante. Les jours (quand une etape peut s'ouvrir) sont dans
 	Config.story.
 
-	L'etape 5 (le repaire) n'existe pas encore : l'histoire s'arrete apres
-	la 4.
+	Apres l'etape 5 (le repaire, le Gardien), le chapitre 1 est fini.
 
 	Les trous `{cle}` sont remplis par le jeu (Quest.fill) : `{nom}` le nom du
 	survivant, `{indice}` ou il se cache dans cette partie.
@@ -89,6 +88,24 @@ local Story: { Step } = {
 			"Il cherche encore un moment, puis il abandonne. Ne sortez pas trop tôt.",
 			"Il y a autre chose. La route qui sort de la ville… quelque chose s'y est installé.",
 			"J'essaie d'en savoir plus. Gardez vos fumigènes.",
+		},
+	},
+	{
+		id = "repaire",
+		event = "devoured:gardien",
+		objective = "Le Gardien dort dans le tunnel, à l'est, sous la voie rapide. Fabriquer un coupe-boulon à l'établi, couper la chaîne de la grille, et le garder sous le regard de l'Œil jusqu'à ce qu'il l'aspire.",
+		briefing = {
+			"… crrr … Mara. Je sais ce qui garde la sortie.",
+			"La route de l'est, celle qui passe sous la voie rapide. Le tunnel est fermé par une grille. Au fond, il y a… un des leurs. Mais énorme.",
+			"On ne le tuera pas. Personne ne le pourrait. Mais l'Œil reprend ce qui traîne sous son regard. Même les siens.",
+			"Réveillez-le pendant le jour. Attirez-le dehors, et tenez-le sous le regard. Assez longtemps.",
+			"Il vous faudra de quoi couper la chaîne : {nom} dit qu'avec de la ferraille et une clé à molette, l'établi suffira.",
+		},
+		report = {
+			"… Vous l'avez fait. Je l'ai vu monter d'ici, il hurlait.",
+			"La route de l'est est libre. Au-delà, il y a d'autres villes… et peut-être d'autres gens.",
+			"Mais l'Œil s'en souviendra. Il vous a vus le nourrir avec les siens.",
+			"Reposez-vous. Je rappellerai.",
 		},
 	},
 }

@@ -34,6 +34,14 @@ export type World = {
 	oculus: BasePart,
 	-- Les refuges possibles du survivant (quete, etape 3).
 	refuges: { BasePart },
+	-- Le repaire du Gardien (quete, etape 5).
+	lair: {
+		nest: BasePart,
+		inside: BasePart,
+		gate: Instance,
+		door: Model,
+		chain: BasePart,
+	},
 }
 
 local world: World? = nil
@@ -121,6 +129,16 @@ function WorldService.load(): World?
 		end
 	end
 
+	local lairFolder = child(root, w.lair, problems, w.folder)
+	local nest = asPart(child(lairFolder, w.lairNest, problems, w.lair), problems, w.lairNest)
+	local den = asPart(child(lairFolder, w.lairInside, problems, w.lair), problems, w.lairInside)
+	local gate = child(lairFolder, w.lairGate, problems, w.lair)
+	local door = child(gate, w.lairDoor, problems, w.lairGate)
+	if door and not door:IsA("Model") then
+		table.insert(problems, w.lairDoor .. " doit être un Model")
+	end
+	local chain = asPart(child(gate, w.lairChain, problems, w.lairGate), problems, w.lairChain)
+
 	if solidSpots then
 		for _, spot in solidSpots:GetChildren() do
 			checkSpot(spot, problems, "Cachette solide")
@@ -192,6 +210,13 @@ function WorldService.load(): World?
 		ventreSpawn = ventreSpawn :: BasePart,
 		oculus = oculus :: BasePart,
 		refuges = refuges,
+		lair = {
+			nest = nest :: BasePart,
+			inside = den :: BasePart,
+			gate = gate :: Instance,
+			door = door :: Model,
+			chain = chain :: BasePart,
+		},
 	}
 	return world
 end

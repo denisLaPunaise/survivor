@@ -115,6 +115,15 @@ Config.world = {
 	-- refuge, attribut = ce que Mara en dit.
 	refuges = "Refuges",
 	refugeClue = "Indice",
+	-- Le repaire du Gardien (quete, etape 5), sous Ville : le nid (ou il
+	-- dort), l'antre (une part qui couvre tout le tunnel : y entrer le
+	-- reveille), la grille (un Model) avec sa porte (un Model) et sa chaine.
+	lair = "Repaire",
+	lairNest = "Nid",
+	lairInside = "Antre",
+	lairGate = "Grille",
+	lairDoor = "Porte",
+	lairChain = "Chaine",
 }
 
 --------------------------------------------------------------------------------
@@ -538,6 +547,15 @@ Config.planque = {
 			earlySeconds = 8,
 		},
 		{
+			-- Un outil, pas un meuble : `item` le met dans le sac de celui
+			-- qui le fabrique, et on peut le refaire s'il est perdu (aspire).
+			id = "coupeboulon",
+			name = "Coupe-boulon",
+			description = "Pour couper la chaîne de la grille du tunnel, à l'est. Va dans ton sac.",
+			cost = { ferraille = 2, cle = 1 },
+			item = "coupeboulon",
+		},
+		{
 			id = "radio",
 			name = "Radio réparée",
 			description = "Une voix y parle la nuit. Elle dit aussi de quel côté l'Œil va chercher.",
@@ -559,9 +577,9 @@ Config.story = {
 	-- la nuit : une etape reussie se raconte la nuit suivante, et la suivante
 	-- s'ouvre a l'aube, pas avant ce jour. L'histoire de la Banlieue dure
 	-- ainsi 8 a 10 jours, et on ne peut pas la finir beaucoup plus vite
-	-- (Josh). L'etape 5 viendra avec son jour (8). Mara
+	-- (Josh). Mara
 	-- donne le premier indice du survivant la nuit d'avant (jour 3).
-	opensOnDay = { poste = 1, signal = 2, survivant = 4, fumigene = 6 },
+	opensOnDay = { poste = 1, signal = 2, survivant = 4, fumigene = 6, repaire = 8 },
 	-- Le temps de lire une ligne de la radio.
 	lineSeconds = 6,
 	-- Poser l'antenne : maintenir X la-haut, a decouvert.
@@ -633,6 +651,54 @@ Config.survivor = {
 	},
 	-- Ce qu'il mange, chaque nuit a la Planque : un plat du menu.
 	meals = 1,
+}
+
+--------------------------------------------------------------------------------
+-- LE GARDIEN (quete, etape 5)
+--------------------------------------------------------------------------------
+
+-- Decide avec Josh (9 novembre 2026) : un Repris geant qui dort au fond du
+-- tunnel sous la voie rapide. Trop fort pour etre tue a coups : on le
+-- reveille, il nous poursuit dehors, et on le garde sous le regard de l'Oeil
+-- pendant un Balayage jusqu'a ce qu'il l'aspire (CONCEPT 12).
+Config.gardien = {
+	name = "Le Gardien",
+	-- Un Repris a cette echelle : plus de deux fois la taille d'un homme (~12
+	-- studs), on le voit de loin. Il doit tenir debout dans le tunnel (16 de
+	-- haut) : a 2,8, il y restait coince.
+	scale = 2.2,
+	-- Plus vite que la marche (14), moins vite que la course (22) : on
+	-- l'attire en courant, il ne lache pas celui qui marche.
+	speed = 17,
+	-- Rentrer au nid : plus lentement, il a perdu.
+	homeSpeed = 11,
+	-- Deux coups mettent a terre (sante 100).
+	damage = 55,
+	attackRange = 9,
+	attackSeconds = 2,
+	-- Il voit loin, et cherche longtemps celui qu'il a perdu avant de rentrer.
+	chaseRadius = 110,
+	forgetSeconds = 12,
+	-- L'Oeil l'aspire apres 6 s de plein regard (un joueur : 2 s) : il faut
+	-- le garder dans le cercle, pas seulement l'y faire passer. Hors du
+	-- regard, sa jauge redescend lentement : on peut s'y reprendre.
+	exposure = { fillSeconds = 6, drainSeconds = 12 },
+	-- Aspire : il monte plus lentement qu'un homme, il se debat.
+	liftSeconds = 5,
+	liftHeight = 450,
+	-- Couper la chaine : maintenir X, longtemps et bruyamment (il se
+	-- reveille). Le coupe-boulon reste dans le sac.
+	chainHoldSeconds = 6,
+	chainPromptDistance = 7,
+	-- Sa marche et son repos : ceux de Roblox (comme Elie), lents : il est
+	-- lourd.
+	walkAnimation = 507777826,
+	walkAnimationSpeed = 0.55,
+	idleAnimation = 507766388,
+	-- Bloque (moins d'un stud en ce temps) en poursuite, il saute.
+	stuckSeconds = 1.5,
+	-- L'ecran de fin du chapitre reste ce temps.
+	endScreenSeconds = 9,
 }
 
 --------------------------------------------------------------------------------
@@ -791,6 +857,13 @@ Config.items = {
 		hint = "Pour les fumigènes : à déposer au coffre",
 	},
 	fumigene = { name = "Fumigène", weight = 0.5, keep = true, hint = "L2 pour le lancer" },
+	-- Pour la chaine de la grille du tunnel (etape 5) : fabrique a l'etabli.
+	coupeboulon = {
+		name = "Coupe-boulon",
+		weight = 2,
+		keep = true,
+		hint = "Pour la chaîne de la grille du tunnel, à l'est",
+	},
 	antenne = {
 		name = "Antenne",
 		weight = 2,

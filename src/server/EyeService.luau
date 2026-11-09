@@ -33,6 +33,7 @@ local Sweep = require(Survivor:WaitForChild("Sweep"))
 local Remotes = Survivor:WaitForChild("Remotes")
 
 local CrewService = require(script.Parent:WaitForChild("CrewService"))
+local GardienService = require(script.Parent:WaitForChild("GardienService"))
 local HidingService = require(script.Parent:WaitForChild("HidingService"))
 local LootService = require(script.Parent:WaitForChild("LootService"))
 local PlanqueService = require(script.Parent:WaitForChild("PlanqueService"))
@@ -54,6 +55,8 @@ local accumulated = 0
 local exposures: { [Player]: number } = {}
 -- La jauge du survivant de la quete : il est vu comme un joueur.
 local survivorExposure = 0
+-- Celle du Gardien (quete, etape 5) : bien plus longue a remplir.
+local gardienExposure = 0
 -- Le dernier joueur que l'Oeil a vu pendant ce Balayage, et quand.
 local sighting: { player: Player, at: number }? = nil
 -- Le clignement : jusqu'a quand il ne voit plus rien, s'il a deja cligne
@@ -179,6 +182,10 @@ local function seenFactor(player: Player): number
 	if survivor then
 		table.insert(ignore, survivor)
 	end
+	local gardien = GardienService.model()
+	if gardien then
+		table.insert(ignore, gardien)
+	end
 	if beam then
 		table.insert(ignore, beam)
 	end
@@ -186,6 +193,33 @@ local function seenFactor(player: Player): number
 	-- personnage lui-meme par arrondi (il est deja exclu, mais ses
 	-- accessoires peuvent deborder).
 	return math.max(visibility(head.Position, ignore), visibility(root.Position, ignore))
+end
+
+-- Ce que l'Oeil voit d'un personnage du jeu (le survivant, le Gardien) : la
+-- meme ligne de vue qu'un joueur.
+local function npcSeen(head: BasePart?, body: BasePart?, model: Model?): number
+	if
+		head == nil
+		or body == nil
+		or looking == nil
+		or os.clock() < blindUntil
+		or not (inCone(head.Position) or inCone(body.Position))
+	then
+		return 0
+	end
+	local ignore: { Instance } = {}
+	for _, other in Players:GetPlayers() do
+		if other.Character then
+			table.insert(ignore, other.Character)
+		end
+	end
+	if model then
+		table.insert(ignore, model)
+	end
+	if beam then
+		table.insert(ignore, beam)
+	end
+	return math.max(visibility(head.Position, ignore), visibility(body.Position, ignore))
 end
 
 local function check(dt: number)
@@ -229,33 +263,33 @@ local function check(dt: number)
 	-- Le survivant, dehors : la meme ligne de vue, la meme jauge, et s'abriter
 	-- avec lui dans une maison la marque aussi.
 	local head, body = SurvivorService.target()
-	local seen = 0
-	if head and body then
-		if looking then
-			HidingService.noteShelter(body.Position)
-		end
-		if
-			looking
-			and os.clock() >= blindUntil
-			and (inCone(head.Position) or inCone(body.Position))
-		then
-			local ignore: { Instance } = {}
-			for _, other in Players:GetPlayers() do
-				if other.Character then
-					table.insert(ignore, other.Character)
-				end
-			end
-			table.insert(ignore, SurvivorService.model() :: Model)
-			if beam then
-				table.insert(ignore, beam)
-			end
-			seen = math.max(visibility(head.Position, ignore), visibility(body.Position, ignore))
-		end
+	if head and body and looking then
+		HidingService.noteShelter(body.Position)
 	end
-	survivorExposure = Exposure.step(survivorExposure, seen, dt, Config.eye.exposure)
+	survivorExposure = Exposure.step(
+		survivorExposure,
+		npcSeen(head, body, SurvivorService.model()),
+		dt,
+		Config.eye.exposure
+	)
 	if Exposure.isTaken(survivorExposure) then
 		survivorExposure = 0
 		SurvivorService.take()
+	end
+
+	-- Le Gardien, dehors : la meme ligne de vue, sa propre jauge (Josh : on
+	-- le livre a l'Oeil).
+	local gHead, gBody = GardienService.target()
+	gardienExposure = Exposure.step(
+		gardienExposure,
+		npcSeen(gHead, gBody, GardienService.model()),
+		dt,
+		Config.gardien.exposure
+	)
+	GardienService.showExposure(gardienExposure)
+	if Exposure.isTaken(gardienExposure) then
+		gardienExposure = 0
+		GardienService.take()
 	end
 end
 
@@ -539,6 +573,7 @@ function EyeService.reset()
 	end
 	table.clear(exposures)
 	survivorExposure = 0
+	gardienExposure = 0
 	eyeState:FireAllClients({ phase = "idle" })
 end
 
