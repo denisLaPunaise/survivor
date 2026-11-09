@@ -27,6 +27,7 @@ local HidingService = require(script.Parent:WaitForChild("HidingService"))
 local LootService = require(script.Parent:WaitForChild("LootService"))
 local QuestService = require(script.Parent:WaitForChild("QuestService"))
 local RemoteGuard = require(script.Parent:WaitForChild("RemoteGuard"))
+local Sfx = require(script.Parent:WaitForChild("Sfx"))
 
 local SmokeService = {}
 
@@ -104,6 +105,7 @@ local function makeCloud(center: Vector3)
 	emitter.LightInfluence = 1
 	emitter.Parent = part
 	part.Parent = workspace
+	Sfx.at("fumee", center)
 	-- Un premier jet d'un coup : la boite eclate.
 	emitter:Emit(math.floor(look.puffsPerSecond / 2))
 

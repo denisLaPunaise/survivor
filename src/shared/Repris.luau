@@ -85,6 +85,39 @@ function Repris.runnerShare(night: Night, nightNumber: number): number
 	)
 end
 
+export type Arrival = { fromDay: number, dayShare: number, nightShare: number }
+export type Share = { id: string, share: number }
+
+-- Les sortes deja arrivees le jour `day`, et leur part : parmi les endormis
+-- du jour, ou parmi ceux qui tombent la nuit. Triees par nom : le meme tirage
+-- donne toujours la meme sorte.
+function Repris.shares(arrivals: { [string]: Arrival }, day: number, night: boolean): { Share }
+	local out: { Share } = {}
+	for id, arrival in arrivals do
+		local share = if night then arrival.nightShare else arrival.dayShare
+		if day >= arrival.fromDay and share > 0 then
+			table.insert(out, { id = id, share = share })
+		end
+	end
+	table.sort(out, function(a, b)
+		return a.id < b.id
+	end)
+	return out
+end
+
+-- La sorte d'un Repris, pour un tirage `roll` entre 0 et 1 : chaque part a
+-- sa tranche, le reste est `base` (l'Errant).
+function Repris.pickKind(shares: { Share }, roll: number, base: string): string
+	local cursor = 0
+	for _, entry in shares do
+		cursor += entry.share
+		if roll < cursor then
+			return entry.id
+		end
+	end
+	return base
+end
+
 -- Un coup sur un joueur : sa sante apres le coup, et s'il tombe. On ne meurt
 -- pas d'un coup : on tombe, et un ami peut nous relever (concept).
 function Repris.hit(health: number, damage: number): (number, boolean)

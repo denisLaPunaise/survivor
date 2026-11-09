@@ -206,6 +206,11 @@ données (en ajouter ne demande pas de code nouveau).
   nombreux), Coureur (rapide, fragile), Hurleur (attire les autres), Rampant
   (trouve ceux qui sont cachés), Brute (casse les barricades), Guetteur (sur les
   toits le jour, prévient l'Œil). Chaque quartier en apporte un nouveau.
+- **Décidé** avec Josh (9 novembre 2026) : dans la Banlieue, **les quatre
+  autres Repris arrivent au fil des jours** : le Hurleur (jour 3), le Rampant
+  (jour 5), la Brute (jour 7, la nuit, contre la barricade), le Guetteur
+  (jour 9, sur les toits le jour, il prévient l'Œil). Les quartiers suivants
+  en apporteront d'autres.
 - **Décidé** : **un boss par quartier**, dans son repaire, qui garde la suite de
   l'histoire ; un **boss de Nuit Rouge** toutes les 7 nuits (**proposé**), qui
   attaque la Planque.
@@ -242,6 +247,18 @@ conserves et un pied-de-biche. Rien d'autre.
   maximum de pièces (performances et taille de la sauvegarde) ;
 - **pas possible** : creuser le terrain librement, construire n'importe où en
   ville, des effondrements physiques.
+
+**Décidé** avec Josh (9 novembre 2026) :
+
+- la **jauge de Visibilité** (lumière la nuit, bruit, fumée, nombre de
+  constructions, survivants) **attire plus de Repris la nuit** ; **pleine,
+  l'Œil trouve la Planque** : le lendemain, un Balayage la vise et arrache ce
+  qui n'est pas protégé. Le camouflage la fait baisser ;
+- la **construction libre** se fait **sur une grille, dans la cour et la
+  maison au-dessus** : en mode construction (flèche gauche), un fantôme vert
+  ou rouge, R2 pour poser, L1 / R1 pour tourner, B pour sortir ; murs, portes,
+  palissades, pièges, lampes ; les Repris les abîment, on répare. L'établi
+  garde ses postes. La cave et les annexes viendront plus tard.
 
 **Proposé** :
 

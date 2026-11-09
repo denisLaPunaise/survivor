@@ -427,6 +427,23 @@ Config.repris = {
 	-- qui tourne au coin, sans saturer le serveur a trente Repris.
 	thinkSeconds = 0.3,
 	repathSeconds = 1,
+	-- Le calcul de chemin : un corps fin (rayon 1,2) qui saute. Avec un rayon
+	-- de 2, une porte de 4 studs ne passait pas : la nuit, seul un Repris sur
+	-- trois trouvait la Planque, les autres marchaient droit dans un mur (vu
+	-- le 9 novembre 2026). A 1,2 : deux sur trois.
+	path = { radius = 1.2, height = 5, canJump = true },
+	-- Celui qui n'avance plus (moins d'un stud en ce temps) saute et fait un
+	-- pas de cote, au hasard, pendant `sidestepSeconds`.
+	stuckSeconds = 2,
+	sidestepSeconds = 1.5,
+	-- Leur corps : un humain decolore (HumanoidDescription : hauteur, largeur,
+	-- profondeur), mis a l'echelle (`scale`), une tete generee
+	-- (ServerStorage.SurvivorModeles : `head`, et pour la Brute `hump`), des
+	-- yeux pales ou un seul grand oeil (`bigEye`). Chaque sorte se reconnait
+	-- a sa silhouette, de loin (lecon d'Arena : la variete se voit sur la
+	-- silhouette). Couleurs en RGB.
+	-- `obstacleFactor` : ce que vaut un coup contre une barricade (la Brute
+	-- casse). `run` : il court (animation de course) plutot qu'il ne marche.
 	kinds = {
 		-- L'Errant : lent, encaisse, la base. Plus lent que la marche (14).
 		errant = {
@@ -437,8 +454,19 @@ Config.repris = {
 			attackRange = 4.5,
 			attackSeconds = 1.3,
 			chaseRadius = 70,
+			obstacleFactor = 1,
+			run = false,
+			look = {
+				height = 1.15,
+				width = 0.7,
+				depth = 0.75,
+				scale = 1,
+				head = "TeteRepris",
+				eyes = { 214, 196, 170 },
+			},
 		},
-		-- Le Coureur : plus rapide que la course (22), fragile.
+		-- Le Coureur : plus rapide que la course (22), fragile. Plus maigre,
+		-- les yeux plus rouges.
 		coureur = {
 			name = "Coureur",
 			speed = 23,
@@ -447,8 +475,129 @@ Config.repris = {
 			attackRange = 4,
 			attackSeconds = 0.9,
 			chaseRadius = 90,
+			obstacleFactor = 1,
+			run = true,
+			look = {
+				height = 1.2,
+				width = 0.55,
+				depth = 0.6,
+				scale = 0.95,
+				head = "TeteRepris",
+				eyes = { 236, 120, 80 },
+			},
+		},
+		-- Le Hurleur (jour 3) : il crie quand il voit quelqu'un, et tout ce
+		-- qui dort ou rode a portee accourt. Lent, fragile : le faire taire
+		-- vite.
+		hurleur = {
+			name = "Hurleur",
+			speed = 9,
+			health = 45,
+			damage = 10,
+			attackRange = 4.5,
+			attackSeconds = 1.4,
+			chaseRadius = 80,
+			obstacleFactor = 1,
+			run = false,
+			-- Son cri porte a 90 studs (deux maisons et la rue) ; il recommence
+			-- au plus toutes les 10 s, et se fige 1,5 s pour crier.
+			scream = { radius = 90, cooldown = 10, freezeSeconds = 1.5 },
+			look = {
+				height = 1.25,
+				width = 0.8,
+				depth = 0.8,
+				scale = 1.1,
+				head = "TeteHurleur",
+				eyes = { 214, 196, 170 },
+			},
+		},
+		-- Le Rampant (jour 5) : petit, bas, il trouve ceux qui sont caches.
+		-- Pres d'une cachette occupee, il la sent et en arrache celui qui y
+		-- est (seulement a cette distance : une cachette reste sure de loin).
+		rampant = {
+			name = "Rampant",
+			speed = 15,
+			health = 35,
+			damage = 12,
+			attackRange = 4,
+			attackSeconds = 1.1,
+			chaseRadius = 60,
+			obstacleFactor = 1,
+			run = true,
+			sniffRadius = 14,
+			look = {
+				height = 0.8,
+				width = 0.6,
+				depth = 0.7,
+				scale = 0.85,
+				head = "TeteRepris",
+				eyes = { 170, 210, 140 },
+			},
+		},
+		-- La Brute (jour 7, la nuit) : enorme, lente, elle encaisse, et un de
+		-- ses coups vaut trois contre la barricade (300 de sante : elle la
+		-- casse en ~6 s seule).
+		brute = {
+			name = "Brute",
+			speed = 8,
+			health = 240,
+			damage = 28,
+			attackRange = 6,
+			attackSeconds = 1.8,
+			chaseRadius = 60,
+			obstacleFactor = 3,
+			run = false,
+			look = {
+				height = 1.1,
+				width = 1,
+				depth = 1,
+				scale = 1.6,
+				head = "TeteRepris",
+				hump = "BosseBrute",
+				eyes = { 236, 120, 80 },
+			},
+		},
+		-- Le Guetteur (jour 9) : perche sur un toit le jour, immobile. S'il
+		-- voit quelqu'un a decouvert, il crie et previent l'Oeil, qui sait ou
+		-- chercher. Hors de portee : on se cache de lui, on ne le tue pas.
+		guetteur = {
+			name = "Guetteur",
+			speed = 0,
+			health = 60,
+			damage = 0,
+			attackRange = 0,
+			attackSeconds = 1,
+			chaseRadius = 110,
+			obstacleFactor = 1,
+			run = false,
+			-- Il ne previent pas plus d'une fois toutes les 20 s.
+			alertCooldown = 20,
+			look = {
+				height = 1.35,
+				width = 0.55,
+				depth = 0.6,
+				scale = 1.2,
+				head = "TeteRepris",
+				bigEye = { 255, 96, 60 },
+			},
 		},
 	},
+	-- Quand les nouveaux arrivent (decide avec Josh le 9 novembre 2026) : le
+	-- jour `fromDay`, puis leur part parmi les endormis du jour (`dayShare`)
+	-- et parmi ceux qui tombent la nuit (`nightShare`). Le Guetteur ne dort
+	-- pas dans les maisons : il en perche `perches` sur les toits, chaque jour.
+	arrivals = {
+		hurleur = { fromDay = 3, dayShare = 0.15, nightShare = 0.12 },
+		rampant = { fromDay = 5, dayShare = 0.1, nightShare = 0.15 },
+		brute = { fromDay = 7, dayShare = 0, nightShare = 0.1 },
+		guetteur = { fromDay = 9, dayShare = 0, nightShare = 0 },
+	},
+	perches = { start = 2, perDay = 1, limit = 6, fromDay = 9 },
+	-- Leurs animations : le pack Zombie de Roblox (verifie charge le 9
+	-- novembre 2026) : ils marchent voutes, les bras en avant.
+	animations = { walk = 616168032, run = 616163682, idle = 616158929 },
+	-- On les entend marcher, de pres seulement.
+	stepsHeard = { min = 6, max = 55 },
 	-- La nuit : combien descendent de la Fissure.
 	night = {
 		base = 5,
@@ -654,6 +803,158 @@ Config.survivor = {
 }
 
 --------------------------------------------------------------------------------
+-- LA CONSTRUCTION LIBRE (autour de la Planque)
+--------------------------------------------------------------------------------
+
+-- Decide avec Josh (9 novembre 2026) : sur une grille, dans la cour et la
+-- maison au-dessus de la cave. Un fantome vert ou rouge montre la piece ; les
+-- Repris abiment ce qui leur barre la route, on repare (X). Les pieces se
+-- payent sur la reserve, comme a l'etabli.
+Config.freeBuild = {
+	-- Ou l'on peut construire : a cette distance du depart de la Planque (la
+	-- ferme, sa cour et ses abords).
+	radius = 70,
+	-- La grille : une case de 4 studs ; une piece couvre `cells` cases en
+	-- longueur (le long de sa face) et `depthCells` en profondeur, au sol ou
+	-- en l'air (`layer` : un filet se tend au-dessus d'un mur).
+	grid = 4,
+	-- On vise a cette distance au plus, au sol.
+	reach = 40,
+	-- Au-dela, le serveur et la sauvegarde souffrent.
+	maxPieces = 60,
+	-- Reparer une piece abimee : maintenir X, une planche.
+	repairCost = { planche = 1 },
+	repairHoldSeconds = 1.5,
+	-- Chaque piece : son cout, sa taille (longueur, hauteur, epaisseur), sa
+	-- sante (nil : on ne la frappe pas), ce qu'elle ajoute a la Visibilite
+	-- de la Planque (negatif : elle cache), et son allure (RGB).
+	pieces = {
+		{
+			id = "palissade",
+			name = "Palissade",
+			cost = { planche = 2 },
+			cells = 2,
+			depthCells = 1,
+			layer = "sol",
+			size = { 8, 7, 0.8 },
+			health = 150,
+			blocks = true,
+			visibility = 2,
+			material = "WoodPlanks",
+			color = { 112, 86, 62 },
+		},
+		{
+			id = "tole",
+			name = "Mur de tôle",
+			cost = { ferraille = 2, planche = 1 },
+			cells = 2,
+			depthCells = 1,
+			layer = "sol",
+			size = { 8, 9, 0.6 },
+			health = 320,
+			blocks = true,
+			visibility = 3,
+			material = "Metal",
+			color = { 104, 84, 70 },
+		},
+		{
+			id = "frise",
+			name = "Chevaux de frise",
+			cost = { planche = 1, ferraille = 1 },
+			cells = 2,
+			depthCells = 1,
+			layer = "sol",
+			size = { 8, 3, 2 },
+			health = 120,
+			blocks = true,
+			visibility = 1,
+			material = "WoodPlanks",
+			color = { 96, 80, 64 },
+		},
+		{
+			-- Un tapis de clous : les Repris qui passent dessus s'y blessent.
+			id = "piege",
+			name = "Piège à clous",
+			cost = { ferraille = 2 },
+			cells = 1,
+			depthCells = 1,
+			layer = "sol",
+			size = { 4, 0.4, 4 },
+			blocks = false,
+			trapDamage = 20,
+			trapSeconds = 1,
+			visibility = 1,
+			material = "Metal",
+			color = { 88, 92, 94 },
+		},
+		{
+			-- Une lampe : elle eclaire la cour la nuit, et se voit de loin.
+			id = "lampe",
+			name = "Lampe",
+			cost = { piles = 1, ferraille = 1 },
+			cells = 1,
+			depthCells = 1,
+			layer = "sol",
+			size = { 1, 7, 1 },
+			blocks = false,
+			lightRange = 40,
+			visibility = 6,
+			material = "Metal",
+			color = { 70, 70, 72 },
+		},
+		{
+			-- Tendu au-dessus de la cour : l'Oeil la voit moins.
+			id = "filet",
+			name = "Filet de camouflage",
+			cost = { tissu = 3, corde = 1 },
+			cells = 2,
+			depthCells = 2,
+			layer = "air",
+			size = { 8, 0.3, 8 },
+			height = 8,
+			blocks = false,
+			visibility = -8,
+			material = "Fabric",
+			color = { 74, 82, 58 },
+		},
+	},
+}
+
+--------------------------------------------------------------------------------
+-- LA VISIBILITE DE LA PLANQUE
+--------------------------------------------------------------------------------
+
+-- Decide avec Josh (9 novembre 2026) : elle attire plus de Repris la nuit ;
+-- pleine, l'Oeil trouve la Planque et un Balayage vient arracher ce qui n'est
+-- pas protege. Le camouflage la fait baisser.
+Config.visibility = {
+	-- Attribut de Workspace : la jauge (0 a `found`), pour l'ecran.
+	attribute = "Visibilite",
+	-- Ce que chaque source ajoute au niveau (les constructions de la cour ont
+	-- le leur, Config.freeBuild.pieces) : chaque poste de l'etabli, la fumee
+	-- du rechaud, le survivant (il parle, il tousse), et chaque coup qu'on
+	-- entend la nuit contre une barricade ou un mur.
+	perBuild = 2,
+	stoveSmoke = 5,
+	survivor = 8,
+	perHit = 0.2,
+	-- Chaque nuit, la jauge monte de la moitie du niveau, et l'Oeil en oublie
+	-- 4. Une cour bien construite et eclairee (niveau ~50) le fait trouver la
+	-- Planque en cinq nuits ; trois filets de camouflage le retardent du
+	-- double.
+	rate = 0.5,
+	decay = 4,
+	found = 100,
+	-- Apres qu'il l'a trouvee, elle redescend la (il s'en souvient).
+	afterFound = 40,
+	-- Un Repris en plus la nuit par tranche de 15 de la jauge (jusqu'a 6).
+	extraEvery = 15,
+	-- Quand il vient la chercher, il arrache ce nombre de constructions qui
+	-- ne sont pas sous un filet.
+	ripCount = 3,
+}
+
+--------------------------------------------------------------------------------
 -- LE GARDIEN (quete, etape 5)
 --------------------------------------------------------------------------------
 
@@ -798,6 +1099,21 @@ Config.sounds = {
 		cri = { id = 9113980319, volume = 0.9, speed = 1.25 },
 		-- Une epave qui s'ecrase.
 		chute = { id = 9125484700, volume = 0.8 },
+		-- Un Repris qui se reveille : un grognement siffle.
+		grognement = { id = 9125475729, volume = 0.7 },
+		-- Le cri du Hurleur, qui fait accourir les autres.
+		hurlement = { id = 9113985445, volume = 1 },
+		-- Le Guetteur qui previent l'Oeil : un sifflement hargneux.
+		guet = { id = 9125476001, volume = 0.9 },
+		-- Leurs pas lourds (une creature a deux pattes, ralentie ou non
+		-- selon sa taille).
+		pas = { id = 9114166413, volume = 0.45, looped = true },
+		-- Un coup qui porte.
+		coup = { id = 9119330371, volume = 0.7 },
+		-- Fouiller : une boite d'objets qu'on remue.
+		fouille = { id = 9114895552, volume = 0.5 },
+		-- Le fumigene qui eclate : un sifflement d'air sous pression.
+		fumee = { id = 9120591722, volume = 0.7 },
 	},
 	-- Au-dela de cette distance du bout de son regard, on ne l'entend plus ;
 	-- dessous, il enfle jusqu'au volume plein.
@@ -1066,15 +1382,16 @@ Config.controls = {
 		watch = {
 			leave = { gamepad = "ButtonB", keyboard = "Backspace" },
 		},
+		-- La construction libre autour de la Planque (decide avec Josh le 9
+		-- novembre 2026) : fleche gauche (`onFoot.build`) entre et sort, R2 pose, L1 / R1
+		-- tournent, haut / bas changent de piece, B sort aussi.
 		building = {
 			place = { gamepad = "ButtonR2", keyboard = "MouseButton1" },
-			rotate = { gamepad = "ButtonX", keyboard = "R" },
-			cancel = { gamepad = "ButtonB", keyboard = "Backspace" },
-			previousCategory = { gamepad = "ButtonL1", keyboard = "Q" },
-			nextCategory = { gamepad = "ButtonR1", keyboard = "E" },
+			rotateLeft = { gamepad = "ButtonL1", keyboard = "Q" },
+			rotateRight = { gamepad = "ButtonR1", keyboard = "E" },
 			previousPiece = { gamepad = "DPadUp", keyboard = "Up" },
 			nextPiece = { gamepad = "DPadDown", keyboard = "Down" },
-			leave = { gamepad = "DPadLeft", keyboard = "B" },
+			leave = { gamepad = "ButtonB", keyboard = "Backspace" },
 		},
 	},
 }

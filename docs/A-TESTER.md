@@ -423,3 +423,28 @@ peuvent le bloquer) ; la porte qui pivote à l'écran.
 4. **S'échapper** pendant qu'il est tenu : les fumigènes servent-ils ?
 5. **Les rues** : reste-t-il coincé contre les maisons ?
 6. **L'écran de fin** : est-il à la hauteur du moment ?
+
+## Les Repris, la construction, la Visibilité (9 novembre 2026)
+
+*Vérifié seul dans Studio, par sondes* : les six sortes se distinguent à la
+silhouette (photo prise) ; les animations Zombie et tous les sons se chargent ;
+le Guetteur siffle quand il me voit ; le Hurleur crie ; le Rampant m'a sorti
+de ma cachette en 0,6 s ; la construction pose, refuse une place prise ou trop
+loin, la palissade cède sous les coups, l'Œil arrache ce qui n'est pas sous un
+filet ; la jauge se calcule.
+
+*Jamais vu* : construire à la manette (le fantôme a été vu au clavier) ; une
+vraie nuit contre des constructions ; la Brute contre la barricade ; un Guetteur
+qui fait venir l'Œil pendant un vrai Balayage ; les sons (je ne peux pas les
+écouter).
+
+1. **Les Repris** : font-ils peur ? Reconnaît-on chaque sorte de loin ?
+   Leurs pas, leur grognement, le cri du Hurleur : bons sons ?
+2. **Le Hurleur** : son cri fait-il vraiment accourir les autres ? Trop ?
+3. **Le Rampant** : se faire arracher de sa cachette, est-ce juste ? 14 studs,
+   trop près, trop loin ?
+4. **Le Guetteur** : le voit-on sur son toit ? Arrive-t-on à l'éviter ?
+5. **Construire** : flèche gauche, viser, R2 — est-ce agréable à la manette ?
+   Le fantôme se voit-il bien ? Manque-t-il « démonter » ?
+6. **La Visibilité** : comprend-on pourquoi elle monte ? L'Œil qui vient
+   fouiller la Planque fait-il peur, ou est-ce injuste ?

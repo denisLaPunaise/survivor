@@ -33,10 +33,12 @@ local Sweep = require(Survivor:WaitForChild("Sweep"))
 local Remotes = Survivor:WaitForChild("Remotes")
 
 local CrewService = require(script.Parent:WaitForChild("CrewService"))
+local FreeBuildService = require(script.Parent:WaitForChild("FreeBuildService"))
 local GardienService = require(script.Parent:WaitForChild("GardienService"))
 local HidingService = require(script.Parent:WaitForChild("HidingService"))
 local LootService = require(script.Parent:WaitForChild("LootService"))
 local PlanqueService = require(script.Parent:WaitForChild("PlanqueService"))
+local ReprisService = require(script.Parent:WaitForChild("ReprisService"))
 local SmokeService = require(script.Parent:WaitForChild("SmokeService"))
 local SurvivorService = require(script.Parent:WaitForChild("SurvivorService"))
 local WorldService = require(script.Parent:WaitForChild("WorldService"))
@@ -57,6 +59,12 @@ local exposures: { [Player]: number } = {}
 local survivorExposure = 0
 -- Celle du Gardien (quete, etape 5) : bien plus longue a remplir.
 local gardienExposure = 0
+-- La Visibilite l'a menee a la Planque : le prochain Balayage la vise, et
+-- arrache ce qui n'y est pas protege quand son regard l'atteint.
+local planqueTargeted = false
+-- Celui qu'un Guetteur a vu entre deux Balayages : le prochain le vise, sans
+-- erreur.
+local tipOff: Player? = nil
 -- Le dernier joueur que l'Oeil a vu pendant ce Balayage, et quand.
 local sighting: { player: Player, at: number }? = nil
 -- Le clignement : jusqu'a quand il ne voit plus rien, s'il a deja cligne
@@ -337,7 +345,15 @@ end
 
 -- Le centre du Balayage : un joueur encore debout, tire au hasard. Sans
 -- personne, un point au hasard du quartier.
+function EyeService.targetPlanque()
+	planqueTargeted = true
+end
+
 local function zoneCenter(bounds: Sweep.Bounds, dayNumber: number): (number, number, Player?)
+	if planqueTargeted then
+		local spawn = WorldService.get().spawn.Position
+		return spawn.X, spawn.Z, nil
+	end
 	local candidates: { Player } = {}
 	for _, player in Players:GetPlayers() do
 		-- Ni l'aspire (il est dans le Ventre), ni l'attache dans son cocon.
@@ -355,9 +371,16 @@ local function zoneCenter(bounds: Sweep.Bounds, dayNumber: number): (number, num
 			nil
 	end
 	local pick = candidates[random:NextInteger(1, #candidates)]
+	-- Un Guetteur l'a vu : il sait exactement ou chercher.
+	local told = tipOff
+	tipOff = nil
+	local tipped = told ~= nil and table.find(candidates, told) ~= nil
+	if tipped then
+		pick = told :: Player
+	end
 	local at = (pick.Character :: Model):GetPivot().Position
 	-- Il vise « dans le coin » au debut, de plus en plus juste ensuite.
-	local error = Growth.onDay(Config.eye.hunt.aimError, dayNumber)
+	local error = if tipped then 0 else Growth.onDay(Config.eye.hunt.aimError, dayNumber)
 	local angle = random:NextNumber(0, math.pi * 2)
 	local miss = random:NextNumber(0, error)
 	return at.X + math.cos(angle) * miss, at.Z + math.sin(angle) * miss, pick
@@ -438,6 +461,10 @@ function EyeService.runSweep(stillCurrent: () -> boolean, dayNumber: number)
 		return globeCenter + (target - globeCenter).Unit * pupilReach
 	end
 	local timeline = buildPath(bounds, HidingService.beginSweep(), cx, cz, dayNumber)
+	-- Ce Balayage vient chercher la Planque : il arrache des qu'il y est.
+	local raidPlanque = planqueTargeted
+	planqueTargeted = false
+	local planqueAt = WorldService.get().spawn.Position
 
 	eyeState:FireAllClients({ phase = "sweep", seconds = timeline.total })
 	beam = makeBeam()
@@ -548,6 +575,18 @@ function EyeService.runSweep(stillCurrent: () -> boolean, dayNumber: number)
 		end
 		looking = { x = bx, z = bz }
 		eyePosition = aimFrom(bx, bz)
+		if
+			raidPlanque
+			and Vector3.new(bx - planqueAt.X, 0, bz - planqueAt.Z).Magnitude
+				<= eye.beamRadius * 2
+		then
+			raidPlanque = false
+			local torn = FreeBuildService.rip(Config.visibility.ripCount)
+			LootService.broadcast(
+				string.format("L'Œil fouille la Planque : %d construction(s) arrachée(s).", torn),
+				"danger"
+			)
+		end
 		placeBeam()
 		if patternTime >= timeline.total or now - started >= hunt.maxSweepSeconds then
 			break
@@ -589,6 +628,16 @@ function EyeService.start()
 	end)
 	Players.PlayerRemoving:Connect(function(player: Player)
 		exposures[player] = nil
+	end)
+	-- Un Guetteur a vu quelqu'un : pendant un Balayage, l'Oeil fonce sur lui ;
+	-- sinon, le prochain Balayage le vise.
+	ReprisService.onWatch(function(player: Player)
+		if looking then
+			sighting = { player = player, at = os.clock() }
+		else
+			tipOff = player
+		end
+		LootService.sendHud(player, "Un Guetteur t'a vu : l'Œil sait où tu es.", "danger")
 	end)
 end
 

@@ -74,6 +74,24 @@ function PlanqueService.whenBuilt(listener: (id: string, model: Instance) -> ())
 	table.insert(builtListeners, listener)
 end
 
+-- Combien de postes de l'etabli sont construits (la Visibilite).
+function PlanqueService.builtCount(): number
+	local count = 0
+	for _ in built do
+		count += 1
+	end
+	return count
+end
+
+-- Les coups encaisses par la barricade depuis la derniere fois (le bruit de
+-- la nuit, pour la Visibilite).
+local hits = 0
+function PlanqueService.takeHits(): number
+	local taken = hits
+	hits = 0
+	return taken
+end
+
 function PlanqueService.has(id: string): boolean
 	return built[id] ~= nil
 end
@@ -278,6 +296,7 @@ function PlanqueService.obstacleNear(position: Vector3, range: number): ((number
 		return nil
 	end
 	return function(damage: number)
+		hits += 1
 		barricadeHealth -= damage
 		if barricadeHealth <= 0 then
 			local broken = built.barricade

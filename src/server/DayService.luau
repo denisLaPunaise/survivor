@@ -21,6 +21,7 @@ local Config = require(Survivor:WaitForChild("Config"))
 
 local CrewService = require(script.Parent:WaitForChild("CrewService"))
 local EyeService = require(script.Parent:WaitForChild("EyeService"))
+local FreeBuildService = require(script.Parent:WaitForChild("FreeBuildService"))
 local GardienService = require(script.Parent:WaitForChild("GardienService"))
 local HidingService = require(script.Parent:WaitForChild("HidingService"))
 local LootService = require(script.Parent:WaitForChild("LootService"))
@@ -29,6 +30,7 @@ local QuestService = require(script.Parent:WaitForChild("QuestService"))
 local ReprisService = require(script.Parent:WaitForChild("ReprisService"))
 local SmokeService = require(script.Parent:WaitForChild("SmokeService"))
 local SurvivorService = require(script.Parent:WaitForChild("SurvivorService"))
+local VisibilityService = require(script.Parent:WaitForChild("VisibilityService"))
 
 local DayService = {}
 
@@ -55,6 +57,7 @@ local function runGame(myGeneration: number)
 		PlanqueService.dawn()
 		CrewService.dawn()
 		HidingService.newDay(dayNumber)
+		VisibilityService.dawn()
 		LootService.newDay()
 		ReprisService.newDay(dayNumber)
 		-- S'attarder dans le quartier : on le dit, chaque matin.
@@ -108,7 +111,9 @@ local function runGame(myGeneration: number)
 		announce("La nuit tombe. Ils descendent.", "danger")
 		eyeState:FireAllClients({ phase = "night", seconds = d.nightSeconds })
 		CrewService.setLamps(true)
-		ReprisService.beginNight(dayNumber)
+		FreeBuildService.setNight(true)
+		-- La Planque se voit : elle en attire d'autres.
+		ReprisService.beginNight(dayNumber, VisibilityService.night())
 		-- Avec les Repris, il recrache ceux qu'il a pris dans la journee, et
 		-- des epaves de ce qu'il a avale.
 		CrewService.releaseTaken()
@@ -118,6 +123,7 @@ local function runGame(myGeneration: number)
 		GardienService.night()
 		task.wait(d.nightSeconds)
 		CrewService.setLamps(false)
+		FreeBuildService.setNight(false)
 	end
 end
 
@@ -142,6 +148,8 @@ function DayService.start()
 		SurvivorService.reset()
 		SmokeService.reset()
 		GardienService.reset()
+		FreeBuildService.reset()
+		VisibilityService.reset()
 		CrewService.setLamps(false)
 		CrewService.gatherAtPlanque()
 		DayService.restart()

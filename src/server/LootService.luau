@@ -479,6 +479,10 @@ function LootService.start()
 		prompt.Triggered:Connect(function(player: Player)
 			search(player, container, prompt)
 		end)
+		-- On l'entend fouiller, pendant qu'il fouille.
+		prompt.PromptButtonHoldBegan:Connect(function()
+			Sfx.at("fouille", part)
+		end)
 	end
 
 	local bagRemote = Remotes:WaitForChild("Bag") :: RemoteEvent

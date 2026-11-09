@@ -112,4 +112,59 @@ return function(t: harness.Harness)
 		string.format("un Errant tombe en %d coups de pied-de-biche", swings),
 		swings >= 2 and swings <= 4
 	)
+
+	t.section("Les nouveaux, au fil des jours (Josh)")
+
+	local order = { "hurleur", "rampant", "brute", "guetteur" }
+	local previousDay = 0
+	local ordered = true
+	for _, id in order do
+		local arrival = r.arrivals[id]
+		if arrival == nil or r.kinds[id] == nil or arrival.fromDay <= previousDay then
+			ordered = false
+		else
+			previousDay = arrival.fromDay
+		end
+	end
+	t.check("Hurleur, Rampant, Brute, Guetteur arrivent dans cet ordre", ordered)
+	t.equal("le Hurleur arrive le jour 3", r.arrivals.hurleur.fromDay, 3)
+	t.equal("le Guetteur arrive le jour 9", r.arrivals.guetteur.fromDay, 9)
+	t.equal("personne de nouveau le jour 1", #Repris.shares(r.arrivals, 1, true), 0)
+	t.equal(
+		"le jour 4, seul le Hurleur est la",
+		Repris.shares(r.arrivals, 4, false)[1].id,
+		"hurleur"
+	)
+	local late = Repris.shares(r.arrivals, 30, true)
+	local total = Repris.runnerShare(r.night, 30)
+	for _, entry in late do
+		total += entry.share
+	end
+	t.check(
+		string.format("la nuit 30, il reste des Errants (%.0f %% d'autres)", total * 100),
+		total < 1
+	)
+	t.equal(
+		"un tirage hors des parts donne l'Errant",
+		Repris.pickKind(late, 0.999, "errant"),
+		"errant"
+	)
+	t.equal("le tirage 0 donne la premiere sorte", Repris.pickKind(late, 0, "errant"), late[1].id)
+	t.check(
+		"la Brute n'est pas dans les maisons le jour (elle vient la nuit)",
+		r.arrivals.brute.dayShare == 0
+	)
+	t.check(
+		"la Brute casse : ses coups valent plus contre la barricade",
+		r.kinds.brute.obstacleFactor > 1
+	)
+	t.check(
+		"le Rampant ne sent une cachette que de pres (de loin, elle reste sure)",
+		r.kinds.rampant.sniffRadius < Config.loot.hidePromptDistance * 3
+	)
+	t.check("le Guetteur ne bouge pas de son toit", r.kinds.guetteur.speed == 0)
+	t.check(
+		"le cri du Hurleur porte plus loin qu'il ne voit",
+		r.kinds.hurleur.scream.radius > r.kinds.hurleur.chaseRadius
+	)
 end

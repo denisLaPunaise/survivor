@@ -180,10 +180,14 @@ GitHub Actions relance formatage, analyse, tests et build à chaque push.
   (`GardienService`, `ChapterView`) ; tunnel sous la voie rapide à l'est
   (recette), grille à couper (coupe-boulon de l'établi), Repris géant qu'on
   livre à l'Œil, écran de fin, puis la partie continue.
+- **9 novembre 2026, les Repris et la Planque** : six sortes de Repris
+  (crânes générés, animations Zombie, pas ; Hurleur, Rampant, Brute,
+  Guetteur au fil des jours) ; construction libre sur grille autour de la
+  Planque (`FreeBuild`, `FreeBuildService`, `BuildMode`) ; jauge de Visibilité
+  (`Visibility`, `VisibilityService`) ; sons de fouille, de fumée, de coups.
 - **Ensuite** : la quête est finie pour la Banlieue ; ce que Josh dira après avoir joué ;
-  un vrai modèle de créature pour les Repris ; puis la jauge de Visibilité de
-  la Planque, la construction libre sur grille, les autres Repris (Rampant,
-  Hurleur, Guetteur, Brute).
+  démonter une construction ; la cave et les annexes de la Planque ; le
+  quartier 2.
 
 ## Construire la ville depuis le pont
 
@@ -197,7 +201,7 @@ copie** du dépôt. Elle ne doit jamais être commitée.
 
 Les touches simulées (`user_keyboard_input`) n'atteignent pas les
 `ProximityPrompt`, et `InputHoldBegin` depuis le pont non plus : les sondes
-passent par `HidingService.tryEnter`, `SurvivorService.tryPrompt`, `SmokeService.tryThrow`, `GardienService.tryCut`, `LootService.trySearch`,
+passent par `HidingService.tryEnter`, `SurvivorService.tryPrompt`, `SmokeService.tryThrow`, `GardienService.tryCut`, `FreeBuildService.tryConstruct`, `LootService.trySearch`,
 `QuestService.tryRelay` et `tryTune`, qui suivent le même chemin que les
 invites (et `VentreService.tryRead` / `tryWatch`, `CrewService.tryFree`). Le
 pont ne voit pas le `PlayerModule` du client : on ne peut pas y faire marcher

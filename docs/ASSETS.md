@@ -11,6 +11,9 @@ Pour reconstruire un modèle perdu, créer une `MeshPart` avec ces identifiants
 | `Arbre` | realistic deciduous suburban tree, thick dark bark trunk, sparse muted olive-green late autumn foliage, slightly overgrown, natural irregular crown | `rbxassetid://91456604386363` | `rbxassetid://117383140726701` | Oui, le 5 novembre 2026 : bien plus crédible que les arbres en boules. Feuillage un peu pâle. |
 | `Voiture1` | abandoned old sedan car, faded dusty paint with rust patches, dirty windows, slightly flat tires, realistic, 1990s suburban family car | `rbxassetid://118456716580222` | `rbxassetid://76327974453445` | Oui : très crédible. Rouge vif, alors que le rouge est en principe réservé à l'Œil — à surveiller. |
 | `Voiture2` | abandoned old station wagon car, faded beige grey paint, dust and rust, dirty cracked windows, realistic, suburban | `rbxassetid://79544487506810` | `rbxassetid://130542278747095` | Oui. |
+| `TeteRepris` | realistic horror creature head, gaunt eyeless human skull-like face covered in cracked charred ash-grey skin, sunken empty eye sockets, thin lips pulled back over teeth, faint orange ember glow inside the cracks, no hair | `rbxassetid://104274234503331` | `rbxassetid://123829886798498` (retirée en jeu) | Oui, le 9 novembre 2026 : un crâne. Sa texture faisait dessin animé (os blanc, dents) : le jeu la retire et le passe en cendre. |
+| `TeteHurleur` | horror creature skull head screaming, jaw unhinged and stretched wide open far down, long gaping dark mouth, eyeless, cracked bone, realistic | `rbxassetid://74758346352796` | `rbxassetid://130969321805934` (retirée en jeu) | Oui : des cornes et la mâchoire ouverte, une silhouette à part. |
+| `BosseBrute` | massive hunched back armor made of fused broken concrete chunks, twisted rusty rebar and charred debris, irregular jagged rocky hump, realistic | `rbxassetid://126404384998025` | `rbxassetid://83533140841646` (retirée en jeu) | Oui : une carapace de ferraille et d'arceaux. Sa texture blanche et rouille jurait : le jeu la passe en ardoise sombre. |
 | — | dead leafless tree, gnarled dark gray bark, bare twisted branches reaching upward, eerie, realistic | `rbxassetid://136766100983379` | `rbxassetid://124800948705941` | **Non** : tronc bleu de dessin animé. Les arbres morts restent construits en parts. |
 
 `tools/BuildBanlieue.luau` utilise `SurvivorModeles.Arbre`, `Voiture1` et
@@ -39,3 +42,14 @@ chargés dans Studio le 6 novembre 2026.
 | `murmure` | il te voit | 9114228525 | Eerie Whispering Reverberant Demon | 6,9 s |
 | `cri` | il a mal (on le fait cligner) | 9113980319 | Creature Mix Giant Crab Monster Roar Growl | 3,1 s |
 | `chute` | une épave qui s'écrase | 9125484700 | Deep Hits Big Reverberant Booms Rumbling Tail | 4,4 s |
+| `grognement` | un Repris se réveille | 9125475729 | Creature Vocal Spider Growl Belch Hiss Snarl 3 | 1,6 s |
+| `hurlement` | le cri du Hurleur | 9113985445 | Creature Roar Constant Deep Throaty Growls 2 | 2,7 s |
+| `guet` | le Guetteur prévient l'Œil | 9125476001 | Creature Vocal Spider Growl Belch Hiss Snarl 8 | 2,9 s |
+| `pas` | les pas des Repris (boucle) | 9114166413 | Dragon Footsteps 23 | 1,0 s |
+| `coup` | un coup qui porte | 9119330371 | Soccer Ball Tackle 4 | 1,0 s |
+| `fouille` | pendant qu'on fouille | 9114895552 | Junk Rattle Box Of Miscellaneous Items 3 | 3,9 s |
+| `fumee` | le fumigène qui éclate | 9120591722 | Water Spray Metal 1 | 6,8 s |
+
+Les animations des Repris sont celles du pack Zombie de Roblox : marche
+`616168032`, course `616163682`, repos `616158929` (vérifiées chargées le 9
+novembre 2026).

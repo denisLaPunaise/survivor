@@ -25,7 +25,8 @@ local CombatService = {}
 
 export type Target = {
 	root: BasePart,
-	hit: (damage: number, from: Player) -> (),
+	-- `from` : qui frappe (nil : un piege).
+	hit: (damage: number, from: Player?) -> (),
 }
 
 -- Ce que les joueurs peuvent frapper : les Repris s'y inscrivent.
@@ -40,6 +41,18 @@ end
 
 function CombatService.unregisterTarget(root: BasePart)
 	targets[root] = nil
+end
+
+-- Un piege : chaque cible a cette distance prend le coup. Rend combien.
+function CombatService.hurtNear(position: Vector3, radius: number, damage: number): number
+	local hurt = 0
+	for root, target in targets do
+		if root.Parent and (root.Position - position).Magnitude <= radius then
+			hurt += 1
+			task.spawn(target.hit, damage, nil)
+		end
+	end
+	return hurt
 end
 
 function CombatService.onDowned(listener: (Player) -> ())

@@ -24,6 +24,7 @@ local suites = {
 	{ name = "La quete principale", run = require("./specs/quest") },
 	{ name = "Le fumigene", run = require("./specs/smoke") },
 	{ name = "Le Gardien", run = require("./specs/gardien") },
+	{ name = "La construction libre", run = require("./specs/build") },
 	{ name = "Les sons", run = require("./specs/sounds") },
 	{ name = "Regles branchees", run = require("./specs/wiring") },
 }

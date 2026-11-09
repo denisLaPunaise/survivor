@@ -649,3 +649,72 @@ l'Œil, un écran de fin puis on continue (`CONCEPT.md` §12). Pris sans lui :
   terminé ».
 - **Après une défaite**, tout recommence : grille refermée, Gardien absent
   jusqu'au jour 8.
+
+## Les Repris, la construction libre, la Visibilité (9 novembre 2026)
+
+Josh a décidé : les quatre nouveaux Repris arrivent au fil des jours dans la
+Banlieue ; la Visibilité attire des Repris puis fait venir l'Œil ; on
+construit sur une grille dans la cour et la maison (`CONCEPT.md` §8 et §9).
+Pris sans lui :
+
+**Les corps des Repris**
+- Le corps reste celui d'un humain de Roblox (articulé, pour marcher), en
+  cendre ; la **tête est un crâne généré**, texture retirée (elle faisait
+  dessin animé), aux orbites qui luisent. Le Hurleur a un crâne à cornes et
+  mâchoire ouverte ; la Brute porte une bosse de gravats générée ; le Guetteur
+  a un seul grand œil rouge. Identifiants dans `docs/ASSETS.md`.
+- Ils **marchent et courent avec les animations Zombie** de Roblox (avant : ils
+  glissaient, raides) et **on entend leurs pas** de près.
+- Leurs proportions changent d'une sorte à l'autre (Coureur maigre, Rampant
+  petit et bas, Brute 1,6 fois plus grande, Guetteur grand et fin).
+
+**Les nouveaux Repris**
+- **Hurleur** (jour 3) : quand il voit quelqu'un, il se fige et crie ; tout
+  Repris à 90 studs accourt. Au plus un cri toutes les 10 s.
+- **Rampant** (jour 5) : il sent un joueur caché à 14 studs ou moins et
+  l'arrache de sa cachette. De plus loin, une cachette reste sûre.
+- **Brute** (jour 7, la nuit seulement) : 240 de santé, lente, ses coups valent
+  triple contre la barricade et les constructions.
+- **Guetteur** (jour 9) : 2 puis jusqu'à 6, perchés sur des toits le jour,
+  immobiles, hors d'atteinte. S'il voit quelqu'un (110 studs, ligne de vue),
+  il siffle : pendant un Balayage, l'Œil fonce sur lui ; sinon, le prochain
+  Balayage le vise sans erreur. Il disparaît la nuit.
+
+**Les sons** (Pro Sound Effects, choisis sur le nom et la durée, je n'ai pas
+pu les écouter) : grognement au réveil, cri du Hurleur, sifflement du
+Guetteur, pas, coups, fouille (pendant qu'on maintient X), sifflement du
+fumigène.
+
+**La construction libre**
+- Mode construction : **flèche gauche** dans un rayon de 70 studs autour de la
+  Planque. R2 pose, L1 / R1 tournent, haut / bas changent de pièce, B ou
+  flèche gauche sortent. Le fantôme est vert ou rouge.
+- **Six pièces** : palissade (2 planches), mur de tôle (2 ferrailles, 1
+  planche), chevaux de frise, piège à clous (blesse les Repris qui passent),
+  lampe (s'allume la nuit), filet de camouflage (tendu au-dessus, cache).
+- Grille de 4 studs ; 60 pièces au plus. Les Repris frappent ce qui leur barre
+  la route ; une pièce abîmée noircit ; **X pour réparer** (1 planche).
+- On ne démonte pas encore une pièce posée.
+
+**La Visibilité**
+- Le niveau additionne les constructions (le filet en retire 8), les postes
+  de l'établi (2 chacun), la fumée du réchaud (5), Élie (8) et le bruit des
+  coups la nuit.
+- Chaque nuit, la jauge monte de la moitié du niveau et perd 4. **Un Repris de
+  plus la nuit par tranche de 15.**
+- **Pleine (100)** : au matin, « l'Œil a trouvé la Planque » ; le premier
+  Balayage vise la Planque et **arrache 3 constructions qui ne sont pas sous
+  un filet**. La jauge redescend à 40.
+- Elle s'affiche au-dessus de la réserve : « Planque repérée : X % ».
+
+**Corrigé en route, en testant une vraie nuit** :
+- la nuit, les Repris calculaient leurs chemins un par un et la boucle
+  attendait chaque calcul : à cent Repris, la plupart restaient plantés. Le
+  calcul se fait maintenant en tâche de fond ;
+- ils visaient le point de départ de la Planque, **sous terre** (aucun chemin)
+  et cherchaient un chemin trop large pour les portes : **après une minute de
+  nuit, aucun ne marchait**, ils poussaient contre un mur. Le chemin est
+  calculé pour un corps plus fin qui saute, et celui qui n'avance plus saute
+  et fait un pas de côté. Mesuré : deux tiers marchent, et ils arrivent à la
+  Planque en trois minutes environ (la nuit en dure quatre). Un tiers reste
+  encore coincé dans des maisons sans issue : à surveiller.

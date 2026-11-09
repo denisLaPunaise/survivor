@@ -40,6 +40,10 @@
 		{
 			"name": "Chapter",
 			"className": "RemoteEvent"
+		},
+		{
+			"name": "Construct",
+			"className": "RemoteEvent"
 		}
 	]
 }

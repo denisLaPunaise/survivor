@@ -270,6 +270,9 @@ function Hud.start()
 	stockText.TextXAlignment = Enum.TextXAlignment.Right
 	stockText.TextYAlignment = Enum.TextYAlignment.Top
 	stockText.TextSize = 16
+	-- Autant de lignes que la reserve en a : une boite fixe coupait les
+	-- dernieres (vu le 9 novembre 2026).
+	stockText.AutomaticSize = Enum.AutomaticSize.Y
 	stockText.Parent = gui
 
 	-- Un message glisse en place et s'ecrit vite, dans la couleur de sa sorte,
@@ -329,24 +332,37 @@ function Hud.start()
 		task.delay(1, showDay, dayNow)
 	end
 
-	local hud = Remotes:WaitForChild("Hud") :: RemoteEvent
-	hud.OnClientEvent:Connect(function(data: any)
-		bagText.Text =
-			string.format("Sac %d/%d\n%s", #data.bag, data.slots, table.concat(data.bag, " · "))
-		local lines: { string } = { "Réserve" }
+	-- La reserve, et dessus la jauge de Visibilite de la Planque (ce que
+	-- l'Oeil en sait) : on la regarde avant de construire ou d'allumer.
+	local lastStock: { [string]: number } = {}
+	local function renderStock()
+		local out: { string } = { "Réserve" }
+		local seen = workspace:GetAttribute(Config.visibility.attribute)
+		if typeof(seen) == "number" then
+			out[1] = string.format("Planque repérée : %d %%\nRéserve", math.floor(seen + 0.5))
+		end
 		local ids: { string } = {}
-		for itemId in data.stock do
+		for itemId in lastStock do
 			table.insert(ids, itemId)
 		end
 		table.sort(ids)
 		for _, itemId in ids do
 			local item = Config.items[itemId]
 			table.insert(
-				lines,
-				string.format("%s × %d", if item then item.name else itemId, data.stock[itemId])
+				out,
+				string.format("%s × %d", if item then item.name else itemId, lastStock[itemId])
 			)
 		end
-		stockText.Text = table.concat(lines, "\n")
+		stockText.Text = table.concat(out, "\n")
+	end
+	workspace:GetAttributeChangedSignal(Config.visibility.attribute):Connect(renderStock)
+
+	local hud = Remotes:WaitForChild("Hud") :: RemoteEvent
+	hud.OnClientEvent:Connect(function(data: any)
+		bagText.Text =
+			string.format("Sac %d/%d\n%s", #data.bag, data.slots, table.concat(data.bag, " · "))
+		lastStock = data.stock
+		renderStock()
 		if data.message then
 			if data.kind == "day" then
 				showDay(data.message)

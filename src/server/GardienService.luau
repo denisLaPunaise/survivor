@@ -259,7 +259,7 @@ local function spawn()
 	CombatService.registerTarget({
 		root = r,
 		-- Les coups ne le tuent pas : ils le reveillent, et se voient.
-		hit = function(_damage: number, from: Player)
+		hit = function(_damage: number, from: Player?)
 			local flash = Instance.new("Highlight")
 			flash.FillColor = Color3.fromRGB(240, 230, 220)
 			flash.FillTransparency = 0.5
