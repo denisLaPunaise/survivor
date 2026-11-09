@@ -5,6 +5,7 @@ première personne. Le jour, on fouille une ville en ruine en se cachant d'un Œ
 géant qui balaie les rues depuis le ciel ; la nuit, on défend sa Planque.
 
 - Le concept complet : [docs/CONCEPT.md](docs/CONCEPT.md)
+- **Nouveau sur le projet ? Commencer par [DEMARRER.md](DEMARRER.md)**
 - Les notes de travail de l'assistant : [CLAUDE.md](CLAUDE.md)
 - Ce qu'il faut regarder en jouant : [docs/A-TESTER.md](docs/A-TESTER.md)
 

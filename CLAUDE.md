@@ -16,6 +16,11 @@ Les notes communes à tous les jeux de Josh sont dans
 sont dans `..\Arena\CLAUDE.md`. Ce fichier ne contient que ce qui est propre à
 Survivor.
 
+**Nouveau sur le projet (un ami de Josh, un autre compte Claude) ?** Lire
+[DEMARRER.md](DEMARRER.md) : installation, place, ordre de lecture. Les notes
+communes y sont copiées dans [docs/NOTES-COMMUNES.md](docs/NOTES-COMMUNES.md),
+à lire si `C:\Users\boill\.claude\CLAUDE.md` n'est pas sur ta machine.
+
 ## Qui fait quoi
 
 | | Rôle |
